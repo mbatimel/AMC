@@ -1,0 +1,48 @@
+.overlaypopup-noscroll {
+  overflow: hidden;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  font-family:
+    Raleway,
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    Roboto,
+    sans-serif;
+  font-feature-settings:
+    'kern' 1,
+    'lnum' 1,
+    'tnum' 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+body {
+  background-color: var(--palette-ulight);
+  color: var(--palette-black);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font-family: inherit;
+    font-size: 14px;
+  }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: Montserrat, Raleway, 'Segoe UI', sans-serif;
+  letter-spacing: 0.15px;
+  overflow-wrap: break-word;
+}

@@ -1,0 +1,6 @@
+dist
+.next
+out
+node_modules/
+*.local
+vi-portal

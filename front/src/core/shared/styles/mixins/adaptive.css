@@ -1,0 +1,41 @@
+/* Mobile: 320px–680px */
+@define-mixin mobileOnly {
+  @media (width <= 680px) {
+    @mixin-content;
+  }
+}
+
+/* Tablet: 681px–1074px */
+@define-mixin tabletOnly {
+  @media (width >= 681px) and (width <= 1074px) {
+    @mixin-content;
+  }
+}
+
+/* Tablet and up: ≥681px */
+@define-mixin tabletUp {
+  @media (width >= 681px) {
+    @mixin-content;
+  }
+}
+
+/* Desktop: 1075px–1450px */
+@define-mixin desktopOnly {
+  @media (width >= 1075px) and (width <= 1450px) {
+    @mixin-content;
+  }
+}
+
+/* Desktop and up: ≥1075px */
+@define-mixin desktopUp {
+  @media (width >= 1075px) {
+    @mixin-content;
+  }
+}
+
+/* Wide desktop: ≥1451px */
+@define-mixin wideDesktopUp {
+  @media (width >= 1451px) {
+    @mixin-content;
+  }
+}

@@ -1,0 +1,61 @@
+/* Theme variables from roundtrip.json */
+
+:root {
+  /* Palette */
+  --palette-black: #111;
+  --palette-dark: #868686;
+  --palette-disabled: #afafaf;
+  --palette-gray: #c8c8c8;
+  --palette-light: #e5e5e5;
+  --palette-main: #a9f135;
+  --palette-sec: #eee;
+  --palette-ulight: #f4f4f4;
+  --palette-white: #fff;
+
+  /* Base */
+  --border: #e5e5e5;
+  --disabled-filter: grayscale(0.5) opacity(0.4);
+  --disabled-overlay: rgb(246 246 246 / 80%);
+
+  /* Header */
+  --header-active: #111;
+  --header-bg: #fff;
+  --header-bg-secondary: #f4f4f4;
+  --header-height: 48px;
+  --header-height-secondary: 48px;
+  --header-logo-main-max-height: 40px;
+  --header-logo-partner-max-height: 40px;
+  --header-main: #111;
+  --header-menu-typo: #868686;
+  --header-menu-typo-secondary: #868686;
+  --header-secondary: #e5e5e5;
+  --header-typo: rgb(17 17 17);
+
+  /* Link */
+  --link: #4086e4;
+  --link-active: rgb(10 88 178);
+  --link-alt: rgb(132 192 255);
+  --link-alt-active: rgb(209 239 255);
+  --link-alt-hover: rgb(179 224 255);
+  --link-hover: rgb(31 103 194);
+
+  /* Status */
+  --alert: #ce2121;
+  --alert-alt: rgb(234 165 165);
+  --alert-bg: rgb(252 234 234);
+  --alert-outline: rgb(206 33 33 / 40%);
+  --focus-outline: rgb(169 241 53 / 40%);
+  --highlight-bg: #fff8e6;
+  --success: #53af24;
+  --success-alt: rgb(186 223 168);
+  --success-bg: rgb(220 239 211);
+  --warning: #e77c00;
+  --warning-alt: rgb(255 173 78);
+  --warning-bg: rgb(246 228 206);
+
+  /* Z-index */
+  --z-index-popup: 12;
+  --z-index-popup-important: 22;
+  --z-index-start: 1;
+  --z-index-tip: 2;
+}
