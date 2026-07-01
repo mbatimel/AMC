@@ -9,8 +9,32 @@ import (
 	"github.com/mbatimel/AMC/orders/pkg/models"
 )
 
-type OrdersAPIGetCart func(ctx context.Context, userID uuid.UUID, clientID string) (models.GetCartResponse, error)
+type OrdersAPIGetCart func(ctx context.Context, userID uuid.UUID, clientID string) (response models.GetCartResponse, err error)
+type OrdersAPIAddCartItem func(ctx context.Context, userID uuid.UUID, clientID string, productID string, qty int) (response models.AddCartItemResponse, err error)
+type OrdersAPIUpdateCartItem func(ctx context.Context, userID uuid.UUID, clientID string, cartItemID string, qty int) (response models.UpdateCartItemResponse, err error)
+type OrdersAPIDeleteCartItem func(ctx context.Context, userID uuid.UUID, clientID string, cartItemID string) (response models.DeleteCartItemResponse, err error)
+type OrdersAPIClearCart func(ctx context.Context, userID uuid.UUID, clientID string) (response models.ClearCartResponse, err error)
+type OrdersAPICreateOrder func(ctx context.Context, userID uuid.UUID, clientID string, deliveryType string, deliveryAddress string, contactName string, phone string, email string, comment string) (response models.CreateOrderResponse, err error)
+type OrdersAPIGetOrder func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, clientID string) (response models.GetOrderResponse, err error)
+type OrdersAPIListOrders func(ctx context.Context, userID uuid.UUID, clientID string, status string, paymentStatus string, limit int, offset int, sort string) (response models.ListOrdersResponse, err error)
+type OrdersAPICancelOrder func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, comment string) (response models.CancelOrderResponse, err error)
+type OrdersAPIRepeatOrder func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, clientID string) (response models.RepeatOrderResponse, err error)
+type OrdersAPIGetOrderDocuments func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderDocumentsResponse, err error)
+type OrdersAPIGetOrderHistory func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderHistoryResponse, err error)
+type OrdersAPIUpdateOrderStatus func(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error)
 
 type MiddlewareOrdersAPI func(next externalAPI.OrdersAPI) externalAPI.OrdersAPI
 
 type MiddlewareOrdersAPIGetCart func(next OrdersAPIGetCart) OrdersAPIGetCart
+type MiddlewareOrdersAPIAddCartItem func(next OrdersAPIAddCartItem) OrdersAPIAddCartItem
+type MiddlewareOrdersAPIUpdateCartItem func(next OrdersAPIUpdateCartItem) OrdersAPIUpdateCartItem
+type MiddlewareOrdersAPIDeleteCartItem func(next OrdersAPIDeleteCartItem) OrdersAPIDeleteCartItem
+type MiddlewareOrdersAPIClearCart func(next OrdersAPIClearCart) OrdersAPIClearCart
+type MiddlewareOrdersAPICreateOrder func(next OrdersAPICreateOrder) OrdersAPICreateOrder
+type MiddlewareOrdersAPIGetOrder func(next OrdersAPIGetOrder) OrdersAPIGetOrder
+type MiddlewareOrdersAPIListOrders func(next OrdersAPIListOrders) OrdersAPIListOrders
+type MiddlewareOrdersAPICancelOrder func(next OrdersAPICancelOrder) OrdersAPICancelOrder
+type MiddlewareOrdersAPIRepeatOrder func(next OrdersAPIRepeatOrder) OrdersAPIRepeatOrder
+type MiddlewareOrdersAPIGetOrderDocuments func(next OrdersAPIGetOrderDocuments) OrdersAPIGetOrderDocuments
+type MiddlewareOrdersAPIGetOrderHistory func(next OrdersAPIGetOrderHistory) OrdersAPIGetOrderHistory
+type MiddlewareOrdersAPIUpdateOrderStatus func(next OrdersAPIUpdateOrderStatus) OrdersAPIUpdateOrderStatus

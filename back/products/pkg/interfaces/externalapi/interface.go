@@ -3,6 +3,8 @@
 // @tg backend=products
 // @tg title=`products`
 // @tg servers=
+//
+//go:generate tg transport --services . --out ../../../internal/transport/jsonRPC/externalapi --outSwagger ../../../swaggers/externalapi/swagger.yaml
 package externalapi
 
 import (
@@ -14,53 +16,110 @@ import (
 // ProductsAPI
 // @tg http-server metrics log
 // @tg http-prefix=/api
+// @tg 200=github.com/mbatimel/AMC/products/swaggers/externalapi/models:Resp200
+// @tg 400=github.com/mbatimel/AMC/products/swaggers/externalapi/models:Err400
+// @tg 401=github.com/mbatimel/AMC/products/swaggers/externalapi/models:Err401
+// @tg 403=github.com/mbatimel/AMC/products/swaggers/externalapi/models:Err403
+// @tg 500=github.com/mbatimel/AMC/products/swaggers/externalapi/models:Err500
 type ProductsAPI interface {
-	// CreateProduct creates a product card for the portal catalog.
+	// CreateProduct ...
 	// @tg http-method=POST
 	// @tg http-path=/v1/products
+	// @tg http-args=sku|sku
+	// @tg http-args=name|name
+	// @tg http-args=description|description
+	// @tg http-args=categoryID|categoryID
+	// @tg http-args=brandID|brandID
+	// @tg http-args=gost|gost
+	// @tg http-args=material|material
+	// @tg http-args=size|size
+	// @tg http-args=packageQty|packageQty
+	// @tg http-args=stockQty|stockQty
+	// @tg http-args=basePrice|basePrice
+	// @tg http-args=clientPrice|clientPrice
+	// @tg http-args=discountPercent|discountPercent
+	// @tg http-args=isPublished|isPublished
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:CreateProduct
 	// @tg summary=`Создание товара`
 	// @tg desc=`Создание карточки товара каталога`
-	CreateProduct(ctx context.Context, request models.CreateProductRequest) (models.CreateProductResponse, error)
+	CreateProduct(ctx context.Context, sku string, name string, description string, categoryID string, brandID string, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, isPublished bool) (response models.CreateProductResponse, err error)
 
-	// GetProduct returns one product by ID.
+	// GetProduct ...
 	// @tg http-method=GET
-	// @tg http-path=/v1/products/{id}
+	// @tg http-path=/v1/products/{productID}
+	// @tg http-args=productID|productID
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:GetProduct
 	// @tg summary=`Получение товара`
 	// @tg desc=`Получение карточки товара по идентификатору`
-	GetProduct(ctx context.Context, request models.GetProductRequest) (models.GetProductResponse, error)
+	GetProduct(ctx context.Context, productID string) (response models.GetProductResponse, err error)
 
-	// ListProducts returns a filtered product list.
+	// ListProducts ...
 	// @tg http-method=GET
 	// @tg http-path=/v1/products
+	// @tg http-args=q|q
+	// @tg http-args=categoryID|categoryID
+	// @tg http-args=brandID|brandID
+	// @tg http-args=material|material
+	// @tg http-args=size|size
+	// @tg http-args=gost|gost
+	// @tg http-args=inStock|inStock
+	// @tg http-args=limit|limit
+	// @tg http-args=offset|offset
+	// @tg http-args=sort|sort
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:ListProducts
 	// @tg summary=`Список товаров`
 	// @tg desc=`Получение списка товаров с фильтрами, поиском и пагинацией`
-	ListProducts(ctx context.Context, request models.ListProductsRequest) (models.ListProductsResponse, error)
+	ListProducts(ctx context.Context, q string, categoryID string, brandID string, material string, size string, gost string, inStock bool, limit int, offset int, sort string) (response models.ListProductsResponse, err error)
 
-	// UpdateProduct updates portal product content.
+	// UpdateProduct ...
 	// @tg http-method=PATCH
-	// @tg http-path=/v1/products/{id}
+	// @tg http-path=/v1/products/{productID}
+	// @tg http-args=productID|productID
+	// @tg http-args=sku|sku
+	// @tg http-args=name|name
+	// @tg http-args=description|description
+	// @tg http-args=categoryID|categoryID
+	// @tg http-args=brandID|brandID
+	// @tg http-args=gost|gost
+	// @tg http-args=material|material
+	// @tg http-args=size|size
+	// @tg http-args=packageQty|packageQty
+	// @tg http-args=stockQty|stockQty
+	// @tg http-args=basePrice|basePrice
+	// @tg http-args=clientPrice|clientPrice
+	// @tg http-args=discountPercent|discountPercent
+	// @tg http-args=isPublished|isPublished
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:UpdateProduct
 	// @tg summary=`Обновление товара`
 	// @tg desc=`Обновление карточки товара каталога`
-	UpdateProduct(ctx context.Context, request models.UpdateProductRequest) (models.UpdateProductResponse, error)
+	UpdateProduct(ctx context.Context, productID string, sku string, name string, description string, categoryID string, brandID string, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, isPublished bool) (response models.UpdateProductResponse, err error)
 
-	// DeleteProduct deletes or hides a product card.
+	// DeleteProduct ...
 	// @tg http-method=DELETE
-	// @tg http-path=/v1/products/{id}
+	// @tg http-path=/v1/products/{productID}
+	// @tg http-args=productID|productID
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:DeleteProduct
 	// @tg summary=`Удаление товара`
 	// @tg desc=`Удаление или скрытие карточки товара`
-	DeleteProduct(ctx context.Context, request models.DeleteProductRequest) (models.DeleteProductResponse, error)
+	DeleteProduct(ctx context.Context, productID string) (response models.DeleteProductResponse, err error)
 
-	// ListCategories returns catalog categories.
+	// ListCategories ...
 	// @tg http-method=GET
 	// @tg http-path=/v1/categories
+	// @tg http-args=limit|limit
+	// @tg http-args=offset|offset
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:ListCategories
 	// @tg summary=`Список категорий`
 	// @tg desc=`Получение списка категорий каталога`
-	ListCategories(ctx context.Context, request models.ListCategoriesRequest) (models.ListCategoriesResponse, error)
+	ListCategories(ctx context.Context, limit int, offset int) (response models.ListCategoriesResponse, err error)
 
-	// ListBrands returns catalog brands.
+	// ListBrands ...
 	// @tg http-method=GET
 	// @tg http-path=/v1/brands
+	// @tg http-args=limit|limit
+	// @tg http-args=offset|offset
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:ListBrands
 	// @tg summary=`Список брендов`
 	// @tg desc=`Получение списка брендов каталога`
-	ListBrands(ctx context.Context, request models.ListBrandsRequest) (models.ListBrandsResponse, error)
+	ListBrands(ctx context.Context, limit int, offset int) (response models.ListBrandsResponse, err error)
 }

@@ -10,13 +10,37 @@ import (
 )
 
 type serverOrdersAPI struct {
-	svc     externalAPI.OrdersAPI
-	getCart OrdersAPIGetCart
+	svc               externalAPI.OrdersAPI
+	getCart           OrdersAPIGetCart
+	addCartItem       OrdersAPIAddCartItem
+	updateCartItem    OrdersAPIUpdateCartItem
+	deleteCartItem    OrdersAPIDeleteCartItem
+	clearCart         OrdersAPIClearCart
+	createOrder       OrdersAPICreateOrder
+	getOrder          OrdersAPIGetOrder
+	listOrders        OrdersAPIListOrders
+	cancelOrder       OrdersAPICancelOrder
+	repeatOrder       OrdersAPIRepeatOrder
+	getOrderDocuments OrdersAPIGetOrderDocuments
+	getOrderHistory   OrdersAPIGetOrderHistory
+	updateOrderStatus OrdersAPIUpdateOrderStatus
 }
 
 type MiddlewareSetOrdersAPI interface {
 	Wrap(m MiddlewareOrdersAPI)
 	WrapGetCart(m MiddlewareOrdersAPIGetCart)
+	WrapAddCartItem(m MiddlewareOrdersAPIAddCartItem)
+	WrapUpdateCartItem(m MiddlewareOrdersAPIUpdateCartItem)
+	WrapDeleteCartItem(m MiddlewareOrdersAPIDeleteCartItem)
+	WrapClearCart(m MiddlewareOrdersAPIClearCart)
+	WrapCreateOrder(m MiddlewareOrdersAPICreateOrder)
+	WrapGetOrder(m MiddlewareOrdersAPIGetOrder)
+	WrapListOrders(m MiddlewareOrdersAPIListOrders)
+	WrapCancelOrder(m MiddlewareOrdersAPICancelOrder)
+	WrapRepeatOrder(m MiddlewareOrdersAPIRepeatOrder)
+	WrapGetOrderDocuments(m MiddlewareOrdersAPIGetOrderDocuments)
+	WrapGetOrderHistory(m MiddlewareOrdersAPIGetOrderHistory)
+	WrapUpdateOrderStatus(m MiddlewareOrdersAPIUpdateOrderStatus)
 
 	WithMetrics()
 	WithLog()
@@ -24,22 +48,142 @@ type MiddlewareSetOrdersAPI interface {
 
 func newServerOrdersAPI(svc externalAPI.OrdersAPI) *serverOrdersAPI {
 	return &serverOrdersAPI{
-		getCart: svc.GetCart,
-		svc:     svc,
+		addCartItem:       svc.AddCartItem,
+		cancelOrder:       svc.CancelOrder,
+		clearCart:         svc.ClearCart,
+		createOrder:       svc.CreateOrder,
+		deleteCartItem:    svc.DeleteCartItem,
+		getCart:           svc.GetCart,
+		getOrder:          svc.GetOrder,
+		getOrderDocuments: svc.GetOrderDocuments,
+		getOrderHistory:   svc.GetOrderHistory,
+		listOrders:        svc.ListOrders,
+		repeatOrder:       svc.RepeatOrder,
+		svc:               svc,
+		updateCartItem:    svc.UpdateCartItem,
+		updateOrderStatus: svc.UpdateOrderStatus,
 	}
 }
 
 func (srv *serverOrdersAPI) Wrap(m MiddlewareOrdersAPI) {
 	srv.svc = m(srv.svc)
 	srv.getCart = srv.svc.GetCart
+	srv.addCartItem = srv.svc.AddCartItem
+	srv.updateCartItem = srv.svc.UpdateCartItem
+	srv.deleteCartItem = srv.svc.DeleteCartItem
+	srv.clearCart = srv.svc.ClearCart
+	srv.createOrder = srv.svc.CreateOrder
+	srv.getOrder = srv.svc.GetOrder
+	srv.listOrders = srv.svc.ListOrders
+	srv.cancelOrder = srv.svc.CancelOrder
+	srv.repeatOrder = srv.svc.RepeatOrder
+	srv.getOrderDocuments = srv.svc.GetOrderDocuments
+	srv.getOrderHistory = srv.svc.GetOrderHistory
+	srv.updateOrderStatus = srv.svc.UpdateOrderStatus
 }
 
-func (srv *serverOrdersAPI) GetCart(ctx context.Context, userID uuid.UUID, clientID string) (models.GetCartResponse, error) {
+func (srv *serverOrdersAPI) GetCart(ctx context.Context, userID uuid.UUID, clientID string) (response models.GetCartResponse, err error) {
 	return srv.getCart(ctx, userID, clientID)
+}
+
+func (srv *serverOrdersAPI) AddCartItem(ctx context.Context, userID uuid.UUID, clientID string, productID string, qty int) (response models.AddCartItemResponse, err error) {
+	return srv.addCartItem(ctx, userID, clientID, productID, qty)
+}
+
+func (srv *serverOrdersAPI) UpdateCartItem(ctx context.Context, userID uuid.UUID, clientID string, cartItemID string, qty int) (response models.UpdateCartItemResponse, err error) {
+	return srv.updateCartItem(ctx, userID, clientID, cartItemID, qty)
+}
+
+func (srv *serverOrdersAPI) DeleteCartItem(ctx context.Context, userID uuid.UUID, clientID string, cartItemID string) (response models.DeleteCartItemResponse, err error) {
+	return srv.deleteCartItem(ctx, userID, clientID, cartItemID)
+}
+
+func (srv *serverOrdersAPI) ClearCart(ctx context.Context, userID uuid.UUID, clientID string) (response models.ClearCartResponse, err error) {
+	return srv.clearCart(ctx, userID, clientID)
+}
+
+func (srv *serverOrdersAPI) CreateOrder(ctx context.Context, userID uuid.UUID, clientID string, deliveryType string, deliveryAddress string, contactName string, phone string, email string, comment string) (response models.CreateOrderResponse, err error) {
+	return srv.createOrder(ctx, userID, clientID, deliveryType, deliveryAddress, contactName, phone, email, comment)
+}
+
+func (srv *serverOrdersAPI) GetOrder(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, clientID string) (response models.GetOrderResponse, err error) {
+	return srv.getOrder(ctx, orderID, userID, clientID)
+}
+
+func (srv *serverOrdersAPI) ListOrders(ctx context.Context, userID uuid.UUID, clientID string, status string, paymentStatus string, limit int, offset int, sort string) (response models.ListOrdersResponse, err error) {
+	return srv.listOrders(ctx, userID, clientID, status, paymentStatus, limit, offset, sort)
+}
+
+func (srv *serverOrdersAPI) CancelOrder(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, comment string) (response models.CancelOrderResponse, err error) {
+	return srv.cancelOrder(ctx, orderID, userID, comment)
+}
+
+func (srv *serverOrdersAPI) RepeatOrder(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, clientID string) (response models.RepeatOrderResponse, err error) {
+	return srv.repeatOrder(ctx, orderID, userID, clientID)
+}
+
+func (srv *serverOrdersAPI) GetOrderDocuments(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderDocumentsResponse, err error) {
+	return srv.getOrderDocuments(ctx, orderID, userID)
+}
+
+func (srv *serverOrdersAPI) GetOrderHistory(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderHistoryResponse, err error) {
+	return srv.getOrderHistory(ctx, orderID, userID)
+}
+
+func (srv *serverOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
+	return srv.updateOrderStatus(ctx, orderID, status, paymentStatus, comment, changedBy)
 }
 
 func (srv *serverOrdersAPI) WrapGetCart(m MiddlewareOrdersAPIGetCart) {
 	srv.getCart = m(srv.getCart)
+}
+
+func (srv *serverOrdersAPI) WrapAddCartItem(m MiddlewareOrdersAPIAddCartItem) {
+	srv.addCartItem = m(srv.addCartItem)
+}
+
+func (srv *serverOrdersAPI) WrapUpdateCartItem(m MiddlewareOrdersAPIUpdateCartItem) {
+	srv.updateCartItem = m(srv.updateCartItem)
+}
+
+func (srv *serverOrdersAPI) WrapDeleteCartItem(m MiddlewareOrdersAPIDeleteCartItem) {
+	srv.deleteCartItem = m(srv.deleteCartItem)
+}
+
+func (srv *serverOrdersAPI) WrapClearCart(m MiddlewareOrdersAPIClearCart) {
+	srv.clearCart = m(srv.clearCart)
+}
+
+func (srv *serverOrdersAPI) WrapCreateOrder(m MiddlewareOrdersAPICreateOrder) {
+	srv.createOrder = m(srv.createOrder)
+}
+
+func (srv *serverOrdersAPI) WrapGetOrder(m MiddlewareOrdersAPIGetOrder) {
+	srv.getOrder = m(srv.getOrder)
+}
+
+func (srv *serverOrdersAPI) WrapListOrders(m MiddlewareOrdersAPIListOrders) {
+	srv.listOrders = m(srv.listOrders)
+}
+
+func (srv *serverOrdersAPI) WrapCancelOrder(m MiddlewareOrdersAPICancelOrder) {
+	srv.cancelOrder = m(srv.cancelOrder)
+}
+
+func (srv *serverOrdersAPI) WrapRepeatOrder(m MiddlewareOrdersAPIRepeatOrder) {
+	srv.repeatOrder = m(srv.repeatOrder)
+}
+
+func (srv *serverOrdersAPI) WrapGetOrderDocuments(m MiddlewareOrdersAPIGetOrderDocuments) {
+	srv.getOrderDocuments = m(srv.getOrderDocuments)
+}
+
+func (srv *serverOrdersAPI) WrapGetOrderHistory(m MiddlewareOrdersAPIGetOrderHistory) {
+	srv.getOrderHistory = m(srv.getOrderHistory)
+}
+
+func (srv *serverOrdersAPI) WrapUpdateOrderStatus(m MiddlewareOrdersAPIUpdateOrderStatus) {
+	srv.updateOrderStatus = m(srv.updateOrderStatus)
 }
 
 func (srv *serverOrdersAPI) WithMetrics() {

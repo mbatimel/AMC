@@ -12,5 +12,135 @@ type requestOrdersAPIGetCart struct {
 }
 
 type responseOrdersAPIGetCart struct {
-	models.GetCartResponse `json:",omitempty"`
+	Response models.GetCartResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPIAddCartItem struct {
+	UserID    uuid.UUID `json:"userID,omitempty"`
+	ClientID  string    `json:"clientID,omitempty"`
+	ProductID string    `json:"productID,omitempty"`
+	Qty       int       `json:"qty,omitempty"`
+}
+
+type responseOrdersAPIAddCartItem struct {
+	Response models.AddCartItemResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPIUpdateCartItem struct {
+	UserID     uuid.UUID `json:"userID,omitempty"`
+	ClientID   string    `json:"clientID,omitempty"`
+	CartItemID string    `json:"cartItemID,omitempty"`
+	Qty        int       `json:"qty,omitempty"`
+}
+
+type responseOrdersAPIUpdateCartItem struct {
+	Response models.UpdateCartItemResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPIDeleteCartItem struct {
+	UserID     uuid.UUID `json:"userID,omitempty"`
+	ClientID   string    `json:"clientID,omitempty"`
+	CartItemID string    `json:"cartItemID,omitempty"`
+}
+
+type responseOrdersAPIDeleteCartItem struct {
+	Response models.DeleteCartItemResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPIClearCart struct {
+	UserID   uuid.UUID `json:"userID,omitempty"`
+	ClientID string    `json:"clientID,omitempty"`
+}
+
+type responseOrdersAPIClearCart struct {
+	Response models.ClearCartResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPICreateOrder struct {
+	UserID          uuid.UUID `json:"userID,omitempty"`
+	ClientID        string    `json:"clientID,omitempty"`
+	DeliveryType    string    `json:"deliveryType,omitempty"`
+	DeliveryAddress string    `json:"deliveryAddress,omitempty"`
+	ContactName     string    `json:"contactName,omitempty"`
+	Phone           string    `json:"phone,omitempty"`
+	Email           string    `json:"email,omitempty"`
+	Comment         string    `json:"comment,omitempty"`
+}
+
+type responseOrdersAPICreateOrder struct {
+	Response models.CreateOrderResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPIGetOrder struct {
+	OrderID  uuid.UUID `json:"orderID,omitempty"`
+	UserID   uuid.UUID `json:"userID,omitempty"`
+	ClientID string    `json:"clientID,omitempty"`
+}
+
+type responseOrdersAPIGetOrder struct {
+	Response models.GetOrderResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPIListOrders struct {
+	UserID        uuid.UUID `json:"userID,omitempty"`
+	ClientID      string    `json:"clientID,omitempty"`
+	Status        string    `json:"status,omitempty"`
+	PaymentStatus string    `json:"paymentStatus,omitempty"`
+	Limit         int       `json:"limit,omitempty"`
+	Offset        int       `json:"offset,omitempty"`
+	Sort          string    `json:"sort,omitempty"`
+}
+
+type responseOrdersAPIListOrders struct {
+	Response models.ListOrdersResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPICancelOrder struct {
+	OrderID uuid.UUID `json:"orderID,omitempty"`
+	UserID  uuid.UUID `json:"userID,omitempty"`
+	Comment string    `json:"comment,omitempty"`
+}
+
+type responseOrdersAPICancelOrder struct {
+	Response models.CancelOrderResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPIRepeatOrder struct {
+	OrderID  uuid.UUID `json:"orderID,omitempty"`
+	UserID   uuid.UUID `json:"userID,omitempty"`
+	ClientID string    `json:"clientID,omitempty"`
+}
+
+type responseOrdersAPIRepeatOrder struct {
+	Response models.RepeatOrderResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPIGetOrderDocuments struct {
+	OrderID uuid.UUID `json:"orderID,omitempty"`
+	UserID  uuid.UUID `json:"userID,omitempty"`
+}
+
+type responseOrdersAPIGetOrderDocuments struct {
+	Response models.GetOrderDocumentsResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPIGetOrderHistory struct {
+	OrderID uuid.UUID `json:"orderID,omitempty"`
+	UserID  uuid.UUID `json:"userID,omitempty"`
+}
+
+type responseOrdersAPIGetOrderHistory struct {
+	Response models.GetOrderHistoryResponse `json:"response,omitempty"`
+}
+
+type requestOrdersAPIUpdateOrderStatus struct {
+	OrderID       uuid.UUID `json:"orderID,omitempty"`
+	Status        string    `json:"status,omitempty"`
+	PaymentStatus string    `json:"paymentStatus,omitempty"`
+	Comment       string    `json:"comment,omitempty"`
+	ChangedBy     string    `json:"changedBy,omitempty"`
+}
+
+type responseOrdersAPIUpdateOrderStatus struct {
+	Response models.UpdateOrderStatusResponse `json:"response,omitempty"`
 }
