@@ -1,0 +1,94 @@
+services:
+  postgres:
+    image: ${PG_IMAGE}:${PG_VERSION}
+    container_name: postgres_container
+    environment:
+      POSTGRES_DB: ${PG_DB}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    ports:
+      - "${PG_PORT}:${PG_PORT}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # redis-node-1:
+  #   image: redis:latest
+  #   command: ["redis-server", "--port", "30001", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
+  #   ports:
+  #     - "30001:30001"
+  #     - "17001:17001"
+  #   volumes:
+  #     - ./redis-node-1:/data
+
+  # redis-node-2:
+  #   image: redis:latest
+  #   command: ["redis-server", "--port", "30002", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
+  #   ports:
+  #     - "30002:30002"
+  #     - "17002:17002"
+  #   volumes:
+  #     - ./redis-node-2:/data
+
+  # redis-node-3:
+  #   image: redis:latest
+  #   command: ["redis-server", "--port", "30003", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
+  #   ports:
+  #     - "30003:30003"
+  #     - "17003:17003"
+  #   volumes:
+  #     - ./redis-node-3:/data
+
+  # redis-node-4:
+  #   image: redis:latest
+  #   command: ["redis-server", "--port", "30004", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
+  #   ports:
+  #     - "30004:30004"
+  #     - "17004:17004"
+  #   volumes:
+  #     - ./redis-node-4:/data
+
+  # zookeeper:
+  #   image: confluentinc/cp-zookeeper:${ZOOKEEPER_IMAGE_TAG}
+  #   environment:
+  #     ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_CLIENT_PORT}
+  #     ZOOKEEPER_TICK_TIME: 2000
+  #   ports:
+  #     - ${ZOOKEEPER_CLIENT_PORT}:${ZOOKEEPER_CLIENT_PORT}
+
+  # kafka0:
+  #   image: confluentinc/cp-kafka:${KAFKA_IMAGE_TAG}
+  #   depends_on:
+  #     - zookeeper
+  #   ports:
+  #     - 9092:9092
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:${ZOOKEEPER_CLIENT_PORT}'
+  #     ZOOKEEPER_SASL_ENABLED: 'false'
+  #     KAFKA_ADVERTISED_LISTENERS: ${SECURITY_PROTOCOL}://${PUBLIC_IP}:9092
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: ${SECURITY_PROTOCOL}:${SECURITY_PROTOCOL}
+  #     KAFKA_SECURITY_INTER_BROKER_PROTOCOL: ${SECURITY_PROTOCOL}
+  #     KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: SCRAM-SHA-256
+  #     KAFKA_SASL_ENABLED_MECHANISMS: ${KAFKA_SASL_MECHANISMS}
+  #     KAFKA_OPTS: "-Djava.security.auth.login.config=/kafka/kafka_server_jaas.conf"
+  #   volumes:
+  #     - ./configs:/kafka
+
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: prometheus
+  #   hostname: localhost
+  #   command:
+  #     - --config.file=/etc/prometheus/prometheus.yml
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  #   environment:
+  #     TZ: "Europe/Moscow"
+
+
+
+volumes:
+  postgres_data:
+
