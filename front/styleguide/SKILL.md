@@ -16,14 +16,13 @@ description: "AMC Frontend стайлгайд — соглашения по Type
 - Реализуешь или ревьюишь логику на Effector
 - Создаёшь API-запросы через Farfetched
 - Организуешь структуру проекта по FSD
-- Работаешь с формами (React Hook Form) и валидацией
 - Создаёшь переводы и интернационализацию
 
 ## Разделы
 
 | Раздел             | Файл                       | Фокус                                                         |
 | ------------------ | -------------------------- | ------------------------------------------------------------- |
-| TypeScript & React | [docs/ts-quick.md](docs/ts-quick.md) | Импорты, экспорты, именование, компоненты, хуки, формы |
+| TypeScript & React | [docs/ts-quick.md](docs/ts-quick.md) | Импорты, экспорты, именование, компоненты, хуки |
 | CSS                | [docs/css-quick.md](docs/css-quick.md) | CSS-переменные, логические свойства, миксины, брейкпоинты |
 | Effector           | [docs/effector-quick.md](docs/effector-quick.md) | Сторы, события, эффекты, sample, Farfetched |
 | FSD                | [docs/fsd-quick.md](docs/fsd-quick.md) | Слои, стримы, сегменты, правила импортов, colocation |
@@ -41,10 +40,14 @@ description: "AMC Frontend стайлгайд — соглашения по Type
 - Пропсы-обработчики: `on*`; внутренние обработчики: `handle*` или `on*Internal`
 - Рефы: суффикс `*Ref`
 - Больше 3 параметров → объект
-- CSS Modules: `import clsx from 'clsx'` + `import styles from '*.module.css'` + `className={clsx(styles.foo, ...)}`
+- **Текст в JSX — в `<span>`**, кроме текста внутри `<button>`; не `<p>` для UI-копирайта
+- CSS Modules: `import clsx from 'clsx'` + `import styles from '*.module.css'` + `className={clsx(styles.fooBar, ...)}`
+- **CSS-классы в модулях — `camelCase`** (`styles.backButton`, не `styles['back-button']`)
 - Переводы в `messages.ts` через `react-intl`
 - **Страницы/виджеты**: `views/Home/index.tsx` + `Home.module.css`; папка слайса — `PascalCase`; `ui/` — только доп. компоненты
-- **Переиспользуемые компоненты** (`core/shared/ui`): `ComponentName/index.tsx`, `ComponentName.module.css`, `messages.ts`
+- **Компонент** (в `ui/` или `core/shared/ui/`): папка `ComponentName/` с `index.tsx` и `ComponentName.module.css`
+- **Иконки** (`core/shared/icons/`): плоский файл `IconName.tsx`, общий тип `IconProps`; `currentColor` → атрибут `fill`
+- **Переиспользуемые компоненты** (`core/shared/ui`): `ComponentName/index.tsx`, `ComponentName/ComponentName.module.css`, `messages.ts`
 
 ### CSS
 

@@ -8,6 +8,11 @@
 - HeroUI v3 подключён; Tailwind v4 — только инфраструктура для HeroUI в сборке.
 - **В своём коде Tailwind utility-классы не пишем** — CSS Modules + `theme.css` + пропсы HeroUI.
 
+#### CSS Modules
+- **Имена классов — `camelCase`**: `.backButton`, `.roleLabel` (не kebab-case).
+- Правило проверяется для `*.module.css`.
+- В JSX: `className={clsx(styles.backButton)}`.
+
 #### Логические свойства
 - Используй `margin-inline-start/end`, `padding-inline-start/end`, `border-inline-start/end` вместо физических.
 

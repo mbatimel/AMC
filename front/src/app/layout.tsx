@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { EffectorProvider } from '@/app/providers/EffectorProvider';
 import { ReactScan } from '@/app/ReactScan';
 import '@/core/shared/styles/index.css';
 
@@ -15,7 +16,9 @@ const RootLayout = ({ children }: RootLayoutProps): JSX.Element => {
   return (
     <html lang="ru">
       <ReactScan />
-      <body>{children}</body>
+      <body>
+        <EffectorProvider>{children}</EffectorProvider>
+      </body>
     </html>
   );
 };

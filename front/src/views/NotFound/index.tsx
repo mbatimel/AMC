@@ -1,3 +1,7 @@
 export const NotFound = (): JSX.Element => {
-  return <main>Страница не найдена</main>;
+  return (
+    <main>
+      <span>Страница не найдена</span>
+    </main>
+  );
 };

@@ -409,7 +409,7 @@ type Props = {
   className?: string;
 };
 
-type FormValues = {
+type UserProfile = {
   name: string;
   email: string;
 };
@@ -420,7 +420,7 @@ type EventTrackerContext = {
 
 // ❌ Неправильно
 type props = {};
-type formValues = {};
+type userProfile = {};
 type eventTrackerContext = {};
 ```
 
@@ -833,84 +833,6 @@ export const WithCustomProps: StoryFn<typeof ComponentName> = () => (
 
 ---
 
-### React Hook Form и валидация форм
-
-**Используйте `react-hook-form` для работы с формами.**
-
-#### Структура формы
-
-```jsx
-import { useForm, FormProvider } from 'react-hook-form';
-import Controller from '@/core/shared/ui/Form/Controller';
-import InputField from '@/core/shared/ui/Form/InputField';
-
-type FormValues = {
-  name: string;
-  email: string;
-};
-
-const Form = (): JSX.Element => {
-  const methods = useForm<FormValues>({
-    mode: 'onBlur',
-    defaultValues: {
-      name: '',
-      email: '',
-    },
-  });
-
-  return (
-    <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)}>
-        <InputField name="name" required />
-        <InputField name="email" validators={[validateEmail(intl)]} />
-      </form>
-    </FormProvider>
-  );
-};
-```
-
-#### Валидаторы
-
-**Валидаторы - это функции высшего порядка**, которые принимают `IntlShape` и возвращают функцию валидации.
-
-```jsx
-import { IntlShape } from 'react-intl';
-import { validateEmail, validateRequired } from '@/core/shared/ui/Form/validators';
-
-const Component = (): JSX.Element => {
-  const intl = useIntl();
-
-  return (
-    <InputField
-      name="email"
-      required
-      validators={[
-        validateRequired(intl),
-        validateEmail(intl),
-      ]}
-    />
-  );
-};
-```
-
-**Паттерны валидации:**
-- Используйте `composeValidators` для комбинации нескольких валидаторов
-- Валидаторы возвращают `string | undefined` (строка = ошибка, undefined = валидно)
-
-#### Обработка ошибок валидации
-
-**Ошибки показываются только при blur, не при фокусе.**
-
-```jsx
-// Controller автоматически скрывает ошибки при фокусе
-<Controller
-  render={({ error, field }) => {
-    // error будет null если поле в фокусе или валидируется
-    return <Input error={error} {...field} />;
-  }}
-/>
-```
-
 ### Custom Hooks
 
 **Именование:** Все хуки начинаются с префикса `use`.
@@ -1037,46 +959,6 @@ export const maxLength = {
   NAME: 100,
   DESCRIPTION: 500,
 };
-```
-
-### Валидаторы
-
-**Валидаторы находятся в `src/components/Form/validators.ts`.**
-
-#### Структура валидатора
-
-```typescript
-import { IntlShape } from 'react-intl';
-import errorMessages from '@messages/error';
-
-export const validateEmail = (intl: IntlShape) => 
-  (value?: string): string | undefined => {
-    if (!value || !value.length || EmailValidator.validate(value)) {
-      return undefined;
-    }
-    return intl.formatMessage(errorMessages.emailError);
-  };
-```
-
-**Паттерны:**
-- Валидаторы - функции высшего порядка
-- Принимают `IntlShape` для локализации ошибок
-- Возвращают `string | undefined` (строка = ошибка)
-- Используйте `Regex` enum для регулярных выражений
-
-#### Композиция валидаторов
-
-```jsx
-import { composeValidators } from '@/core/shared/ui/Form/validators';
-
-<InputField
-  name="email"
-  validators={composeValidators([
-    validateRequired(intl),
-    validateEmail(intl),
-    validateMaxLength(intl, 100),
-  ])}
-/>
 ```
 
 ### Модели данных
