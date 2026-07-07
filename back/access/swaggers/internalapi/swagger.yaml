@@ -1,0 +1,319 @@
+openapi: 3.0.0
+info:
+    title: access
+    version: 0.0.1
+servers:
+    - {}
+paths:
+    /api/v1/access/check:
+        post:
+            tags:
+                - AccessAPI
+            summary: Проверка доступа пользователя
+            description: Проверяет, что фактическая роль пользователя не ниже ожидаемой роли
+            parameters:
+                - in: query
+                  name: userID
+                  schema:
+                    type: string
+                    format: uuid
+                - in: query
+                  name: role
+                  schema:
+                    type: number
+                    format: int
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+    /api/v1/access/role/add:
+        post:
+            tags:
+                - AccessAPI
+            summary: Добавление роли пользователю
+            description: Добавляет пользователю роль с указанным кодом после проверки прав администратора
+            parameters:
+                - in: header
+                  name: X-Admin-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - in: query
+                  name: userID
+                  schema:
+                    type: string
+                    format: uuid
+                - in: query
+                  name: role
+                  schema:
+                    type: number
+                    format: int
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+    /api/v1/access/role/delete:
+        post:
+            tags:
+                - AccessAPI
+            summary: Удаление роли пользователя
+            description: Удаляет указанную роль пользователя после проверки прав администратора
+            parameters:
+                - in: header
+                  name: X-Admin-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - in: query
+                  name: userID
+                  schema:
+                    type: string
+                    format: uuid
+                - in: query
+                  name: role
+                  schema:
+                    type: number
+                    format: int
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+    /api/v1/access/role/update:
+        post:
+            tags:
+                - AccessAPI
+            summary: Обновление роли пользователя
+            description: Обновляет роль пользователя после проверки прав администратора
+            parameters:
+                - in: header
+                  name: X-Admin-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - in: query
+                  name: userID
+                  schema:
+                    type: string
+                    format: uuid
+                - in: query
+                  name: role
+                  schema:
+                    type: number
+                    format: int
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+components:
+    schemas:
+        requestAccessAPIAddRole:
+            type: object
+        requestAccessAPICheckAccess:
+            type: object
+        requestAccessAPIDeleteRole:
+            type: object
+        requestAccessAPIUpdateRole:
+            type: object
+        responseAccessAPIAddRole:
+            type: object
+            required:
+                - success
+            properties:
+                success:
+                    type: boolean
+            description: Добавляет пользователю роль с указанным кодом после проверки прав администратора
+        responseAccessAPICheckAccess:
+            type: object
+            required:
+                - allowed
+            properties:
+                allowed:
+                    type: boolean
+            description: Проверяет, что фактическая роль пользователя не ниже ожидаемой роли
+        responseAccessAPIDeleteRole:
+            type: object
+            required:
+                - success
+            properties:
+                success:
+                    type: boolean
+            description: Удаляет указанную роль пользователя после проверки прав администратора
+        responseAccessAPIUpdateRole:
+            type: object
+            required:
+                - success
+            properties:
+                success:
+                    type: boolean
+            description: Обновляет роль пользователя после проверки прав администратора
