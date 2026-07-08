@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"os"
+	"strings"
 
+	"github.com/mbatimel/AMC/migrations/pkg/migrations"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/mbatimel/AMC/migrations/pkg/migrations"
 )
 
 type PGConfig struct {
@@ -18,6 +20,9 @@ type PGConfig struct {
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 
+	if err := loadEnvFile(".env"); err != nil && !os.IsNotExist(err) {
+		panic(err)
+	}
 
 	if _, err := os.Stat("./pkg/migrations/data"); os.IsNotExist(err) {
 		panic("Migration directory is not exist")
@@ -43,4 +48,39 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func loadEnvFile(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+
+		key = strings.TrimSpace(key)
+		if key == "" || os.Getenv(key) != "" {
+			continue
+		}
+
+		value = strings.Trim(strings.TrimSpace(value), `"'`)
+		value = os.Expand(value, func(name string) string {
+			return os.Getenv(name)
+		})
+		if err = os.Setenv(key, value); err != nil {
+			return err
+		}
+	}
+	return scanner.Err()
 }
