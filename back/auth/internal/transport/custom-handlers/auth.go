@@ -94,47 +94,6 @@ func SignUpUser(
 	return nil
 }
 
-func LogoutUser(
-	ctx *fiber.Ctx,
-	svc externalapi.AuthAPI,
-	userID uuid.UUID,
-) error {
-	var (
-		methodName = "LogoutUser"
-		err        error
-	)
-
-	defer func(begin time.Time) {
-		fields := map[string]interface{}{
-			"method":     "post",
-			"path":       "/v1/auth/logout",
-			"methodName": methodName,
-			"userID":     userID,
-			"took":       time.Since(begin).String(),
-		}
-
-		l := log.Info()
-		if err != nil {
-			if errors.Is(err, errors.ForbiddenError()) {
-				l = log.Warn().Err(err)
-			} else {
-				l = log.Error().Err(err)
-			}
-		}
-
-		l.Fields(fields).Msg("call")
-	}(time.Now())
-
-	err = svc.LogoutUser(ctx.UserContext(), userID)
-	if err != nil {
-		sendResponse(ctx, log.Logger, nil, err)
-		return nil
-	}
-
-	sendResponse(ctx, log.Logger, nil, nil)
-	return nil
-}
-
 func ChangePassword(
 	ctx *fiber.Ctx,
 	svc externalapi.AuthAPI,

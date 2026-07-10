@@ -5,7 +5,7 @@
 // @tg servers=
 //
 //go:generate tg transport --services . --out ../../../internal/transport/jsonRPC/externalapi --outSwagger ../../../swaggers/externalapi/swagger.yaml
-package externalapi
+package externalAPI
 
 import (
 	"context"
@@ -54,18 +54,6 @@ type AuthAPI interface {
 		name string,
 		surename string,
 	) (userID uuid.UUID, err error)
-
-	// LogoutUser ...
-	// @tg http-method=POST
-	// @tg http-path=/v1/auth/logout
-	// @tg http-headers=userID|X-User-Id
-	// @tg uuidPackage=github.com/google/uuid
-	// @tg summary=`Выход пользователя`
-	// @tg desc=`Завершение пользовательской сессии`
-	LogoutUser(
-		ctx context.Context,
-		userID uuid.UUID,
-	) (err error)
 
 	// ChangePassword ...
 	// @tg http-method=POST

@@ -101,42 +101,6 @@ func (http *httpAuthAPI) serveSignUpUser(ctx *fiber.Ctx) (err error) {
 	}
 	return sendResponse(ctx, err)
 }
-func (http *httpAuthAPI) logoutUser(ctx context.Context, request requestAuthAPILogoutUser) (response responseAuthAPILogoutUser, err error) {
-
-	err = http.svc.LogoutUser(ctx, request.UserID)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpAuthAPI) serveLogoutUser(ctx *fiber.Ctx) (err error) {
-
-	var request requestAuthAPILogoutUser
-
-	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
-		var userID uuid.UUID
-		userID, _ = uuid.Parse(_userID)
-		request.UserID = userID
-	}
-
-	var response responseAuthAPILogoutUser
-	if response, err = http.logoutUser(ctx.UserContext(), request); err == nil {
-		var iResponse interface{} = response
-		if redirect, ok := iResponse.(withRedirect); ok {
-			return ctx.Redirect(redirect.RedirectTo())
-		}
-
-		return sendResponse(ctx, response)
-	}
-	if errCoder, ok := err.(withErrorCode); ok {
-		ctx.Status(errCoder.Code())
-	} else {
-		ctx.Status(fiber.StatusInternalServerError)
-	}
-	return sendResponse(ctx, err)
-}
 func (http *httpAuthAPI) changePassword(ctx context.Context, request requestAuthAPIChangePassword) (response responseAuthAPIChangePassword, err error) {
 
 	err = http.svc.ChangePassword(ctx, request.UserID, request.OldPassword, request.NewPassword)

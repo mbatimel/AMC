@@ -12,7 +12,6 @@ type serverAuthAPI struct {
 	svc                   externalAPI.AuthAPI
 	loginUser             AuthAPILoginUser
 	signUpUser            AuthAPISignUpUser
-	logoutUser            AuthAPILogoutUser
 	changePassword        AuthAPIChangePassword
 	verifyEmailCode       AuthAPIVerifyEmailCode
 	sendEmailVerification AuthAPISendEmailVerification
@@ -22,7 +21,6 @@ type MiddlewareSetAuthAPI interface {
 	Wrap(m MiddlewareAuthAPI)
 	WrapLoginUser(m MiddlewareAuthAPILoginUser)
 	WrapSignUpUser(m MiddlewareAuthAPISignUpUser)
-	WrapLogoutUser(m MiddlewareAuthAPILogoutUser)
 	WrapChangePassword(m MiddlewareAuthAPIChangePassword)
 	WrapVerifyEmailCode(m MiddlewareAuthAPIVerifyEmailCode)
 	WrapSendEmailVerification(m MiddlewareAuthAPISendEmailVerification)
@@ -35,7 +33,6 @@ func newServerAuthAPI(svc externalAPI.AuthAPI) *serverAuthAPI {
 	return &serverAuthAPI{
 		changePassword:        svc.ChangePassword,
 		loginUser:             svc.LoginUser,
-		logoutUser:            svc.LogoutUser,
 		sendEmailVerification: svc.SendEmailVerification,
 		signUpUser:            svc.SignUpUser,
 		svc:                   svc,
@@ -47,7 +44,6 @@ func (srv *serverAuthAPI) Wrap(m MiddlewareAuthAPI) {
 	srv.svc = m(srv.svc)
 	srv.loginUser = srv.svc.LoginUser
 	srv.signUpUser = srv.svc.SignUpUser
-	srv.logoutUser = srv.svc.LogoutUser
 	srv.changePassword = srv.svc.ChangePassword
 	srv.verifyEmailCode = srv.svc.VerifyEmailCode
 	srv.sendEmailVerification = srv.svc.SendEmailVerification
@@ -59,10 +55,6 @@ func (srv *serverAuthAPI) LoginUser(ctx context.Context, email string, password 
 
 func (srv *serverAuthAPI) SignUpUser(ctx context.Context, email string, password string, name string, surename string) (userID uuid.UUID, err error) {
 	return srv.signUpUser(ctx, email, password, name, surename)
-}
-
-func (srv *serverAuthAPI) LogoutUser(ctx context.Context, userID uuid.UUID) (err error) {
-	return srv.logoutUser(ctx, userID)
 }
 
 func (srv *serverAuthAPI) ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword string, newPassword string) (err error) {
@@ -83,10 +75,6 @@ func (srv *serverAuthAPI) WrapLoginUser(m MiddlewareAuthAPILoginUser) {
 
 func (srv *serverAuthAPI) WrapSignUpUser(m MiddlewareAuthAPISignUpUser) {
 	srv.signUpUser = m(srv.signUpUser)
-}
-
-func (srv *serverAuthAPI) WrapLogoutUser(m MiddlewareAuthAPILogoutUser) {
-	srv.logoutUser = m(srv.logoutUser)
 }
 
 func (srv *serverAuthAPI) WrapChangePassword(m MiddlewareAuthAPIChangePassword) {

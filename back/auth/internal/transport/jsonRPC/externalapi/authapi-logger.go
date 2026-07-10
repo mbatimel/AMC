@@ -70,26 +70,6 @@ func (m loggerAuthAPI) SignUpUser(ctx context.Context, email string, password st
 	return m.next.SignUpUser(ctx, email, password, name, surename)
 }
 
-func (m loggerAuthAPI) LogoutUser(ctx context.Context, userID uuid.UUID) (err error) {
-	logger := log.Ctx(ctx).With().Str("service", "AuthAPI").Str("method", "logoutUser").Logger()
-	defer func(_begin time.Time) {
-		logHandle := func(ev *zerolog.Event) {
-			fields := map[string]interface{}{
-				"method":   "authAPI.logoutUser",
-				"request":  viewer.Sprintf("%+v", requestAuthAPILogoutUser{UserID: userID}),
-				"response": viewer.Sprintf("%+v", responseAuthAPILogoutUser{}),
-			}
-			ev.Fields(fields).Str("took", time.Since(_begin).String())
-		}
-		if err != nil {
-			logger.Error().Err(err).Func(logHandle).Msg("call logoutUser")
-			return
-		}
-		logger.Info().Func(logHandle).Msg("call logoutUser")
-	}(time.Now())
-	return m.next.LogoutUser(ctx, userID)
-}
-
 func (m loggerAuthAPI) ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword string, newPassword string) (err error) {
 	logger := log.Ctx(ctx).With().Str("service", "AuthAPI").Str("method", "changePassword").Logger()
 	defer func(_begin time.Time) {

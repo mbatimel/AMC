@@ -11,6 +11,13 @@ var (
 	InternalServerError   = func() *Error {
 		return New("internal server error", fasthttp.StatusInternalServerError, ErrInternal)
 	}
+	ErrCodeExpiredOrNotFound = func() *Error { return New("code not found or expired", fasthttp.StatusBadRequest, ErrInternal) }
+
+	ErrInvalidEmailError    = func() *Error { return New("invalid email", fasthttp.StatusBadRequest, ErrInvalidRequest) }
+	ErrUserNotFoundError    = func() *Error { return New("user not found", fasthttp.StatusNotFound, ErrNotFound) }
+	ErrInvalidPasswordError = func() *Error { return New("invalid email or password", fasthttp.StatusUnauthorized, ErrUnauthorized) }
+	ErrEmailExistsError     = func() *Error { return New("email already registered", fasthttp.StatusConflict, ErrConflict) }
+	ErrInvalidCodeError     = func() *Error { return New("invalid verification code", fasthttp.StatusBadRequest, ErrInvalidRequest) }
 )
 
 const (
@@ -20,4 +27,7 @@ const (
 	ErrForbidden        = "monetization.errors.auth.forbidden"        // Доступ запрещен
 	ErrInvalidRequest   = "monetization.errors.auth.invalidRequest"   // Неправильный запрос
 	ErrAccessDenied     = "monetization.errors.auth.accessDenied"     // Отказано в доступе
+	ErrNotFound         = "monetization.errors.auth.notFound"         // Не найдено
+	ErrUnauthorized     = "monetization.errors.auth.unauthorized"     // Не авторизован
+	ErrConflict         = "monetization.errors.auth.conflict"         // Конфликт данных
 )

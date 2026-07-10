@@ -65,29 +65,6 @@ func (m metricsAuthAPI) SignUpUser(ctx context.Context, email string, password s
 	return m.next.SignUpUser(ctx, email, password, name, surename)
 }
 
-func (m metricsAuthAPI) LogoutUser(ctx context.Context, userID uuid.UUID) (err error) {
-
-	defer func(_begin time.Time) {
-		var (
-			success = true
-			errCode int
-		)
-		if err != nil {
-			success = false
-			errCode = v2.StatusInternalServerError
-			ec, ok := err.(withErrorCode)
-			if ok {
-				errCode = ec.Code()
-			}
-		}
-		RequestCount.WithLabelValues("authAPI", "logoutUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestCountAll.WithLabelValues("authAPI", "logoutUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestLatency.WithLabelValues("authAPI", "logoutUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
-	}(time.Now())
-
-	return m.next.LogoutUser(ctx, userID)
-}
-
 func (m metricsAuthAPI) ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword string, newPassword string) (err error) {
 
 	defer func(_begin time.Time) {

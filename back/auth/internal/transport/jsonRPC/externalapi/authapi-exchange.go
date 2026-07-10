@@ -23,13 +23,6 @@ type responseAuthAPISignUpUser struct {
 	UserID uuid.UUID `json:"userID,omitempty"`
 }
 
-type requestAuthAPILogoutUser struct {
-	UserID uuid.UUID `json:"userID,omitempty"`
-}
-
-// Formal exchange type, please do not delete.
-type responseAuthAPILogoutUser struct{}
-
 type requestAuthAPIChangePassword struct {
 	UserID      uuid.UUID `json:"userID,omitempty"`
 	OldPassword string    `json:"oldPassword,omitempty"`
