@@ -21,6 +21,10 @@
   --header-active: #111;
   --header-bg: #fff;
   --header-bg-secondary: #f4f4f4;
+  --header-brand: #ce2121;
+  --header-brand-hover: #b51d1d;
+  --header-cart-bg: #121a33;
+  --header-cart-bg-hover: #152232;
   --header-height: 48px;
   --header-height-secondary: 48px;
   --header-logo-main-max-height: 40px;
@@ -29,6 +33,10 @@
   --header-menu-typo: #868686;
   --header-menu-typo-secondary: #868686;
   --header-secondary: #e5e5e5;
+  --header-topbar-bg: #121a33;
+  --header-topbar-divider: rgb(255 255 255 / 30%);
+  --header-topbar-typo: rgb(255 255 255 / 75%);
+  --header-topbar-typo-hover: #fff;
   --header-typo: rgb(17 17 17);
 
   /* Link */
@@ -52,6 +60,15 @@
   --warning: #e77c00;
   --warning-alt: rgb(255 173 78);
   --warning-bg: rgb(246 228 206);
+
+  /* Footer */
+  --footer-bg: #121a33;
+  --footer-border: rgb(255 255 255 / 12%);
+  --footer-chip-bg: rgb(255 255 255 / 8%);
+  --footer-chip-border: rgb(255 255 255 / 16%);
+  --footer-typo: #fff;
+  --footer-typo-muted: rgb(255 255 255 / 55%);
+  --footer-top-accent: var(--header-brand);
 
   /* Z-index */
   --z-index-popup: 12;

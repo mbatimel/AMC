@@ -1,0 +1,225 @@
+/* Top bar */
+
+.topBar {
+  background: var(--header-topbar-bg);
+  color: var(--header-topbar-typo);
+  font-size: 12px;
+}
+
+.topBarInner {
+  display: flex;
+  align-items: center;
+  padding-block: 8px;
+  gap: 14px;
+}
+
+.cityButton {
+  cursor: pointer;
+  font: inherit;
+  align-items: center;
+  display: flex;
+  border: 1px solid var(--color-white-12, #ffffff1f);
+  block-size: 30px;
+  border-radius: 16px;
+  background: var(--color-white-8, #ffffff14);
+  padding: 4px 10px;
+  color: white;
+  gap: 6px;
+}
+
+.cityIcon,
+.cityChevron,
+.contactIcon {
+  flex-shrink: 0;
+}
+
+.contacts {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.contactLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.contactLink:hover {
+  color: var(--header-topbar-typo-hover);
+}
+
+.phones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.phoneExtension {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.phoneDivider {
+  display: inline-block;
+  block-size: 12px;
+  border-inline-end: 1px solid var(--header-topbar-divider);
+}
+
+/* Main bar */
+
+.mainBar {
+  padding-block: 24px;
+}
+
+.mainBarInner {
+  display: grid;
+  align-items: center;
+  gap: 24px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.search {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.searchInput {
+  flex: 1;
+  min-inline-size: 0;
+  border: 0;
+  background: var(--header-bg);
+  color: var(--header-typo);
+  font: inherit;
+  outline: none;
+  padding-block: 14px;
+  padding-inline: 40px;
+}
+
+.searchInput::placeholder {
+  color: var(--palette-dark);
+}
+
+.searchButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: var(--header-brand);
+  color: var(--palette-white);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 500;
+  padding-inline: 18px;
+  white-space: nowrap;
+}
+
+.searchButton:hover {
+  background: var(--header-brand-hover);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cartButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--header-cart-bg);
+  color: var(--palette-white);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 500;
+  padding-inline: 16px;
+  text-decoration: none;
+  white-space: nowrap;
+  block-size: 38px;
+  inline-size: 142px;
+  justify-content: center;
+}
+
+.cartButton:hover {
+  background: var(--header-cart-bg-hover);
+}
+
+.accountBlock {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.accountLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--header-typo);
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+  block-size: 32px;
+  inline-size: 142px;
+  justify-content: center;
+}
+
+.accountLink:hover {
+  color: var(--header-brand);
+}
+
+/* Navigation */
+
+.navBar {
+  display: block;
+}
+
+.navBarInner {
+  display: flex;
+  align-items: center;
+}
+
+.navList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 24px;
+  list-style: none;
+  margin: 0;
+  padding-block: 0;
+  padding-inline: 0;
+}
+
+.navItem {
+  margin: 0;
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  block-size: 44px;
+  border-block-end: 2px solid transparent;
+  color: var(--header-menu-typo);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  color: var(--header-typo);
+}
+
+.navLinkActive {
+  border-block-end-color: var(--header-brand);
+  color: var(--header-brand);
+}

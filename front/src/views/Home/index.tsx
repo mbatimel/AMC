@@ -1,14 +1,11 @@
-'use client';
+import { Page } from '@/core/shared/ui/Page';
 
-import { Button } from '@heroui/react';
-import clsx from 'clsx';
-
-import styles from './Home.module.css';
+import { HomeContent } from './ui/HomeContent';
 
 export const Home = (): JSX.Element => {
   return (
-    <main className={clsx(styles.root)}>
-      <Button variant="primary">AMC</Button>
-    </main>
+    <Page>
+      <HomeContent />
+    </Page>
   );
 };

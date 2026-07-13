@@ -1,0 +1,10 @@
+.mainSection {
+  display: block;
+}
+
+.mainGrid {
+  display: grid;
+  gap: 36px;
+  grid-template-columns: 2fr repeat(3, 1fr);
+  border-block-end: 1px solid var(--footer-border);
+}

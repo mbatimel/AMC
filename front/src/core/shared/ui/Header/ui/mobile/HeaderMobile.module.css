@@ -1,0 +1,210 @@
+.toolbar {
+  padding-block: 8px;
+}
+
+.toolbarInner {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding-inline: 12px;
+}
+
+.menuButton,
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--header-bg);
+  color: var(--header-typo);
+  cursor: pointer;
+  padding: 0;
+}
+
+.menuButton {
+  block-size: 40px;
+  inline-size: 40px;
+}
+
+.iconButton {
+  block-size: 40px;
+  inline-size: 40px;
+  text-decoration: none;
+}
+
+.iconButtonCart {
+  border-color: transparent;
+  background: var(--header-cart-bg);
+  color: var(--palette-white);
+}
+
+.iconButtonCart:hover {
+  background: var(--header-cart-bg-hover);
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.searchRow {
+  padding-block-end: 12px;
+  padding-inline: 12px;
+}
+
+.searchMobile {
+  border-radius: 10px;
+}
+
+.searchDrawer {
+  border-radius: 8px;
+  align-items: center;
+}
+
+.searchDrawerIcon {
+  margin-inline-start: 12px;
+  align-self: center;
+}
+
+.searchButtonIcon {
+  gap: 0;
+  padding-inline: 14px;
+}
+
+/* Drawer */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-popup);
+  background: rgb(17 17 17 / 45%);
+}
+
+.drawer {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: var(--z-index-popup-important);
+  display: flex;
+  overflow: hidden auto;
+  flex-direction: column;
+  background: var(--header-bg);
+  inline-size: min(100%, 360px);
+  max-inline-size: 100%;
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 16px;
+  padding-inline: 16px;
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--header-typo);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.drawerSearch {
+  padding-block-end: 16px;
+  padding-inline: 16px;
+}
+
+.drawerSection {
+  padding-block: 0 16px;
+  padding-inline: 16px;
+}
+
+.drawerSectionTitle {
+  color: var(--palette-dark);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin-block-end: 12px;
+  text-transform: uppercase;
+}
+
+.drawerLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawerLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--header-typo);
+  font-size: 14px;
+  font-weight: 500;
+  padding-block: 12px;
+  padding-inline: 14px;
+  text-decoration: none;
+}
+
+.drawerLink:hover {
+  border-color: var(--palette-gray);
+}
+
+.drawerLinkActive {
+  border-color: var(--header-brand);
+  color: var(--header-brand);
+}
+
+.drawerLinkIcon {
+  flex-shrink: 0;
+}
+
+.search {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.searchInput {
+  flex: 1;
+  min-inline-size: 0;
+  border: 0;
+  background: var(--header-bg);
+  color: var(--header-typo);
+  font: inherit;
+  outline: none;
+  padding-block: 10px;
+  padding-inline: 14px;
+}
+
+.searchInput::placeholder {
+  color: var(--palette-dark);
+}
+
+.searchButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: var(--header-brand);
+  color: var(--palette-white);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 500;
+  padding-inline: 18px;
+  white-space: nowrap;
+}
+
+.searchButton:hover {
+  background: var(--header-brand-hover);
+}

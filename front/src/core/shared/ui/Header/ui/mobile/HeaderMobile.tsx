@@ -1,0 +1,68 @@
+import clsx from 'clsx';
+
+import { IconCart, IconMenu, IconOrders, IconUser } from '@/core/shared/icons';
+
+import type { HeaderMobileViewProps } from '../../model/types';
+
+import { HEADER_ACCOUNT_HREF, HEADER_CART_HREF, HEADER_ORDERS_HREF } from '../../constants';
+import rootStyles from '../../Header.module.css';
+import { HeaderLogo } from '../shared/HeaderLogo';
+import { HeaderSearchForm } from '../shared/HeaderSearchForm';
+import styles from './HeaderMobile.module.css';
+import { HeaderMobileMenu } from './HeaderMobileMenu';
+
+export const HeaderMobile = ({ mobileMenu, nav, search }: HeaderMobileViewProps): JSX.Element => {
+  const { closeMenu, drawerId, drawerRef, isOpen, menuTriggerRef, openMenu } = mobileMenu;
+
+  return (
+    <>
+      <div className={clsx(styles.toolbar)}>
+        <div className={clsx(rootStyles.container, styles.toolbarInner)}>
+          <button
+            aria-controls={drawerId}
+            aria-expanded={isOpen}
+            aria-haspopup="dialog"
+            aria-label="Открыть меню"
+            className={clsx(styles.menuButton)}
+            onClick={openMenu}
+            ref={menuTriggerRef}
+            type="button"
+          >
+            <IconMenu height={18} width={18} />
+          </button>
+
+          <HeaderLogo />
+
+          <div className={clsx(styles.toolbarActions)}>
+            <a
+              aria-label="Корзина"
+              className={clsx(styles.iconButton, styles.iconButtonCart)}
+              href={HEADER_CART_HREF}
+            >
+              <IconCart height={18} width={18} />
+            </a>
+            <a aria-label="Кабинет" className={clsx(styles.iconButton)} href={HEADER_ACCOUNT_HREF}>
+              <IconUser height={18} width={18} />
+            </a>
+            <a aria-label="Мои заказы" className={clsx(styles.iconButton)} href={HEADER_ORDERS_HREF}>
+              <IconOrders height={18} width={18} />
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className={clsx(rootStyles.container, styles.searchRow)}>
+        <HeaderSearchForm search={search} variant="mobile" />
+      </div>
+
+      <HeaderMobileMenu
+        closeMenu={closeMenu}
+        drawerId={drawerId}
+        drawerRef={drawerRef}
+        isOpen={isOpen}
+        nav={nav}
+        search={search}
+      />
+    </>
+  );
+};

@@ -1,0 +1,42 @@
+.root {
+  background: var(--header-bg);
+  border-block-end: 1px solid var(--border);
+}
+
+.desktop {
+  display: none;
+
+  @mixin desktopUp {
+    display: block;
+  }
+}
+
+.mobile {
+  display: block;
+
+  @mixin desktopUp {
+    display: none;
+  }
+}
+
+.container {
+  margin-inline: auto;
+  max-inline-size: 1200px;
+  padding-inline: 40px;
+}
+
+.logoLink {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.logoImage {
+  block-size: 46px;
+  inline-size: auto;
+  max-inline-size: 100%;
+
+  @mixin mobileOnly {
+    block-size: 36px;
+  }
+}

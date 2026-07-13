@@ -28,6 +28,17 @@ export default {
   },
   overrides: [
     {
+      files: ['src/**/*.module.css'],
+      rules: {
+        'selector-class-pattern': [
+          '^[a-z][a-zA-Z0-9]*$',
+          {
+            message: 'Expected class selector to be camelCase',
+          },
+        ],
+      },
+    },
+    {
       files: ['src/core/shared/styles/mixins/**/*.css'],
       rules: {
         'nesting-selector-no-missing-scoping-root': null,

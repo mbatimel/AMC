@@ -1,0 +1,15 @@
+.mainSection {
+  padding-block: 24px;
+}
+
+.mainStack {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}

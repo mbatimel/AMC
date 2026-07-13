@@ -1,0 +1,196 @@
+.root {
+  background: var(--footer-bg);
+  border-block-start: 3px solid var(--footer-top-accent);
+  color: var(--footer-typo);
+}
+
+.desktop {
+  display: none;
+
+  @mixin desktopUp {
+    display: block;
+  }
+}
+
+.mobile {
+  display: block;
+
+  @mixin desktopUp {
+    display: none;
+  }
+}
+
+.container {
+  margin-inline: auto;
+  max-inline-size: 1200px;
+  padding-inline: 40px;
+  padding-block: 22px;
+
+  @mixin mobileOnly {
+    padding-inline: 16px;
+    padding-block: 20px;
+  }
+}
+
+.brandsSection {
+  padding-block: 36px 0;
+  border-block-end: 1px solid var(--footer-border);
+
+  @mixin mobileOnly {
+    padding-block: 28px 0;
+  }
+}
+
+.brandsTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--footer-typo);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin-block-end: 14px;
+  text-transform: uppercase;
+}
+
+.brandsTitleIcon {
+  color: var(--footer-top-accent);
+  flex-shrink: 0;
+}
+
+.brandsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.brandItem {
+  margin: 0;
+}
+
+.brandChip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--footer-chip-border);
+  border-radius: 6px;
+  background: var(--footer-chip-bg);
+  color: var(--footer-typo);
+  font-size: 13px;
+  padding-block: 6px;
+  padding-inline: 12px;
+  text-decoration: none;
+}
+
+.brandChip:hover {
+  border-color: rgb(255 255 255 / 30%);
+}
+
+.logoLink {
+  display: inline-flex;
+  text-decoration: none;
+}
+
+.logoImage {
+  block-size: 40px;
+  filter: brightness(0) invert(1);
+  inline-size: auto;
+  max-inline-size: 100%;
+}
+
+.description {
+  color: var(--footer-typo-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-block-start: 16px;
+  max-inline-size: 280px;
+}
+
+.navTitle {
+  color: var(--footer-typo);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin-block-end: 14px;
+  text-transform: uppercase;
+}
+
+.navList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navItem {
+  margin: 0;
+}
+
+.navLink {
+  color: var(--footer-typo-muted);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  color: var(--footer-typo);
+}
+
+.legalSection {
+  display: block;
+}
+
+.legalLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.legalItem {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+
+  &:not(:first-child) {
+    border-inline-start: 1px solid var(--footer-border);
+    padding-inline-start: 12px;
+  }
+}
+
+.legalLink {
+  color: var(--footer-typo-muted);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.legalLink:hover {
+  color: var(--footer-typo);
+}
+
+.copyrightRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-block-start: 16px;
+
+  @mixin mobileOnly {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+.copyrightText,
+.versionText {
+  color: var(--footer-typo-muted);
+  font-size: 13px;
+}
