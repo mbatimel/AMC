@@ -395,11 +395,6 @@
     "@eslint/core" "^0.17.0"
     levn "^0.4.1"
 
-"@farfetched/core@^0.15.0":
-  version "0.15.0"
-  resolved "https://registry.yarnpkg.com/@farfetched/core/-/core-0.15.0.tgz#6e01afb4503ea5ca6ddbe6a04c9d17df69127e9b"
-  integrity sha512-VHjR5GskzPF8GWUUTFWblhk/trofAjmncyTpThRH9Iy3q5NknuTVp/yUWNeyupgfoEpRROUyTjkziFCeL7mreg==
-
 "@formatjs/ecma402-abstract@2.3.6":
   version "2.3.6"
   resolved "https://registry.yarnpkg.com/@formatjs/ecma402-abstract/-/ecma402-abstract-2.3.6.tgz#d6ca9d3579054fe1e1a0a0b5e872e0d64922e4e1"
@@ -3960,11 +3955,6 @@ path-parse@^1.0.7:
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/path-parse/-/path-parse-1.0.7.tgz#fbc114b60ca42b30d9daf5858e4bd68bbedb6735"
   integrity sha512-LDJzPVEEEPR+y48z93A0Ed0yXb8pAByGWo/k5YYdYgpY2/2EsOsksJrq7lOHxryrVOn1ejG6oAp8ahvOIQD8sw==
-
-patronum@^2.3.0:
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/patronum/-/patronum-2.3.0.tgz#9b49ebc7380c228cb24dc7093bac11bc84f4b2a9"
-  integrity sha512-BfKIOpoymVz6XnkOn8Fi5QZ1a3r/3lXdd8BcdHmYDbIXPTIRnD1EPFBFev/DheWnOge6/ZswEqgNF2ANLGOxLw==
 
 picocolors@^1.0.0, picocolors@^1.1.1:
   version "1.1.1"

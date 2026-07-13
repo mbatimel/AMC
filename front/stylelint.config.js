@@ -19,7 +19,6 @@ export default {
         ignoreProperties: ['composes'],
       },
     ],
-    'selector-class-pattern': null,
     'selector-pseudo-class-no-unknown': [
       true,
       {
@@ -28,17 +27,6 @@ export default {
     ],
   },
   overrides: [
-    {
-      files: ['**/*.module.css'],
-      rules: {
-        'selector-class-pattern': [
-          '^[a-z][a-zA-Z0-9]*$',
-          {
-            message: 'Expected class selector to be camelCase (not kebab-case)',
-          },
-        ],
-      },
-    },
     {
       files: ['src/core/shared/styles/mixins/**/*.css'],
       rules: {
