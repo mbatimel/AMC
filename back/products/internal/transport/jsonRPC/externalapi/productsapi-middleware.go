@@ -4,7 +4,7 @@ package externalapi
 import (
 	"context"
 
-	"github.com/mbatimel/AMC/products/pkg/interfaces/externalAPI"
+	"github.com/mbatimel/AMC/products/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/products/pkg/models"
 )
 
@@ -16,7 +16,7 @@ type ProductsAPIDeleteProduct func(ctx context.Context, productID string) (respo
 type ProductsAPIListCategories func(ctx context.Context, limit int, offset int) (response models.ListCategoriesResponse, err error)
 type ProductsAPIListBrands func(ctx context.Context, limit int, offset int) (response models.ListBrandsResponse, err error)
 
-type MiddlewareProductsAPI func(next externalAPI.ProductsAPI) externalAPI.ProductsAPI
+type MiddlewareProductsAPI func(next externalapi.ProductsAPI) externalapi.ProductsAPI
 
 type MiddlewareProductsAPICreateProduct func(next ProductsAPICreateProduct) ProductsAPICreateProduct
 type MiddlewareProductsAPIGetProduct func(next ProductsAPIGetProduct) ProductsAPIGetProduct

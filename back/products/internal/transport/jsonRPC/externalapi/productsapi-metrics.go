@@ -7,15 +7,15 @@ import (
 	"time"
 
 	v2 "github.com/gofiber/fiber/v2"
-	"github.com/mbatimel/AMC/products/pkg/interfaces/externalAPI"
+	"github.com/mbatimel/AMC/products/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/products/pkg/models"
 )
 
 type metricsProductsAPI struct {
-	next externalAPI.ProductsAPI
+	next externalapi.ProductsAPI
 }
 
-func metricsMiddlewareProductsAPI(next externalAPI.ProductsAPI) externalAPI.ProductsAPI {
+func metricsMiddlewareProductsAPI(next externalapi.ProductsAPI) externalapi.ProductsAPI {
 	return &metricsProductsAPI{next: next}
 }
 

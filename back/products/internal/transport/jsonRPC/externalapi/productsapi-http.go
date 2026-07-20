@@ -3,7 +3,7 @@ package externalapi
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/mbatimel/AMC/products/pkg/interfaces/externalAPI"
+	"github.com/mbatimel/AMC/products/pkg/interfaces/externalapi"
 )
 
 type httpProductsAPI struct {
@@ -11,10 +11,10 @@ type httpProductsAPI struct {
 	maxBatchSize     int
 	maxParallelBatch int
 	svc              *serverProductsAPI
-	base             externalAPI.ProductsAPI
+	base             externalapi.ProductsAPI
 }
 
-func NewProductsAPI(svcProductsAPI externalAPI.ProductsAPI) (srv *httpProductsAPI) {
+func NewProductsAPI(svcProductsAPI externalapi.ProductsAPI) (srv *httpProductsAPI) {
 
 	srv = &httpProductsAPI{
 		base: svcProductsAPI,

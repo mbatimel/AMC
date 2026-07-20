@@ -4,12 +4,12 @@ package externalapi
 import (
 	"context"
 
-	"github.com/mbatimel/AMC/products/pkg/interfaces/externalAPI"
+	"github.com/mbatimel/AMC/products/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/products/pkg/models"
 )
 
 type serverProductsAPI struct {
-	svc            externalAPI.ProductsAPI
+	svc            externalapi.ProductsAPI
 	createProduct  ProductsAPICreateProduct
 	getProduct     ProductsAPIGetProduct
 	listProducts   ProductsAPIListProducts
@@ -33,7 +33,7 @@ type MiddlewareSetProductsAPI interface {
 	WithLog()
 }
 
-func newServerProductsAPI(svc externalAPI.ProductsAPI) *serverProductsAPI {
+func newServerProductsAPI(svc externalapi.ProductsAPI) *serverProductsAPI {
 	return &serverProductsAPI{
 		createProduct:  svc.CreateProduct,
 		deleteProduct:  svc.DeleteProduct,
