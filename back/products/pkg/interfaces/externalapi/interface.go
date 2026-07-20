@@ -1,3 +1,4 @@
+package externalapi
 // Package externalapi describes the public products API contract.
 // @tg version=0.0.1
 // @tg backend=products
@@ -5,7 +6,7 @@
 // @tg servers=
 //
 //go:generate tg transport --services . --out ../../../internal/transport/jsonRPC/externalapi --outSwagger ../../../swaggers/externalapi/swagger.yaml
-package externalapi
+
 
 import (
 	"context"

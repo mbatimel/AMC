@@ -6,18 +6,18 @@ import (
 	"time"
 
 	"github.com/mbatimel/AMC/products/internal/transport/jsonRPC/externalapi/viewer"
-	"github.com/mbatimel/AMC/products/pkg/interfaces/externalAPI"
+	"github.com/mbatimel/AMC/products/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/products/pkg/models"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 type loggerProductsAPI struct {
-	next externalAPI.ProductsAPI
+	next externalapi.ProductsAPI
 }
 
 func loggerMiddlewareProductsAPI() MiddlewareProductsAPI {
-	return func(next externalAPI.ProductsAPI) externalAPI.ProductsAPI {
+	return func(next externalapi.ProductsAPI) externalapi.ProductsAPI {
 		return &loggerProductsAPI{next: next}
 	}
 }

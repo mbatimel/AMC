@@ -1,7 +1,4 @@
 openapi: 3.0.0
-info:
-    title: products
-    version: 0.0.1
 servers:
     - {}
 paths:
@@ -259,29 +256,23 @@ paths:
             description: Получение списка товаров с фильтрами, поиском и пагинацией
             parameters:
                 - in: query
-                  name: offset
+                  name: material
                   schema:
-                    type: number
-                    format: int
+                    type: string
+                - in: query
+                  name: gost
+                  schema:
+                    type: string
+                - in: query
+                  name: inStock
+                  schema:
+                    type: boolean
                 - in: query
                   name: sort
                   schema:
                     type: string
                 - in: query
-                  name: material
-                  schema:
-                    type: string
-                - in: query
-                  name: limit
-                  schema:
-                    type: number
-                    format: int
-                - in: query
                   name: q
-                  schema:
-                    type: string
-                - in: query
-                  name: categoryID
                   schema:
                     type: string
                 - in: query
@@ -293,13 +284,19 @@ paths:
                   schema:
                     type: string
                 - in: query
-                  name: gost
+                  name: limit
+                  schema:
+                    type: number
+                    format: int
+                - in: query
+                  name: offset
+                  schema:
+                    type: number
+                    format: int
+                - in: query
+                  name: categoryID
                   schema:
                     type: string
-                - in: query
-                  name: inStock
-                  schema:
-                    type: boolean
             responses:
                 "200":
                     description: Successful operation
@@ -413,19 +410,7 @@ paths:
             description: Создание карточки товара каталога
             parameters:
                 - in: query
-                  name: name
-                  schema:
-                    type: string
-                - in: query
-                  name: description
-                  schema:
-                    type: string
-                - in: query
-                  name: categoryID
-                  schema:
-                    type: string
-                - in: query
-                  name: gost
+                  name: material
                   schema:
                     type: string
                 - in: query
@@ -433,22 +418,16 @@ paths:
                   schema:
                     type: string
                 - in: query
-                  name: stockQty
-                  schema:
-                    type: number
-                    format: int
-                - in: query
                   name: basePrice
                   schema:
                     type: number
                     format: float
                 - in: query
-                  name: discountPercent
+                  name: name
                   schema:
-                    type: number
-                    format: float
+                    type: string
                 - in: query
-                  name: sku
+                  name: categoryID
                   schema:
                     type: string
                 - in: query
@@ -456,11 +435,12 @@ paths:
                   schema:
                     type: string
                 - in: query
-                  name: material
-                  schema:
-                    type: string
-                - in: query
                   name: packageQty
+                  schema:
+                    type: number
+                    format: int
+                - in: query
+                  name: stockQty
                   schema:
                     type: number
                     format: int
@@ -470,9 +450,26 @@ paths:
                     type: number
                     format: float
                 - in: query
+                  name: discountPercent
+                  schema:
+                    type: number
+                    format: float
+                - in: query
                   name: isPublished
                   schema:
                     type: boolean
+                - in: query
+                  name: sku
+                  schema:
+                    type: string
+                - in: query
+                  name: description
+                  schema:
+                    type: string
+                - in: query
+                  name: gost
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: Successful operation
@@ -703,15 +700,24 @@ paths:
             description: Обновление карточки товара каталога
             parameters:
                 - in: query
-                  name: categoryID
+                  name: basePrice
+                  schema:
+                    type: number
+                    format: float
+                - in: query
+                  name: name
                   schema:
                     type: string
                 - in: query
-                  name: gost
+                  name: description
                   schema:
                     type: string
                 - in: query
                   name: size
+                  schema:
+                    type: string
+                - in: query
+                  name: categoryID
                   schema:
                     type: string
                 - in: query
@@ -724,12 +730,12 @@ paths:
                     type: number
                     format: int
                 - in: query
-                  name: stockQty
+                  name: discountPercent
                   schema:
                     type: number
-                    format: int
+                    format: float
                 - in: query
-                  name: basePrice
+                  name: clientPrice
                   schema:
                     type: number
                     format: float
@@ -738,11 +744,11 @@ paths:
                   schema:
                     type: string
                 - in: query
-                  name: description
+                  name: sku
                   schema:
                     type: string
                 - in: query
-                  name: name
+                  name: gost
                   schema:
                     type: string
                 - in: query
@@ -750,23 +756,14 @@ paths:
                   schema:
                     type: string
                 - in: query
-                  name: clientPrice
+                  name: stockQty
                   schema:
                     type: number
-                    format: float
-                - in: query
-                  name: discountPercent
-                  schema:
-                    type: number
-                    format: float
+                    format: int
                 - in: query
                   name: isPublished
                   schema:
                     type: boolean
-                - in: query
-                  name: sku
-                  schema:
-                    type: string
             responses:
                 "200":
                     description: Successful operation
