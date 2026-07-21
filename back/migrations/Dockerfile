@@ -15,7 +15,10 @@ FROM alpine:3.20
 RUN apk add --no-cache ca-certificates && \
     adduser -D -H -u 10001 app
 
+WORKDIR /app
+
 COPY --from=builder /out/migrations /usr/local/bin/migrations
+COPY --from=builder --chown=app:app /src/pkg/migrations/data ./pkg/migrations/data
 
 USER app
 
