@@ -1,0 +1,86 @@
+services:
+  postgres:
+    image: postgres:15.7
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PG_DB}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [amc_net]
+
+  migrations:
+    image: ghcr.io/mbatimel/amc-migrations:${IMAGE_TAG}
+    restart: "no"
+    environment:
+      PG_ADDRESS: postgres:5432
+      PG_DB: ${PG_DB}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [amc_net]
+
+  access:
+    image: ghcr.io/mbatimel/amc-access:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      PG_HOST: postgres
+      PG_PORT: "5432"
+      PG_DB: ${PG_DB}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      ACCESS_INTERNAL_ADDRESS: ":8080"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    networks: [amc_net]
+
+  front:
+    image: ghcr.io/mbatimel/amc-front:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+    depends_on:
+      - access
+    networks: [amc_net]
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_conf:/etc/letsencrypt:ro
+    depends_on:
+      - access
+      - front
+    networks: [amc_net]
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+    entrypoint: >
+      /bin/sh -c 'trap exit TERM; while :; do certbot renew -q; sleep 12h; done'
+    networks: [amc_net]
+
+volumes:
+  postgres_data:
+  certbot_www:
+  certbot_conf:
+
+networks:
+  amc_net:
