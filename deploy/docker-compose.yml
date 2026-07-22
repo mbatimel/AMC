@@ -29,16 +29,18 @@ services:
     networks: [amc_net]
   auth:
     image: ghcr.io/mbatimel/amc-auth:${IMAGE_TAG}
-    restart: "no"
+    restart: unless-stopped
     environment:
-      PG_ADDRESS: postgres:5432
+      PG_HOST: postgres
+      PG_PORT: "5432"
       PG_DB: ${PG_DB}
       PG_USER: ${PG_USER}
       PG_PASSWORD: ${PG_PASSWORD}
-      ACCESS_INTERNAL_ADDRESS: ":8080"
+      BIND_ADDR: ":8081"
+      ACCESS_URL: "http://access:8080"
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     networks: [amc_net]
 
   access:
@@ -75,6 +77,7 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
       - access
+      - auth
       - front
     networks: [amc_net]
 

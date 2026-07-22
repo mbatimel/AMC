@@ -152,11 +152,12 @@ func (e *Error) AddCause(args ...string) *Error {
 	return e
 }
 
+// Code returns the HTTP status code. The generated transport layer
+// (jsonRPC/externalapi) type-asserts errors against a `Code() int` method
+// to set the response status, so this must stay in sync with statusCode
+// rather than the JSON-RPC errorCode.
 func (e *Error) Code() int {
-	if e.errorCode != nil {
-		return *e.errorCode
-	}
-	return defaultErrorCode
+	return e.statusCode
 }
 
 func (e *Error) SetErrorCode(errorCode int) *Error {

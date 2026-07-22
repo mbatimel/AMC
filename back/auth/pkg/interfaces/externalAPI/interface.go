@@ -5,7 +5,7 @@
 // @tg servers=
 //
 //go:generate tg transport --services . --out ../../../internal/transport/jsonRPC/externalapi --outSwagger ../../../swaggers/externalapi/swagger.yaml
-package externalapi
+package externalAPI
 
 import (
 	"context"
