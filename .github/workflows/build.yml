@@ -16,6 +16,9 @@ jobs:
           - name: access
             dockerfile: ./back/access/Dockerfile
             image: ghcr.io/mbatimel/amc-access
+          - name: auth
+            dockerfile: ./back/auth/Dockerfile
+            image: ghcr.io/mbatimel/auth-access
           - name: migrations
             dockerfile: ./back/migrations/Dockerfile
             image: ghcr.io/mbatimel/amc-migrations

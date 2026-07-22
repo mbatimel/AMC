@@ -27,6 +27,19 @@ services:
       postgres:
         condition: service_healthy
     networks: [amc_net]
+  auth:
+    image: ghcr.io/mbatimel/amc-auth:${IMAGE_TAG}
+    restart: "no"
+    environment:
+      PG_ADDRESS: postgres:5432
+      PG_DB: ${PG_DB}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      ACCESS_INTERNAL_ADDRESS: ":8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [amc_net]
 
   access:
     image: ghcr.io/mbatimel/amc-access:${IMAGE_TAG}
@@ -57,30 +70,16 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:8090:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - certbot_www:/var/www/certbot:ro
-      - certbot_conf:/etc/letsencrypt:ro
     depends_on:
       - access
       - front
     networks: [amc_net]
 
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - certbot_www:/var/www/certbot
-      - certbot_conf:/etc/letsencrypt
-    entrypoint: >
-      /bin/sh -c 'trap exit TERM; while :; do certbot renew -q; sleep 12h; done'
-    networks: [amc_net]
-
 volumes:
   postgres_data:
-  certbot_www:
-  certbot_conf:
 
 networks:
   amc_net:
