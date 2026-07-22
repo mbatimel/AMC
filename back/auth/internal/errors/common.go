@@ -11,13 +11,21 @@ var (
 	InternalServerError   = func() *Error {
 		return New("internal server error", fasthttp.StatusInternalServerError, ErrInternal)
 	}
+	InvalidCredentialsError = func() *Error {
+		return New("invalid email or password", fasthttp.StatusUnauthorized, ErrInvalidCredentials)
+	}
+	EmailTakenError = func() *Error { return New("email already registered", fasthttp.StatusConflict, ErrEmailTaken) }
+	NotFoundError   = func() *Error { return New("not found", fasthttp.StatusNotFound, ErrNotFound) }
 )
 
 const (
-	ErrInternal         = "monetization.errors.auth.internalError"    // Внутренняя ошибка
-	ErrBadRequest       = "monetization.errors.auth.badRequest"       // Плохой запрос
-	ErrMethodNotAllowed = "monetization.errors.auth.methodNotAllowed" // Метод не поддерживается
-	ErrForbidden        = "monetization.errors.auth.forbidden"        // Доступ запрещен
-	ErrInvalidRequest   = "monetization.errors.auth.invalidRequest"   // Неправильный запрос
-	ErrAccessDenied     = "monetization.errors.auth.accessDenied"     // Отказано в доступе
+	ErrInternal           = "auth.errors.internalError"      // Внутренняя ошибка
+	ErrBadRequest         = "auth.errors.badRequest"         // Плохой запрос
+	ErrMethodNotAllowed   = "auth.errors.methodNotAllowed"   // Метод не поддерживается
+	ErrForbidden          = "auth.errors.forbidden"          // Доступ запрещен
+	ErrInvalidRequest     = "auth.errors.invalidRequest"     // Неправильный запрос
+	ErrAccessDenied       = "auth.errors.accessDenied"       // Отказано в доступе
+	ErrInvalidCredentials = "auth.errors.invalidCredentials" // Неверный email или пароль
+	ErrEmailTaken         = "auth.errors.emailTaken"         // Email уже зарегистрирован
+	ErrNotFound           = "auth.errors.notFound"           // Не найдено
 )

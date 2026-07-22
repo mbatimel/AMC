@@ -64,11 +64,6 @@ func (http *httpAuthAPI) serveSignUpUser(ctx *fiber.Ctx) (err error) {
 
 	var request requestAuthAPISignUpUser
 
-	if _surename := ctx.Query("surename"); _surename != "" {
-		var surename string
-		surename = _surename
-		request.Surename = surename
-	}
 	if _email := ctx.Query("email"); _email != "" {
 		var email string
 		email = _email
@@ -83,6 +78,11 @@ func (http *httpAuthAPI) serveSignUpUser(ctx *fiber.Ctx) (err error) {
 		var name string
 		name = _name
 		request.Name = name
+	}
+	if _surename := ctx.Query("surename"); _surename != "" {
+		var surename string
+		surename = _surename
+		request.Surename = surename
 	}
 
 	var response responseAuthAPISignUpUser
