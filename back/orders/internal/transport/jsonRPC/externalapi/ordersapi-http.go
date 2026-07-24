@@ -3,7 +3,7 @@ package externalapi
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/mbatimel/AMC/orders/pkg/interfaces/externalAPI"
+	"github.com/mbatimel/AMC/orders/pkg/interfaces/externalapi"
 )
 
 type httpOrdersAPI struct {
@@ -11,10 +11,10 @@ type httpOrdersAPI struct {
 	maxBatchSize     int
 	maxParallelBatch int
 	svc              *serverOrdersAPI
-	base             externalAPI.OrdersAPI
+	base             externalapi.OrdersAPI
 }
 
-func NewOrdersAPI(svcOrdersAPI externalAPI.OrdersAPI) (srv *httpOrdersAPI) {
+func NewOrdersAPI(svcOrdersAPI externalapi.OrdersAPI) (srv *httpOrdersAPI) {
 
 	srv = &httpOrdersAPI{
 		base: svcOrdersAPI,
@@ -56,4 +56,5 @@ func (http *httpOrdersAPI) SetRoutes(route *fiber.App) {
 	route.Get("/api/v1/orders/{orderID}/documents", http.serveGetOrderDocuments)
 	route.Get("/api/v1/orders/{orderID}/history", http.serveGetOrderHistory)
 	route.Patch("/api/v1/admin/orders/{orderID}/status", http.serveUpdateOrderStatus)
+	route.Get("/api/v1/orders/cities", http.serveGetCities)
 }

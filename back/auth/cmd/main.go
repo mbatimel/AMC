@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp"
 
-	accessClient "github.com/mbatimel/AMC/auth/internal/access"
+	accessTransport "github.com/mbatimel/AMC/access/pkg/client/transport"
 	"github.com/mbatimel/AMC/auth/internal/config"
 	authService "github.com/mbatimel/AMC/auth/internal/service"
 	postgres "github.com/mbatimel/AMC/auth/internal/storage/postgres"
@@ -35,7 +35,7 @@ func main() {
 	defer pool.Close()
 
 	postgresStorage := postgres.New(pool)
-	access := accessClient.New(cfg.AccessURL)
+	access := accessTransport.NewClientAccessAPI(cfg.AccessURL)
 	svc := authService.NewAuthApiService(log.Logger, postgresStorage, access)
 
 	app := externalapi.New(log.Logger, externalapi.AuthAPI(externalapi.NewAuthAPI(svc))).WithLog().WithMetrics()

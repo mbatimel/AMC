@@ -1,5 +1,7 @@
 package models
 
+import "github.com/google/uuid"
+
 type GetCartResponse struct {
 	Cart Cart `json:"cart"`
 }
@@ -54,4 +56,8 @@ type GetOrderHistoryResponse struct {
 
 type UpdateOrderStatusResponse struct {
 	Order Order `json:"order"`
+}
+type GetCities struct {
+	ID   uuid.UUID `json:"id"`
+	City string    `json:"city"`
 }

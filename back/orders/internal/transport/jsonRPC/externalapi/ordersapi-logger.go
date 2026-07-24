@@ -7,18 +7,18 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mbatimel/AMC/orders/internal/transport/jsonRPC/externalapi/viewer"
-	"github.com/mbatimel/AMC/orders/pkg/interfaces/externalAPI"
+	"github.com/mbatimel/AMC/orders/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/orders/pkg/models"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 type loggerOrdersAPI struct {
-	next externalAPI.OrdersAPI
+	next externalapi.OrdersAPI
 }
 
 func loggerMiddlewareOrdersAPI() MiddlewareOrdersAPI {
-	return func(next externalAPI.OrdersAPI) externalAPI.OrdersAPI {
+	return func(next externalapi.OrdersAPI) externalapi.OrdersAPI {
 		return &loggerOrdersAPI{next: next}
 	}
 }
@@ -342,4 +342,24 @@ func (m loggerOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.UUI
 		logger.Info().Func(logHandle).Msg("call updateOrderStatus")
 	}(time.Now())
 	return m.next.UpdateOrderStatus(ctx, orderID, status, paymentStatus, comment, changedBy)
+}
+
+func (m loggerOrdersAPI) GetCities(ctx context.Context, userID uuid.UUID) (response []models.GetCities, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "OrdersAPI").Str("method", "getCities").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method":   "ordersAPI.getCities",
+				"request":  viewer.Sprintf("%+v", requestOrdersAPIGetCities{UserID: userID}),
+				"response": viewer.Sprintf("%+v", responseOrdersAPIGetCities{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call getCities")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call getCities")
+	}(time.Now())
+	return m.next.GetCities(ctx, userID)
 }

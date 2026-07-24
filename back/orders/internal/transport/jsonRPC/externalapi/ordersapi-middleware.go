@@ -5,7 +5,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/mbatimel/AMC/orders/pkg/interfaces/externalAPI"
+	"github.com/mbatimel/AMC/orders/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/orders/pkg/models"
 )
 
@@ -22,8 +22,9 @@ type OrdersAPIRepeatOrder func(ctx context.Context, orderID uuid.UUID, userID uu
 type OrdersAPIGetOrderDocuments func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderDocumentsResponse, err error)
 type OrdersAPIGetOrderHistory func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderHistoryResponse, err error)
 type OrdersAPIUpdateOrderStatus func(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error)
+type OrdersAPIGetCities func(ctx context.Context, userID uuid.UUID) (response []models.GetCities, err error)
 
-type MiddlewareOrdersAPI func(next externalAPI.OrdersAPI) externalAPI.OrdersAPI
+type MiddlewareOrdersAPI func(next externalapi.OrdersAPI) externalapi.OrdersAPI
 
 type MiddlewareOrdersAPIGetCart func(next OrdersAPIGetCart) OrdersAPIGetCart
 type MiddlewareOrdersAPIAddCartItem func(next OrdersAPIAddCartItem) OrdersAPIAddCartItem
@@ -38,3 +39,4 @@ type MiddlewareOrdersAPIRepeatOrder func(next OrdersAPIRepeatOrder) OrdersAPIRep
 type MiddlewareOrdersAPIGetOrderDocuments func(next OrdersAPIGetOrderDocuments) OrdersAPIGetOrderDocuments
 type MiddlewareOrdersAPIGetOrderHistory func(next OrdersAPIGetOrderHistory) OrdersAPIGetOrderHistory
 type MiddlewareOrdersAPIUpdateOrderStatus func(next OrdersAPIUpdateOrderStatus) OrdersAPIUpdateOrderStatus
+type MiddlewareOrdersAPIGetCities func(next OrdersAPIGetCities) OrdersAPIGetCities

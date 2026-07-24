@@ -5,12 +5,12 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/mbatimel/AMC/orders/pkg/interfaces/externalAPI"
+	"github.com/mbatimel/AMC/orders/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/orders/pkg/models"
 )
 
 type serverOrdersAPI struct {
-	svc               externalAPI.OrdersAPI
+	svc               externalapi.OrdersAPI
 	getCart           OrdersAPIGetCart
 	addCartItem       OrdersAPIAddCartItem
 	updateCartItem    OrdersAPIUpdateCartItem
@@ -24,6 +24,7 @@ type serverOrdersAPI struct {
 	getOrderDocuments OrdersAPIGetOrderDocuments
 	getOrderHistory   OrdersAPIGetOrderHistory
 	updateOrderStatus OrdersAPIUpdateOrderStatus
+	getCities         OrdersAPIGetCities
 }
 
 type MiddlewareSetOrdersAPI interface {
@@ -41,12 +42,13 @@ type MiddlewareSetOrdersAPI interface {
 	WrapGetOrderDocuments(m MiddlewareOrdersAPIGetOrderDocuments)
 	WrapGetOrderHistory(m MiddlewareOrdersAPIGetOrderHistory)
 	WrapUpdateOrderStatus(m MiddlewareOrdersAPIUpdateOrderStatus)
+	WrapGetCities(m MiddlewareOrdersAPIGetCities)
 
 	WithMetrics()
 	WithLog()
 }
 
-func newServerOrdersAPI(svc externalAPI.OrdersAPI) *serverOrdersAPI {
+func newServerOrdersAPI(svc externalapi.OrdersAPI) *serverOrdersAPI {
 	return &serverOrdersAPI{
 		addCartItem:       svc.AddCartItem,
 		cancelOrder:       svc.CancelOrder,
@@ -54,6 +56,7 @@ func newServerOrdersAPI(svc externalAPI.OrdersAPI) *serverOrdersAPI {
 		createOrder:       svc.CreateOrder,
 		deleteCartItem:    svc.DeleteCartItem,
 		getCart:           svc.GetCart,
+		getCities:         svc.GetCities,
 		getOrder:          svc.GetOrder,
 		getOrderDocuments: svc.GetOrderDocuments,
 		getOrderHistory:   svc.GetOrderHistory,
@@ -80,6 +83,7 @@ func (srv *serverOrdersAPI) Wrap(m MiddlewareOrdersAPI) {
 	srv.getOrderDocuments = srv.svc.GetOrderDocuments
 	srv.getOrderHistory = srv.svc.GetOrderHistory
 	srv.updateOrderStatus = srv.svc.UpdateOrderStatus
+	srv.getCities = srv.svc.GetCities
 }
 
 func (srv *serverOrdersAPI) GetCart(ctx context.Context, userID uuid.UUID, clientID string) (response models.GetCartResponse, err error) {
@@ -134,6 +138,10 @@ func (srv *serverOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.
 	return srv.updateOrderStatus(ctx, orderID, status, paymentStatus, comment, changedBy)
 }
 
+func (srv *serverOrdersAPI) GetCities(ctx context.Context, userID uuid.UUID) (response []models.GetCities, err error) {
+	return srv.getCities(ctx, userID)
+}
+
 func (srv *serverOrdersAPI) WrapGetCart(m MiddlewareOrdersAPIGetCart) {
 	srv.getCart = m(srv.getCart)
 }
@@ -184,6 +192,10 @@ func (srv *serverOrdersAPI) WrapGetOrderHistory(m MiddlewareOrdersAPIGetOrderHis
 
 func (srv *serverOrdersAPI) WrapUpdateOrderStatus(m MiddlewareOrdersAPIUpdateOrderStatus) {
 	srv.updateOrderStatus = m(srv.updateOrderStatus)
+}
+
+func (srv *serverOrdersAPI) WrapGetCities(m MiddlewareOrdersAPIGetCities) {
+	srv.getCities = m(srv.getCities)
 }
 
 func (srv *serverOrdersAPI) WithMetrics() {
