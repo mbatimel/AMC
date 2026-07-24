@@ -3,23 +3,23 @@ FROM golang:1.25-alpine AS builder
 WORKDIR /src
 
 COPY back/access ./access
-COPY back/auth/go.mod back/auth/go.sum ./auth/
-WORKDIR /src/auth
+COPY back/orders/go.mod back/orders/go.sum ./orders/
+WORKDIR /src/orders
 RUN go mod download
 
-COPY back/auth/ ./
+COPY back/orders/ ./
 
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
-    -o /out/auth ./cmd
+    -o /out/orders ./cmd
 
 FROM alpine:3.20
 
 RUN apk add --no-cache ca-certificates && \
     adduser -D -H -u 10001 app
 
-COPY --from=builder /out/auth /usr/local/bin/auth
+COPY --from=builder /out/orders /usr/local/bin/orders
 
 USER app
-EXPOSE 8081
+EXPOSE 8082
 
-ENTRYPOINT ["/usr/local/bin/auth"]
+ENTRYPOINT ["/usr/local/bin/orders"]

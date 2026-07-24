@@ -144,3 +144,11 @@ type requestOrdersAPIUpdateOrderStatus struct {
 type responseOrdersAPIUpdateOrderStatus struct {
 	Response models.UpdateOrderStatusResponse `json:"response,omitempty"`
 }
+
+type requestOrdersAPIGetCities struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+}
+
+type responseOrdersAPIGetCities struct {
+	Response []models.GetCities `json:"response,omitempty"`
+}

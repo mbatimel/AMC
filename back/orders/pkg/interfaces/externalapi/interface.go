@@ -186,4 +186,14 @@ type OrdersAPI interface {
 	// @tg desc=`Администраторское изменение статуса заказа и оплаты`
 	// @tg uuidPackage=github.com/google/uuid
 	UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error)
+
+	// GetCities ...
+	// @tg http-method=GET
+	// @tg http-path=/v1/orders/cities
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/orders/internal/transport/custom-handlers:GetCities
+	// @tg summary=`Получение списка городов `
+	// @tg desc=`Получение списка городов `
+	// @tg uuidPackage=github.com/google/uuid
+	GetCities(ctx context.Context, userID uuid.UUID) (response []models.GetCities, err error)
 }

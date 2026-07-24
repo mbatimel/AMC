@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	externalapi "github.com/mbatimel/AMC/orders/pkg/interfaces/externalAPI"
+	externalapi "github.com/mbatimel/AMC/orders/pkg/interfaces/externalapi"
 	"github.com/rs/zerolog/log"
 )
 
@@ -17,6 +17,13 @@ func GetCart(ctx *fiber.Ctx, svc externalapi.OrdersAPI, userID uuid.UUID, client
 		"clientID": clientID,
 	}, func() (interface{}, error) {
 		return svc.GetCart(ctx.UserContext(), userID, clientID)
+	})
+}
+func GetCities(ctx *fiber.Ctx, svc externalapi.OrdersAPI, userID uuid.UUID) error {
+	return handle(ctx, "get", "/v1/orders/cities", "GetCities", map[string]interface{}{
+		"userID": userID,
+	}, func() (interface{}, error) {
+		return svc.GetCities(ctx.UserContext(), userID)
 	})
 }
 

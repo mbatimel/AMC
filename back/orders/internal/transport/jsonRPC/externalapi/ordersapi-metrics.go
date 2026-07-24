@@ -8,15 +8,15 @@ import (
 
 	v2 "github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/mbatimel/AMC/orders/pkg/interfaces/externalAPI"
+	"github.com/mbatimel/AMC/orders/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/orders/pkg/models"
 )
 
 type metricsOrdersAPI struct {
-	next externalAPI.OrdersAPI
+	next externalapi.OrdersAPI
 }
 
-func metricsMiddlewareOrdersAPI(next externalAPI.OrdersAPI) externalAPI.OrdersAPI {
+func metricsMiddlewareOrdersAPI(next externalapi.OrdersAPI) externalapi.OrdersAPI {
 	return &metricsOrdersAPI{next: next}
 }
 
@@ -317,4 +317,27 @@ func (m metricsOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.UU
 	}(time.Now())
 
 	return m.next.UpdateOrderStatus(ctx, orderID, status, paymentStatus, comment, changedBy)
+}
+
+func (m metricsOrdersAPI) GetCities(ctx context.Context, userID uuid.UUID) (response []models.GetCities, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("ordersAPI", "getCities", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("ordersAPI", "getCities", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("ordersAPI", "getCities", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.GetCities(ctx, userID)
 }

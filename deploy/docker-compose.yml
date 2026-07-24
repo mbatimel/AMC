@@ -57,6 +57,20 @@ services:
       migrations:
         condition: service_completed_successfully
     networks: [amc_net]
+  orders:
+    image: ghcr.io/mbatimel/amc-orders:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      PG_HOST: postgres
+      PG_PORT: "5432"
+      PG_DB: ${PG_DB}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      ACCESS_INTERNAL_ADDRESS: ":8082"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    networks: [amc_net]
 
   front:
     image: ghcr.io/mbatimel/amc-front:${IMAGE_TAG}
