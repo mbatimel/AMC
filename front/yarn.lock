@@ -1357,10 +1357,10 @@
     react-aria "^3.48.0"
     react-stately "^3.46.0"
 
-"@react-grab/cli@0.1.47":
-  version "0.1.47"
-  resolved "https://registry.yarnpkg.com/@react-grab/cli/-/cli-0.1.47.tgz#92e7ffe4e027203c32645193b26c900860b0ed76"
-  integrity sha512-Cc7d8mSwvoV8gpeTQbE8dMPdeXIyO6w+yIhzgi3jY06i03WLNhb/6jIxNBNF1cVRI7ujnFQXZA66BbnBNTpBSw==
+"@react-grab/cli@0.1.50":
+  version "0.1.50"
+  resolved "https://registry.yarnpkg.com/@react-grab/cli/-/cli-0.1.50.tgz#51bd9c77fb7e8c67eb050b8a23ccf906f8d1665f"
+  integrity sha512-Px/Hwhhyk2PubCA4ZaRFsfvwxhbxXsetJyvqC6aFFi8WhJhA+oVC33aTzuAeWmM3fhb4/8ce8YsHXI1d6ChcKg==
   dependencies:
     agent-install "^0.0.6"
     commander "^14.0.3"
@@ -1979,10 +1979,15 @@ baseline-browser-mapping@^2.10.38, baseline-browser-mapping@^2.9.19:
   resolved "https://registry.yarnpkg.com/baseline-browser-mapping/-/baseline-browser-mapping-2.10.40.tgz#f372c8eb36ff4ad0b5e7ae467014abef124554ba"
   integrity sha512-BSSLZ9/Cjjv7Gtj5B68ZzXcXUg8iOf3fme+FCuh8rC/Go+Kmh8cox7M3A8dolou16s64QjLPOSdngh7GxXvkSw==
 
-bippy@^0.5.39, bippy@^0.5.41:
+bippy@^0.5.39:
   version "0.5.42"
   resolved "https://registry.yarnpkg.com/bippy/-/bippy-0.5.42.tgz#394bc69a1119c207df9370202cd00fed5997fc60"
   integrity sha512-K3tpfO9uGQB2k/Vi5P6jgfrnXvO/FAQNUE2tqKjQmT0a93fJCysMGLgJmRKzYYfybAoOtwWwmKm0vw/uXE0hMw==
+
+bippy@^0.6.1:
+  version "0.6.1"
+  resolved "https://registry.yarnpkg.com/bippy/-/bippy-0.6.1.tgz#b38db90f8ccbc8f34b9cd21484ccc595dabd222a"
+  integrity sha512-ky4m94Y/KfsddjGkKTsV4uFjZqkJjpOjQ2t5gKPdX6XH1MNxMNX5FrVefsxV4lpjemEmEdwe0e0YbzAMNs3oUQ==
 
 brace-expansion@^1.1.7:
   version "1.1.15"
@@ -4166,13 +4171,13 @@ react-dom@^19.2.7:
   dependencies:
     scheduler "^0.27.0"
 
-react-grab@latest:
-  version "0.1.47"
-  resolved "https://registry.yarnpkg.com/react-grab/-/react-grab-0.1.47.tgz#14c0c0fdcc59684274a152f62783a457c6d199e4"
-  integrity sha512-1GNy24KMJ4CY1IxorYO9mydItGi0L1HkQB19uYU3t0BMsJB0K+D/QYiaBz+rugRynyY8LzmXIuOcon1TykLlCg==
+react-grab@0.1.50, react-grab@latest:
+  version "0.1.50"
+  resolved "https://registry.yarnpkg.com/react-grab/-/react-grab-0.1.50.tgz#f351c398f51f0a3cfc62a5313786a07a1a4d03bc"
+  integrity sha512-zRkHKq/8a1msCpEOp8BDROeQZT50m0OH2XPrP6jk5op+JAHrlsm3pj7eAQMOsct87EZDeGNnu4r+sGsJJzyw1Q==
   dependencies:
-    "@react-grab/cli" "0.1.47"
-    bippy "^0.5.41"
+    "@react-grab/cli" "0.1.50"
+    bippy "^0.6.1"
 
 react-is@^16.13.1:
   version "16.13.1"

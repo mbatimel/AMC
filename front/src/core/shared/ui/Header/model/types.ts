@@ -4,7 +4,14 @@ import type { useHeaderNav } from './useHeaderNav';
 import type { useHeaderSearch } from './useHeaderSearch';
 import type { useMobileMenu } from './useMobileMenu';
 
+export type HeaderAccountLink = {
+  href: string;
+  isAuthenticated: boolean;
+  label: string;
+};
+
 export type HeaderMobileMenuProps = {
+  account: HeaderAccountLink;
   closeMenu: () => void;
   drawerId: string;
   drawerRef: RefObject<HTMLElement | null>;
@@ -18,6 +25,7 @@ export type HeaderMobileViewProps = HeaderViewProps & {
 };
 
 export type HeaderViewProps = {
+  account: HeaderAccountLink;
   nav: UseHeaderNavResult;
   search: UseHeaderSearchResult;
 };

@@ -1,3 +1,5 @@
+import { AppPath } from '@/core/shared/router/paths';
+
 export type FooterLinkItem = {
   href: string;
   label: string;
@@ -31,7 +33,7 @@ export const FOOTER_CATALOG_LINKS: FooterLinkItem[] = [
 ];
 
 export const FOOTER_CABINET_LINKS: FooterLinkItem[] = [
-  { href: '#', label: 'Личный кабинет' },
+  { href: AppPath.Cabinet, label: 'Личный кабинет' },
   { href: '#', label: 'Мои заказы' },
   { href: '#', label: 'Документы' },
   { href: '#', label: 'Избранное' },

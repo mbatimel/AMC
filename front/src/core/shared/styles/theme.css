@@ -70,6 +70,14 @@
   --footer-typo-muted: rgb(255 255 255 / 55%);
   --footer-top-accent: var(--header-brand);
 
+  /* Auth */
+  --auth-bg: #f4f6f9;
+  --auth-card-radius: 16px;
+  --auth-card-shadow: 0 8px 32px rgb(18 26 51 / 8%);
+  --auth-icon-bg: #fde8e8;
+  --auth-max-width: 440px;
+  --auth-max-width-wide: 720px;
+
   /* Z-index */
   --z-index-popup: 12;
   --z-index-popup-important: 22;

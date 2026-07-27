@@ -1,10 +1,8 @@
 import clsx from 'clsx';
 
-import {
-  FOOTER_CABINET_LINKS,
-  FOOTER_CATALOG_LINKS,
-  FOOTER_INFO_LINKS,
-} from '../../constants';
+import type { FooterLinkItem } from '../../constants';
+
+import { FOOTER_CATALOG_LINKS, FOOTER_INFO_LINKS } from '../../constants';
 import styles from '../../Footer.module.css';
 import { FooterAbout } from '../shared/FooterAbout';
 import { FooterBrands } from '../shared/FooterBrands';
@@ -12,7 +10,12 @@ import { FooterLegal } from '../shared/FooterLegal';
 import { FooterNavColumn } from '../shared/FooterNavColumn';
 import desktopStyles from './FooterDesktop.module.css';
 
-export const FooterDesktop = (): JSX.Element => {
+type FooterDesktopProps = {
+  cabinetLinks: FooterLinkItem[];
+  cabinetTitle: string;
+};
+
+export const FooterDesktop = ({ cabinetLinks, cabinetTitle }: FooterDesktopProps): JSX.Element => {
   return (
     <>
       <FooterBrands />
@@ -21,7 +24,7 @@ export const FooterDesktop = (): JSX.Element => {
         <div className={clsx(styles.container, desktopStyles.mainGrid)}>
           <FooterAbout />
           <FooterNavColumn items={FOOTER_CATALOG_LINKS} title="Каталог" />
-          <FooterNavColumn items={FOOTER_CABINET_LINKS} title="Кабинет" />
+          <FooterNavColumn items={cabinetLinks} title={cabinetTitle} />
           <FooterNavColumn items={FOOTER_INFO_LINKS} title="Информация" />
         </div>
       </section>

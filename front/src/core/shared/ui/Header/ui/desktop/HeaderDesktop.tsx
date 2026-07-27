@@ -5,6 +5,7 @@ import {
   IconChevronDown,
   IconEmail,
   IconLocation,
+  IconLogin,
   IconOrders,
   IconPhone,
   IconUser,
@@ -13,7 +14,6 @@ import {
 import type { HeaderViewProps } from '../../model/types';
 
 import {
-  HEADER_ACCOUNT_HREF,
   HEADER_CART_HREF,
   HEADER_CITY,
   HEADER_EMAIL,
@@ -66,7 +66,12 @@ export const HeaderDesktopTopBar = (): JSX.Element => {
   );
 };
 
-export const HeaderDesktopMain = ({ search }: Pick<HeaderViewProps, 'search'>): JSX.Element => {
+export const HeaderDesktopMain = ({
+  account,
+  search,
+}: Pick<HeaderViewProps, 'account' | 'search'>): JSX.Element => {
+  const AccountIcon = account.isAuthenticated ? IconUser : IconLogin;
+
   return (
     <div className={clsx(styles.mainBar)}>
       <div className={clsx(rootStyles.container, styles.mainBarInner)}>
@@ -81,9 +86,9 @@ export const HeaderDesktopMain = ({ search }: Pick<HeaderViewProps, 'search'>): 
           </a>
 
           <div className={clsx(styles.accountBlock)}>
-            <a className={clsx(styles.accountLink)} href={HEADER_ACCOUNT_HREF}>
-              <IconUser height={16} width={16} />
-              <span>Кабинет</span>
+            <a className={clsx(styles.accountLink)} href={account.href}>
+              <AccountIcon height={16} width={16} />
+              <span>{account.label}</span>
             </a>
             <a className={clsx(styles.accountLink)} href={HEADER_ORDERS_HREF}>
               <IconOrders height={16} width={16} />
@@ -112,11 +117,11 @@ export const HeaderDesktopNav = ({ nav }: Pick<HeaderViewProps, 'nav'>): JSX.Ele
   );
 };
 
-export const HeaderDesktop = ({ nav, search }: HeaderViewProps): JSX.Element => {
+export const HeaderDesktop = ({ account, nav, search }: HeaderViewProps): JSX.Element => {
   return (
     <>
       <HeaderDesktopTopBar />
-      <HeaderDesktopMain search={search} />
+      <HeaderDesktopMain account={account} search={search} />
       <HeaderDesktopNav nav={nav} />
     </>
   );
