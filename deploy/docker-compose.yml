@@ -82,6 +82,23 @@ services:
       - access
     networks: [amc_net]
 
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    restart: unless-stopped
+    environment:
+      BASE_URL: /docs
+      URLS: >-
+        [
+          {"url": "/docs/specs/access.yaml", "name": "Access (internal)"},
+          {"url": "/docs/specs/auth.yaml", "name": "Auth"},
+          {"url": "/docs/specs/orders.yaml", "name": "Orders"}
+        ]
+    volumes:
+      - ../back/access/swaggers/internalapi/swagger.yaml:/usr/share/nginx/html/specs/access.yaml:ro
+      - ../back/auth/swaggers/externalapi/swagger.yaml:/usr/share/nginx/html/specs/auth.yaml:ro
+      - ../back/orders/swaggers/externalapi/swagger.yaml:/usr/share/nginx/html/specs/orders.yaml:ro
+    networks: [amc_net]
+
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
@@ -89,11 +106,13 @@ services:
       - "127.0.0.1:8090:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/htpasswd:/etc/nginx/htpasswd:ro
     depends_on:
       - access
       - auth
       - orders
       - front
+      - swagger-ui
     networks: [amc_net]
 
 volumes:
