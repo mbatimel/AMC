@@ -19,11 +19,10 @@ func GetCart(ctx *fiber.Ctx, svc externalapi.OrdersAPI, userID uuid.UUID, client
 		return svc.GetCart(ctx.UserContext(), userID, clientID)
 	})
 }
-func GetCities(ctx *fiber.Ctx, svc externalapi.OrdersAPI, userID uuid.UUID) error {
+func GetCities(ctx *fiber.Ctx, svc externalapi.OrdersAPI) error {
 	return handle(ctx, "get", "/v1/orders/cities", "GetCities", map[string]interface{}{
-		"userID": userID,
 	}, func() (interface{}, error) {
-		return svc.GetCities(ctx.UserContext(), userID)
+		return svc.GetCities(ctx.UserContext())
 	})
 }
 

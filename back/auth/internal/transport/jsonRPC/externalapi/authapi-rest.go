@@ -50,9 +50,9 @@ func (http *httpAuthAPI) serveLoginUser(ctx *fiber.Ctx) (err error) {
 	}
 	return sendResponse(ctx, err)
 }
-func (http *httpAuthAPI) signUpUser(ctx context.Context, request requestAuthAPISignUpUser) (response responseAuthAPISignUpUser, err error) {
+func (http *httpAuthAPI) registerIP(ctx context.Context, request requestAuthAPIRegisterIP) (response responseAuthAPIRegisterIP, err error) {
 
-	response.UserID, err = http.svc.SignUpUser(ctx, request.Email, request.Password, request.Name, request.Surename)
+	response.UserID, err = http.svc.RegisterIP(ctx, request.Email, request.Password, request.FullName, request.ShortName, request.Inn, request.Kpp, request.Ogrn, request.Okved, request.TaxSystem, request.LegalAddress, request.ActualAddress, request.DirectorFullName, request.DirectorPosition, request.Phone, request.AdditionalPhone, request.Website, request.BankAccount, request.BankName, request.BankBik, request.CorrespondentAccount)
 	if err != nil {
 		if http.errorHandler != nil {
 			err = http.errorHandler(err)
@@ -60,10 +60,80 @@ func (http *httpAuthAPI) signUpUser(ctx context.Context, request requestAuthAPIS
 	}
 	return
 }
-func (http *httpAuthAPI) serveSignUpUser(ctx *fiber.Ctx) (err error) {
+func (http *httpAuthAPI) serveRegisterIP(ctx *fiber.Ctx) (err error) {
 
-	var request requestAuthAPISignUpUser
+	var request requestAuthAPIRegisterIP
 
+	if _additionalPhone := ctx.Query("additionalPhone"); _additionalPhone != "" {
+		var additionalPhone string
+		additionalPhone = _additionalPhone
+		request.AdditionalPhone = &additionalPhone
+	}
+	if _fullName := ctx.Query("fullName"); _fullName != "" {
+		var fullName string
+		fullName = _fullName
+		request.FullName = &fullName
+	}
+	if _inn := ctx.Query("inn"); _inn != "" {
+		var inn string
+		inn = _inn
+		request.Inn = &inn
+	}
+	if _okved := ctx.Query("okved"); _okved != "" {
+		var okved string
+		okved = _okved
+		request.Okved = &okved
+	}
+	if _legalAddress := ctx.Query("legalAddress"); _legalAddress != "" {
+		var legalAddress string
+		legalAddress = _legalAddress
+		request.LegalAddress = &legalAddress
+	}
+	if _directorPosition := ctx.Query("directorPosition"); _directorPosition != "" {
+		var directorPosition string
+		directorPosition = _directorPosition
+		request.DirectorPosition = &directorPosition
+	}
+	if _website := ctx.Query("website"); _website != "" {
+		var website string
+		website = _website
+		request.Website = &website
+	}
+	if _bankName := ctx.Query("bankName"); _bankName != "" {
+		var bankName string
+		bankName = _bankName
+		request.BankName = &bankName
+	}
+	if _kpp := ctx.Query("kpp"); _kpp != "" {
+		var kpp string
+		kpp = _kpp
+		request.Kpp = &kpp
+	}
+	if _directorFullName := ctx.Query("directorFullName"); _directorFullName != "" {
+		var directorFullName string
+		directorFullName = _directorFullName
+		request.DirectorFullName = &directorFullName
+	}
+	if _phone := ctx.Query("phone"); _phone != "" {
+		var phone string
+		phone = _phone
+		request.Phone = &phone
+	}
+	if _bankAccount := ctx.Query("bankAccount"); _bankAccount != "" {
+		var bankAccount string
+		bankAccount = _bankAccount
+		request.BankAccount = &bankAccount
+	}
+	if _bankBik := ctx.Query("bankBik"); _bankBik != "" {
+		var bankBik string
+		bankBik = _bankBik
+		request.BankBik = &bankBik
+	}
+	if _correspondentAccount := ctx.Query("correspondentAccount"); _correspondentAccount != "" {
+		var correspondentAccount string
+		correspondentAccount = _correspondentAccount
+		request.CorrespondentAccount = &correspondentAccount
+	}
 	if _email := ctx.Query("email"); _email != "" {
 		var email string
 		email = _email
@@ -74,19 +144,95 @@ func (http *httpAuthAPI) serveSignUpUser(ctx *fiber.Ctx) (err error) {
 		password = _password
 		request.Password = password
 	}
-	if _name := ctx.Query("name"); _name != "" {
-		var name string
-		name = _name
-		request.Name = name
+	if _shortName := ctx.Query("shortName"); _shortName != "" {
+		var shortName string
+		shortName = _shortName
+		request.ShortName = &shortName
 	}
-	if _surename := ctx.Query("surename"); _surename != "" {
-		var surename string
-		surename = _surename
-		request.Surename = surename
+	if _ogrn := ctx.Query("ogrn"); _ogrn != "" {
+		var ogrn string
+		ogrn = _ogrn
+		request.Ogrn = &ogrn
+	}
+	if _taxSystem := ctx.Query("taxSystem"); _taxSystem != "" {
+		var taxSystem string
+		taxSystem = _taxSystem
+		request.TaxSystem = &taxSystem
+	}
+	if _actualAddress := ctx.Query("actualAddress"); _actualAddress != "" {
+		var actualAddress string
+		actualAddress = _actualAddress
+		request.ActualAddress = &actualAddress
 	}
 
-	var response responseAuthAPISignUpUser
-	if response, err = http.signUpUser(ctx.UserContext(), request); err == nil {
+	var response responseAuthAPIRegisterIP
+	if response, err = http.registerIP(ctx.UserContext(), request); err == nil {
+		var iResponse interface{} = response
+		if redirect, ok := iResponse.(withRedirect); ok {
+			return ctx.Redirect(redirect.RedirectTo())
+		}
+
+		return sendResponse(ctx, response)
+	}
+	if errCoder, ok := err.(withErrorCode); ok {
+		ctx.Status(errCoder.Code())
+	} else {
+		ctx.Status(fiber.StatusInternalServerError)
+	}
+	return sendResponse(ctx, err)
+}
+func (http *httpAuthAPI) registerIndividual(ctx context.Context, request requestAuthAPIRegisterIndividual) (response responseAuthAPIRegisterIndividual, err error) {
+
+	response.UserID, err = http.svc.RegisterIndividual(ctx, request.Fio, request.Phone, request.Email, request.DeliveryAddress, request.Password, request.City, request.Inn)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAuthAPI) serveRegisterIndividual(ctx *fiber.Ctx) (err error) {
+
+	var request requestAuthAPIRegisterIndividual
+
+	if _deliveryAddress := ctx.Query("deliveryAddress"); _deliveryAddress != "" {
+		var deliveryAddress string
+		deliveryAddress = _deliveryAddress
+		request.DeliveryAddress = deliveryAddress
+	}
+	if _password := ctx.Query("password"); _password != "" {
+		var password string
+		password = _password
+		request.Password = password
+	}
+	if _city := ctx.Query("city"); _city != "" {
+		var city string
+		city = _city
+		request.City = city
+	}
+	if _inn := ctx.Query("inn"); _inn != "" {
+		var inn string
+		inn = _inn
+		request.Inn = &inn
+	}
+	if _fio := ctx.Query("fio"); _fio != "" {
+		var fio string
+		fio = _fio
+		request.Fio = fio
+	}
+	if _phone := ctx.Query("phone"); _phone != "" {
+		var phone string
+		phone = _phone
+		request.Phone = phone
+	}
+	if _email := ctx.Query("email"); _email != "" {
+		var email string
+		email = _email
+		request.Email = email
+	}
+
+	var response responseAuthAPIRegisterIndividual
+	if response, err = http.registerIndividual(ctx.UserContext(), request); err == nil {
 		var iResponse interface{} = response
 		if redirect, ok := iResponse.(withRedirect); ok {
 			return ctx.Redirect(redirect.RedirectTo())

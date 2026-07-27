@@ -24,8 +24,14 @@ var sqlGetUserByEmail string
 //go:embed sql/getUserByID.sql
 var sqlGetUserByID string
 
-//go:embed sql/insertUser.sql
-var sqlInsertUser string
+//go:embed sql/insertCounterparty.sql
+var sqlInsertCounterparty string
+
+//go:embed sql/insertUserForIP.sql
+var sqlInsertUserForIP string
+
+//go:embed sql/insertIndividualUser.sql
+var sqlInsertIndividualUser string
 
 //go:embed sql/updateUserPassword.sql
 var sqlUpdateUserPassword string
@@ -77,16 +83,51 @@ func (s *Storage) GetUserByID(ctx context.Context, userID uuid.UUID) (User, erro
 	return user, nil
 }
 
-// CreateUserWithRole inserts a new user and assigns the given role to them in a single transaction.
-func (s *Storage) CreateUserWithRole(ctx context.Context, email, passwordHash, name, surename string, roleCode int) (uuid.UUID, error) {
+// assignRole looks up roleCode and links userID to it inside the given transaction.
+func (s *Storage) assignRole(ctx context.Context, tx pgx.Tx, userID uuid.UUID, roleCode int) error {
+	var roleID uuid.UUID
+	err := tx.QueryRow(ctx, sqlGetRoleByCode, roleCode).Scan(&roleID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrRoleNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("get role by code: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx, sqlInsertUserRole, userID, roleID); err != nil {
+		return fmt.Errorf("insert user role: %w", err)
+	}
+	return nil
+}
+
+// CreateIPUser creates a counterparty with the given IP/organization details, a linked
+// user with login credentials, and assigns roleCode to that user, all in one transaction.
+func (s *Storage) CreateIPUser(
+	ctx context.Context,
+	email, passwordHash string,
+	fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
+	directorFullName, directorPosition, phone, additionalPhone, website,
+	bankAccount, bankName, bankBik, correspondentAccount *string,
+	roleCode int,
+) (uuid.UUID, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("begin create user transaction: %w", err)
+		return uuid.UUID{}, fmt.Errorf("begin create ip user transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
+	var counterpartyID uuid.UUID
+	err = tx.QueryRow(ctx, sqlInsertCounterparty,
+		fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
+		directorFullName, directorPosition, phone, additionalPhone, email, website,
+		bankAccount, bankName, bankBik, correspondentAccount,
+	).Scan(&counterpartyID)
+	if err != nil {
+		return uuid.UUID{}, fmt.Errorf("insert counterparty: %w", err)
+	}
+
 	var userID uuid.UUID
-	err = tx.QueryRow(ctx, sqlInsertUser, email, passwordHash, name, surename).Scan(&userID)
+	err = tx.QueryRow(ctx, sqlInsertUserForIP, email, passwordHash, counterpartyID).Scan(&userID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
@@ -95,21 +136,49 @@ func (s *Storage) CreateUserWithRole(ctx context.Context, email, passwordHash, n
 		return uuid.UUID{}, fmt.Errorf("insert user: %w", err)
 	}
 
-	var roleID uuid.UUID
-	err = tx.QueryRow(ctx, sqlGetRoleByCode, roleCode).Scan(&roleID)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return uuid.UUID{}, ErrRoleNotFound
-	}
-	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("get role by code: %w", err)
-	}
-
-	if _, err = tx.Exec(ctx, sqlInsertUserRole, userID, roleID); err != nil {
-		return uuid.UUID{}, fmt.Errorf("insert user role: %w", err)
+	if err = s.assignRole(ctx, tx, userID, roleCode); err != nil {
+		return uuid.UUID{}, err
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		return uuid.UUID{}, fmt.Errorf("commit create user transaction: %w", err)
+		return uuid.UUID{}, fmt.Errorf("commit create ip user transaction: %w", err)
+	}
+
+	return userID, nil
+}
+
+// CreateIndividualUser creates an individual (non-legal-entity) user and assigns roleCode
+// to them in a single transaction.
+func (s *Storage) CreateIndividualUser(
+	ctx context.Context,
+	email, passwordHash, surename, name, middleName, phone, city, deliveryAddress string,
+	inn *string,
+	roleCode int,
+) (uuid.UUID, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return uuid.UUID{}, fmt.Errorf("begin create individual user transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var userID uuid.UUID
+	err = tx.QueryRow(ctx, sqlInsertIndividualUser,
+		email, passwordHash, surename, name, middleName, phone, city, deliveryAddress, inn,
+	).Scan(&userID)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
+			return uuid.UUID{}, ErrEmailTaken
+		}
+		return uuid.UUID{}, fmt.Errorf("insert user: %w", err)
+	}
+
+	if err = s.assignRole(ctx, tx, userID, roleCode); err != nil {
+		return uuid.UUID{}, err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return uuid.UUID{}, fmt.Errorf("commit create individual user transaction: %w", err)
 	}
 
 	return userID, nil

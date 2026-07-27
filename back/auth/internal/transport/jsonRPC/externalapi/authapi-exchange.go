@@ -12,14 +12,44 @@ type responseAuthAPILoginUser struct {
 	UserID uuid.UUID `json:"userID,omitempty"`
 }
 
-type requestAuthAPISignUpUser struct {
-	Email    string `json:"email,omitempty"`
-	Password string `json:"password,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Surename string `json:"surename,omitempty"`
+type requestAuthAPIRegisterIP struct {
+	Email                string  `json:"email,omitempty"`
+	Password             string  `json:"password,omitempty"`
+	FullName             *string `json:"fullName,omitempty"`
+	ShortName            *string `json:"shortName,omitempty"`
+	Inn                  *string `json:"inn,omitempty"`
+	Kpp                  *string `json:"kpp,omitempty"`
+	Ogrn                 *string `json:"ogrn,omitempty"`
+	Okved                *string `json:"okved,omitempty"`
+	TaxSystem            *string `json:"taxSystem,omitempty"`
+	LegalAddress         *string `json:"legalAddress,omitempty"`
+	ActualAddress        *string `json:"actualAddress,omitempty"`
+	DirectorFullName     *string `json:"directorFullName,omitempty"`
+	DirectorPosition     *string `json:"directorPosition,omitempty"`
+	Phone                *string `json:"phone,omitempty"`
+	AdditionalPhone      *string `json:"additionalPhone,omitempty"`
+	Website              *string `json:"website,omitempty"`
+	BankAccount          *string `json:"bankAccount,omitempty"`
+	BankName             *string `json:"bankName,omitempty"`
+	BankBik              *string `json:"bankBik,omitempty"`
+	CorrespondentAccount *string `json:"correspondentAccount,omitempty"`
 }
 
-type responseAuthAPISignUpUser struct {
+type responseAuthAPIRegisterIP struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+}
+
+type requestAuthAPIRegisterIndividual struct {
+	Fio             string  `json:"fio,omitempty"`
+	Phone           string  `json:"phone,omitempty"`
+	Email           string  `json:"email,omitempty"`
+	DeliveryAddress string  `json:"deliveryAddress,omitempty"`
+	Password        string  `json:"password,omitempty"`
+	City            string  `json:"city,omitempty"`
+	Inn             *string `json:"inn,omitempty"`
+}
+
+type responseAuthAPIRegisterIndividual struct {
 	UserID uuid.UUID `json:"userID,omitempty"`
 }
 

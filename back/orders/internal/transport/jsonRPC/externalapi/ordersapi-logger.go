@@ -344,13 +344,13 @@ func (m loggerOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.UUI
 	return m.next.UpdateOrderStatus(ctx, orderID, status, paymentStatus, comment, changedBy)
 }
 
-func (m loggerOrdersAPI) GetCities(ctx context.Context, userID uuid.UUID) (response []models.GetCities, err error) {
+func (m loggerOrdersAPI) GetCities(ctx context.Context) (response []models.GetCities, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "OrdersAPI").Str("method", "getCities").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
 			fields := map[string]interface{}{
 				"method":   "ordersAPI.getCities",
-				"request":  viewer.Sprintf("%+v", requestOrdersAPIGetCities{UserID: userID}),
+				"request":  viewer.Sprintf("%+v", requestOrdersAPIGetCities{}),
 				"response": viewer.Sprintf("%+v", responseOrdersAPIGetCities{Response: response}),
 			}
 			ev.Fields(fields).Str("took", time.Since(_begin).String())
@@ -361,5 +361,5 @@ func (m loggerOrdersAPI) GetCities(ctx context.Context, userID uuid.UUID) (respo
 		}
 		logger.Info().Func(logHandle).Msg("call getCities")
 	}(time.Now())
-	return m.next.GetCities(ctx, userID)
+	return m.next.GetCities(ctx)
 }

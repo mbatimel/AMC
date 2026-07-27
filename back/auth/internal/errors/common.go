@@ -16,6 +16,9 @@ var (
 	}
 	EmailTakenError = func() *Error { return New("email already registered", fasthttp.StatusConflict, ErrEmailTaken) }
 	NotFoundError   = func() *Error { return New("not found", fasthttp.StatusNotFound, ErrNotFound) }
+	ValidationError = func(field string) *Error {
+		return New("validation failed", fasthttp.StatusBadRequest, ErrInvalidRequest).AddCause("field", field)
+	}
 )
 
 const (

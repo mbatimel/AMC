@@ -138,8 +138,8 @@ func (srv *serverOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.
 	return srv.updateOrderStatus(ctx, orderID, status, paymentStatus, comment, changedBy)
 }
 
-func (srv *serverOrdersAPI) GetCities(ctx context.Context, userID uuid.UUID) (response []models.GetCities, err error) {
-	return srv.getCities(ctx, userID)
+func (srv *serverOrdersAPI) GetCities(ctx context.Context) (response []models.GetCities, err error) {
+	return srv.getCities(ctx)
 }
 
 func (srv *serverOrdersAPI) WrapGetCart(m MiddlewareOrdersAPIGetCart) {

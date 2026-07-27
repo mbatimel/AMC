@@ -44,7 +44,8 @@ func (http *httpAuthAPI) WithErrorHandler(handler ErrorHandler) *httpAuthAPI {
 
 func (http *httpAuthAPI) SetRoutes(route *fiber.App) {
 	route.Post("/api/v1/auth/login", http.serveLoginUser)
-	route.Post("/api/v1/auth/signup", http.serveSignUpUser)
+	route.Post("/api/v1/auth/register/ip", http.serveRegisterIP)
+	route.Post("/api/v1/auth/register/individual", http.serveRegisterIndividual)
 	route.Post("/api/v1/auth/logout", http.serveLogoutUser)
 	route.Post("/api/v1/auth/change-password", http.serveChangePassword)
 	route.Post("/api/v1/auth/verify-email", http.serveVerifyEmailCode)

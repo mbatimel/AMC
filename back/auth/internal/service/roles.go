@@ -8,5 +8,5 @@ const (
 	RoleCodeBuyer    = 3
 )
 
-// defaultSignUpRoleCode is the role assigned to every user created via SignUpUser.
+// defaultSignUpRoleCode is the role assigned to every user created via RegisterIP/RegisterIndividual.
 const defaultSignUpRoleCode = RoleCodeBuyer
