@@ -37,15 +37,8 @@ func NewOrdersApiService(logger zerolog.Logger, storage Storage, accessClient Ac
 }
 
 // GetCities returns all cities from the cities table. Only buyers may call it.
-func (s *service) GetCities(ctx context.Context, userID uuid.UUID) (response []models.GetCities, err error) {
-	allowed, err := s.accessClient.CheckAccess(ctx, userID, RoleCodeBuyer)
-	if err != nil {
-		return nil, customErrors.InternalServerError().SetOuterError(err)
-	}
-	if !allowed {
-		return nil, customErrors.ForbiddenError()
-	}
-
+func (s *service) GetCities(ctx context.Context) (response []models.GetCities, err error) {
+	
 	cities, err := s.storage.GetCities(ctx)
 	if err != nil {
 		return nil, customErrors.InternalServerError().SetOuterError(err)

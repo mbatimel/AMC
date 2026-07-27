@@ -9,7 +9,8 @@ import (
 )
 
 type AuthAPILoginUser func(ctx context.Context, email string, password string) (userID uuid.UUID, err error)
-type AuthAPISignUpUser func(ctx context.Context, email string, password string, name string, surename string) (userID uuid.UUID, err error)
+type AuthAPIRegisterIP func(ctx context.Context, email string, password string, fullName *string, shortName *string, inn *string, kpp *string, ogrn *string, okved *string, taxSystem *string, legalAddress *string, actualAddress *string, directorFullName *string, directorPosition *string, phone *string, additionalPhone *string, website *string, bankAccount *string, bankName *string, bankBik *string, correspondentAccount *string) (userID uuid.UUID, err error)
+type AuthAPIRegisterIndividual func(ctx context.Context, fio string, phone string, email string, deliveryAddress string, password string, city string, inn *string) (userID uuid.UUID, err error)
 type AuthAPILogoutUser func(ctx context.Context, userID uuid.UUID) (err error)
 type AuthAPIChangePassword func(ctx context.Context, userID uuid.UUID, oldPassword string, newPassword string) (err error)
 type AuthAPIVerifyEmailCode func(ctx context.Context, userID uuid.UUID, code int64) (err error)
@@ -18,7 +19,8 @@ type AuthAPISendEmailVerification func(ctx context.Context, userID uuid.UUID) (e
 type MiddlewareAuthAPI func(next externalAPI.AuthAPI) externalAPI.AuthAPI
 
 type MiddlewareAuthAPILoginUser func(next AuthAPILoginUser) AuthAPILoginUser
-type MiddlewareAuthAPISignUpUser func(next AuthAPISignUpUser) AuthAPISignUpUser
+type MiddlewareAuthAPIRegisterIP func(next AuthAPIRegisterIP) AuthAPIRegisterIP
+type MiddlewareAuthAPIRegisterIndividual func(next AuthAPIRegisterIndividual) AuthAPIRegisterIndividual
 type MiddlewareAuthAPILogoutUser func(next AuthAPILogoutUser) AuthAPILogoutUser
 type MiddlewareAuthAPIChangePassword func(next AuthAPIChangePassword) AuthAPIChangePassword
 type MiddlewareAuthAPIVerifyEmailCode func(next AuthAPIVerifyEmailCode) AuthAPIVerifyEmailCode

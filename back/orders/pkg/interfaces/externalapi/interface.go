@@ -190,10 +190,9 @@ type OrdersAPI interface {
 	// GetCities ...
 	// @tg http-method=GET
 	// @tg http-path=/v1/orders/cities
-	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/orders/internal/transport/custom-handlers:GetCities
 	// @tg summary=`Получение списка городов `
 	// @tg desc=`Получение списка городов `
 	// @tg uuidPackage=github.com/google/uuid
-	GetCities(ctx context.Context, userID uuid.UUID) (response []models.GetCities, err error)
+	GetCities(ctx context.Context) (response []models.GetCities, err error)
 }

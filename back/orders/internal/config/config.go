@@ -33,7 +33,8 @@ func LoadConfig() Config {
 		log.Fatal().Msg("PG_DB, PG_USER and PG_PASSWORD must be specified")
 	}
 	if cfg.AccessURL == "" {
-		log.Fatal().Msg("ACCESS_URL must be specified")
+		cfg.AccessURL = "http://localhost:8080"
+		log.Warn().Msg("ACCESS_URL must be specified")
 	}
 	return cfg
 }

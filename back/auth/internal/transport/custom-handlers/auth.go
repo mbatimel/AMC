@@ -48,28 +48,69 @@ func LoginUser(ctx *fiber.Ctx, svc externalapi.AuthAPI, email string, password s
 	sendResponse(ctx, log.Logger, userID, nil)
 	return err
 }
-func SignUpUser(
+
+// derefStr returns the pointed-to string for logging, or nil if s is nil.
+func derefStr(s *string) interface{} {
+	if s == nil {
+		return nil
+	}
+	return *s
+}
+
+func RegisterIP(
 	ctx *fiber.Ctx,
 	svc externalapi.AuthAPI,
 	email string,
 	password string,
-	name string,
-	surename string,
+	fullName *string,
+	shortName *string,
+	inn *string,
+	kpp *string,
+	ogrn *string,
+	okved *string,
+	taxSystem *string,
+	legalAddress *string,
+	actualAddress *string,
+	directorFullName *string,
+	directorPosition *string,
+	phone *string,
+	additionalPhone *string,
+	website *string,
+	bankAccount *string,
+	bankName *string,
+	bankBik *string,
+	correspondentAccount *string,
 ) error {
 	var (
-		methodName = "SignUpUser"
+		methodName = "RegisterIP"
 		err        error
 	)
 
 	defer func(begin time.Time) {
 		fields := map[string]interface{}{
-			"method":     "post",
-			"path":       "/v1/auth/signup",
-			"methodName": methodName,
-			"email":      email,
-			"name":       name,
-			"surename":   surename,
-			"took":       time.Since(begin).String(),
+			"method":               "post",
+			"path":                 "/v1/auth/register/ip",
+			"methodName":           methodName,
+			"email":                email,
+			"fullName":             derefStr(fullName),
+			"shortName":            derefStr(shortName),
+			"inn":                  derefStr(inn),
+			"kpp":                  derefStr(kpp),
+			"ogrn":                 derefStr(ogrn),
+			"okved":                derefStr(okved),
+			"taxSystem":            derefStr(taxSystem),
+			"legalAddress":         derefStr(legalAddress),
+			"actualAddress":        derefStr(actualAddress),
+			"directorFullName":     derefStr(directorFullName),
+			"directorPosition":     derefStr(directorPosition),
+			"phone":                derefStr(phone),
+			"additionalPhone":      derefStr(additionalPhone),
+			"website":              derefStr(website),
+			"bankAccount":          derefStr(bankAccount),
+			"bankName":             derefStr(bankName),
+			"bankBik":              derefStr(bankBik),
+			"correspondentAccount": derefStr(correspondentAccount),
+			"took":                 time.Since(begin).String(),
 		}
 
 		l := log.Info()
@@ -84,7 +125,64 @@ func SignUpUser(
 		l.Fields(fields).Msg("call")
 	}(time.Now())
 
-	userID, err := svc.SignUpUser(ctx.UserContext(), email, password, name, surename)
+	userID, err := svc.RegisterIP(
+		ctx.UserContext(), email, password,
+		fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
+		directorFullName, directorPosition, phone, additionalPhone, website,
+		bankAccount, bankName, bankBik, correspondentAccount,
+	)
+	if err != nil {
+		sendResponse(ctx, log.Logger, nil, err)
+		return nil
+	}
+
+	sendResponse(ctx, log.Logger, userID, nil)
+	return nil
+}
+
+func RegisterIndividual(
+	ctx *fiber.Ctx,
+	svc externalapi.AuthAPI,
+	fio string,
+	phone string,
+	email string,
+	deliveryAddress string,
+	password string,
+	city string,
+	inn *string,
+) error {
+	var (
+		methodName = "RegisterIndividual"
+		err        error
+	)
+
+	defer func(begin time.Time) {
+		fields := map[string]interface{}{
+			"method":          "post",
+			"path":            "/v1/auth/register/individual",
+			"methodName":      methodName,
+			"fio":             fio,
+			"phone":           phone,
+			"email":           email,
+			"deliveryAddress": deliveryAddress,
+			"city":            city,
+			"inn":             derefStr(inn),
+			"took":            time.Since(begin).String(),
+		}
+
+		l := log.Info()
+		if err != nil {
+			if errors.Is(err, errors.ForbiddenError()) {
+				l = log.Warn().Err(err)
+			} else {
+				l = log.Error().Err(err)
+			}
+		}
+
+		l.Fields(fields).Msg("call")
+	}(time.Now())
+
+	userID, err := svc.RegisterIndividual(ctx.UserContext(), fio, phone, email, deliveryAddress, password, city, inn)
 	if err != nil {
 		sendResponse(ctx, log.Logger, nil, err)
 		return nil

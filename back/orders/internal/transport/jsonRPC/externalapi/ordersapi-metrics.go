@@ -319,7 +319,7 @@ func (m metricsOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.UU
 	return m.next.UpdateOrderStatus(ctx, orderID, status, paymentStatus, comment, changedBy)
 }
 
-func (m metricsOrdersAPI) GetCities(ctx context.Context, userID uuid.UUID) (response []models.GetCities, err error) {
+func (m metricsOrdersAPI) GetCities(ctx context.Context) (response []models.GetCities, err error) {
 
 	defer func(_begin time.Time) {
 		var (
@@ -339,5 +339,5 @@ func (m metricsOrdersAPI) GetCities(ctx context.Context, userID uuid.UUID) (resp
 		RequestLatency.WithLabelValues("ordersAPI", "getCities", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
 	}(time.Now())
 
-	return m.next.GetCities(ctx, userID)
+	return m.next.GetCities(ctx)
 }

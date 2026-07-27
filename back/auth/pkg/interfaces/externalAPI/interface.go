@@ -37,22 +37,78 @@ type AuthAPI interface {
 		password string,
 	) (userID uuid.UUID, err error)
 
-	// SignUpUser ...
+	// RegisterIP ...
 	// @tg http-method=POST
-	// @tg http-path=/v1/auth/signup
+	// @tg http-path=/v1/auth/register/ip
 	// @tg http-args=email|email
 	// @tg http-args=password|password
-	// @tg http-args=name|name
-	// @tg http-args=surename|surename
+	// @tg http-args=fullName|fullName
+	// @tg http-args=shortName|shortName
+	// @tg http-args=inn|inn
+	// @tg http-args=kpp|kpp
+	// @tg http-args=ogrn|ogrn
+	// @tg http-args=okved|okved
+	// @tg http-args=taxSystem|taxSystem
+	// @tg http-args=legalAddress|legalAddress
+	// @tg http-args=actualAddress|actualAddress
+	// @tg http-args=directorFullName|directorFullName
+	// @tg http-args=directorPosition|directorPosition
+	// @tg http-args=phone|phone
+	// @tg http-args=additionalPhone|additionalPhone
+	// @tg http-args=website|website
+	// @tg http-args=bankAccount|bankAccount
+	// @tg http-args=bankName|bankName
+	// @tg http-args=bankBik|bankBik
+	// @tg http-args=correspondentAccount|correspondentAccount
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg summary=`Регистрация пользователя`
-	// @tg desc=`Создание нового пользователя`
-	SignUpUser(
+	// @tg summary=`Регистрация ИП/организации`
+	// @tg desc=`Создание нового пользователя с реквизитами ИП/организации. Все поля кроме email и пароля необязательны.`
+	RegisterIP(
 		ctx context.Context,
 		email string,
 		password string,
-		name string,
-		surename string,
+		fullName *string,
+		shortName *string,
+		inn *string,
+		kpp *string,
+		ogrn *string,
+		okved *string,
+		taxSystem *string,
+		legalAddress *string,
+		actualAddress *string,
+		directorFullName *string,
+		directorPosition *string,
+		phone *string,
+		additionalPhone *string,
+		website *string,
+		bankAccount *string,
+		bankName *string,
+		bankBik *string,
+		correspondentAccount *string,
+	) (userID uuid.UUID, err error)
+
+	// RegisterIndividual ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/auth/register/individual
+	// @tg http-args=fio|fio
+	// @tg http-args=phone|phone
+	// @tg http-args=email|email
+	// @tg http-args=deliveryAddress|deliveryAddress
+	// @tg http-args=password|password
+	// @tg http-args=city|city
+	// @tg http-args=inn|inn
+	// @tg uuidPackage=github.com/google/uuid
+	// @tg summary=`Регистрация физического лица`
+	// @tg desc=`Создание нового пользователя-физлица. ИНН необязателен, остальные поля обязательны.`
+	RegisterIndividual(
+		ctx context.Context,
+		fio string,
+		phone string,
+		email string,
+		deliveryAddress string,
+		password string,
+		city string,
+		inn *string,
 	) (userID uuid.UUID, err error)
 
 	// LogoutUser ...

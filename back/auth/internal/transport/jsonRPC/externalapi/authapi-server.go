@@ -11,7 +11,8 @@ import (
 type serverAuthAPI struct {
 	svc                   externalAPI.AuthAPI
 	loginUser             AuthAPILoginUser
-	signUpUser            AuthAPISignUpUser
+	registerIP            AuthAPIRegisterIP
+	registerIndividual    AuthAPIRegisterIndividual
 	logoutUser            AuthAPILogoutUser
 	changePassword        AuthAPIChangePassword
 	verifyEmailCode       AuthAPIVerifyEmailCode
@@ -21,7 +22,8 @@ type serverAuthAPI struct {
 type MiddlewareSetAuthAPI interface {
 	Wrap(m MiddlewareAuthAPI)
 	WrapLoginUser(m MiddlewareAuthAPILoginUser)
-	WrapSignUpUser(m MiddlewareAuthAPISignUpUser)
+	WrapRegisterIP(m MiddlewareAuthAPIRegisterIP)
+	WrapRegisterIndividual(m MiddlewareAuthAPIRegisterIndividual)
 	WrapLogoutUser(m MiddlewareAuthAPILogoutUser)
 	WrapChangePassword(m MiddlewareAuthAPIChangePassword)
 	WrapVerifyEmailCode(m MiddlewareAuthAPIVerifyEmailCode)
@@ -36,8 +38,9 @@ func newServerAuthAPI(svc externalAPI.AuthAPI) *serverAuthAPI {
 		changePassword:        svc.ChangePassword,
 		loginUser:             svc.LoginUser,
 		logoutUser:            svc.LogoutUser,
+		registerIP:            svc.RegisterIP,
+		registerIndividual:    svc.RegisterIndividual,
 		sendEmailVerification: svc.SendEmailVerification,
-		signUpUser:            svc.SignUpUser,
 		svc:                   svc,
 		verifyEmailCode:       svc.VerifyEmailCode,
 	}
@@ -46,7 +49,8 @@ func newServerAuthAPI(svc externalAPI.AuthAPI) *serverAuthAPI {
 func (srv *serverAuthAPI) Wrap(m MiddlewareAuthAPI) {
 	srv.svc = m(srv.svc)
 	srv.loginUser = srv.svc.LoginUser
-	srv.signUpUser = srv.svc.SignUpUser
+	srv.registerIP = srv.svc.RegisterIP
+	srv.registerIndividual = srv.svc.RegisterIndividual
 	srv.logoutUser = srv.svc.LogoutUser
 	srv.changePassword = srv.svc.ChangePassword
 	srv.verifyEmailCode = srv.svc.VerifyEmailCode
@@ -57,8 +61,12 @@ func (srv *serverAuthAPI) LoginUser(ctx context.Context, email string, password 
 	return srv.loginUser(ctx, email, password)
 }
 
-func (srv *serverAuthAPI) SignUpUser(ctx context.Context, email string, password string, name string, surename string) (userID uuid.UUID, err error) {
-	return srv.signUpUser(ctx, email, password, name, surename)
+func (srv *serverAuthAPI) RegisterIP(ctx context.Context, email string, password string, fullName *string, shortName *string, inn *string, kpp *string, ogrn *string, okved *string, taxSystem *string, legalAddress *string, actualAddress *string, directorFullName *string, directorPosition *string, phone *string, additionalPhone *string, website *string, bankAccount *string, bankName *string, bankBik *string, correspondentAccount *string) (userID uuid.UUID, err error) {
+	return srv.registerIP(ctx, email, password, fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress, directorFullName, directorPosition, phone, additionalPhone, website, bankAccount, bankName, bankBik, correspondentAccount)
+}
+
+func (srv *serverAuthAPI) RegisterIndividual(ctx context.Context, fio string, phone string, email string, deliveryAddress string, password string, city string, inn *string) (userID uuid.UUID, err error) {
+	return srv.registerIndividual(ctx, fio, phone, email, deliveryAddress, password, city, inn)
 }
 
 func (srv *serverAuthAPI) LogoutUser(ctx context.Context, userID uuid.UUID) (err error) {
@@ -81,8 +89,12 @@ func (srv *serverAuthAPI) WrapLoginUser(m MiddlewareAuthAPILoginUser) {
 	srv.loginUser = m(srv.loginUser)
 }
 
-func (srv *serverAuthAPI) WrapSignUpUser(m MiddlewareAuthAPISignUpUser) {
-	srv.signUpUser = m(srv.signUpUser)
+func (srv *serverAuthAPI) WrapRegisterIP(m MiddlewareAuthAPIRegisterIP) {
+	srv.registerIP = m(srv.registerIP)
+}
+
+func (srv *serverAuthAPI) WrapRegisterIndividual(m MiddlewareAuthAPIRegisterIndividual) {
+	srv.registerIndividual = m(srv.registerIndividual)
 }
 
 func (srv *serverAuthAPI) WrapLogoutUser(m MiddlewareAuthAPILogoutUser) {

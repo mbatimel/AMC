@@ -13,6 +13,14 @@ paths:
             description: Администраторское изменение статуса заказа и оплаты
             parameters:
                 - in: query
+                  name: comment
+                  schema:
+                    type: string
+                - in: query
+                  name: changedBy
+                  schema:
+                    type: string
+                - in: query
                   name: orderID
                   schema:
                     type: string
@@ -23,14 +31,6 @@ paths:
                     type: string
                 - in: query
                   name: paymentStatus
-                  schema:
-                    type: string
-                - in: query
-                  name: comment
-                  schema:
-                    type: string
-                - in: query
-                  name: changedBy
                   schema:
                     type: string
             responses:
@@ -466,6 +466,10 @@ paths:
                     type: string
                     format: uuid
                 - in: query
+                  name: clientID
+                  schema:
+                    type: string
+                - in: query
                   name: cartItemID
                   schema:
                     type: string
@@ -474,10 +478,6 @@ paths:
                   schema:
                     type: number
                     format: int
-                - in: query
-                  name: clientID
-                  schema:
-                    type: string
             responses:
                 "200":
                     description: Successful operation
@@ -820,14 +820,6 @@ paths:
                     type: string
                     format: uuid
                 - in: query
-                  name: clientID
-                  schema:
-                    type: string
-                - in: query
-                  name: deliveryType
-                  schema:
-                    type: string
-                - in: query
                   name: deliveryAddress
                   schema:
                     type: string
@@ -845,6 +837,14 @@ paths:
                     type: string
                 - in: query
                   name: comment
+                  schema:
+                    type: string
+                - in: query
+                  name: clientID
+                  schema:
+                    type: string
+                - in: query
+                  name: deliveryType
                   schema:
                     type: string
             responses:
@@ -1391,14 +1391,14 @@ paths:
                     type: string
                     format: uuid
                 - in: query
-                  name: clientID
-                  schema:
-                    type: string
-                - in: query
                   name: orderID
                   schema:
                     type: string
                     format: uuid
+                - in: query
+                  name: clientID
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: Successful operation
@@ -1495,13 +1495,6 @@ paths:
                 - OrdersAPI
             summary: 'Получение списка городов '
             description: 'Получение списка городов '
-            parameters:
-                - in: header
-                  name: X-User-Id
-                  required: true
-                  schema:
-                    type: string
-                    format: uuid
             responses:
                 "200":
                     description: Successful operation
