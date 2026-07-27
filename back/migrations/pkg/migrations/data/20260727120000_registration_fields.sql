@@ -20,8 +20,15 @@ ALTER TABLE users
     ADD COLUMN IF NOT EXISTS city VARCHAR(255),
     ADD COLUMN IF NOT EXISTS delivery_address TEXT;
 
-ALTER TABLE users
-    ADD CONSTRAINT fk_users_counterparty_id FOREIGN KEY (counterparty_id) REFERENCES counterparties(id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'fk_users_counterparty_id'
+    ) THEN
+        ALTER TABLE users
+            ADD CONSTRAINT fk_users_counterparty_id FOREIGN KEY (counterparty_id) REFERENCES counterparties(id);
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_users_counterparty_id ON users(counterparty_id);
 -- +goose StatementEnd
