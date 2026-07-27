@@ -1,4 +1,5 @@
 export type {
+  HeaderAccountLink,
   HeaderMobileMenuProps,
   HeaderMobileViewProps,
   HeaderViewProps,

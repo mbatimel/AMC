@@ -1,18 +1,24 @@
 import clsx from 'clsx';
 
-import { IconCart, IconMenu, IconOrders, IconUser } from '@/core/shared/icons';
+import { IconCart, IconLogin, IconMenu, IconOrders, IconUser } from '@/core/shared/icons';
 
 import type { HeaderMobileViewProps } from '../../model/types';
 
-import { HEADER_ACCOUNT_HREF, HEADER_CART_HREF, HEADER_ORDERS_HREF } from '../../constants';
+import { HEADER_CART_HREF, HEADER_ORDERS_HREF } from '../../constants';
 import rootStyles from '../../Header.module.css';
 import { HeaderLogo } from '../shared/HeaderLogo';
 import { HeaderSearchForm } from '../shared/HeaderSearchForm';
 import styles from './HeaderMobile.module.css';
 import { HeaderMobileMenu } from './HeaderMobileMenu';
 
-export const HeaderMobile = ({ mobileMenu, nav, search }: HeaderMobileViewProps): JSX.Element => {
+export const HeaderMobile = ({
+  account,
+  mobileMenu,
+  nav,
+  search,
+}: HeaderMobileViewProps): JSX.Element => {
   const { closeMenu, drawerId, drawerRef, isOpen, menuTriggerRef, openMenu } = mobileMenu;
+  const AccountIcon = account.isAuthenticated ? IconUser : IconLogin;
 
   return (
     <>
@@ -41,8 +47,8 @@ export const HeaderMobile = ({ mobileMenu, nav, search }: HeaderMobileViewProps)
             >
               <IconCart height={18} width={18} />
             </a>
-            <a aria-label="Кабинет" className={clsx(styles.iconButton)} href={HEADER_ACCOUNT_HREF}>
-              <IconUser height={18} width={18} />
+            <a aria-label={account.label} className={clsx(styles.iconButton)} href={account.href}>
+              <AccountIcon height={18} width={18} />
             </a>
             <a aria-label="Мои заказы" className={clsx(styles.iconButton)} href={HEADER_ORDERS_HREF}>
               <IconOrders height={18} width={18} />
@@ -56,6 +62,7 @@ export const HeaderMobile = ({ mobileMenu, nav, search }: HeaderMobileViewProps)
       </div>
 
       <HeaderMobileMenu
+        account={account}
         closeMenu={closeMenu}
         drawerId={drawerId}
         drawerRef={drawerRef}

@@ -1,7 +1,8 @@
 import clsx from 'clsx';
 
-import { IconClose } from '@/core/shared/icons';
+import { IconClose, IconLogin, IconUser } from '@/core/shared/icons';
 
+import type { HeaderMenuItem } from '../../constants';
 import type { HeaderMobileMenuProps } from '../../model/types';
 
 import { HeaderLogo } from '../shared/HeaderLogo';
@@ -10,6 +11,7 @@ import { HeaderSearchForm } from '../shared/HeaderSearchForm';
 import styles from './HeaderMobile.module.css';
 
 export const HeaderMobileMenu = ({
+  account,
   closeMenu,
   drawerId,
   drawerRef,
@@ -23,6 +25,12 @@ export const HeaderMobileMenu = ({
 
   const onNavigate = (): void => {
     closeMenu();
+  };
+
+  const accountItem: HeaderMenuItem = {
+    href: account.href,
+    icon: account.isAuthenticated ? IconUser : IconLogin,
+    label: account.label,
   };
 
   return (
@@ -78,18 +86,26 @@ export const HeaderMobileMenu = ({
 
         <section className={clsx(styles.drawerSection)}>
           <div className={clsx(styles.drawerSectionTitle)}>
-            <span>Кабинет</span>
+            <span>{account.isAuthenticated ? 'Кабинет' : 'Аккаунт'}</span>
           </div>
           <div className={clsx(styles.drawerLinks)}>
-            {nav.cabinetItems.map((item) => (
-              <HeaderMenuLink
-                getIsActive={nav.getIsActive}
-                item={item}
-                key={item.label}
-                onNavigate={onNavigate}
-                variant="drawer"
-              />
-            ))}
+            <HeaderMenuLink
+              getIsActive={nav.getIsActive}
+              item={accountItem}
+              onNavigate={onNavigate}
+              variant="drawer"
+            />
+            {account.isAuthenticated
+              ? nav.cabinetItems.map((item) => (
+                  <HeaderMenuLink
+                    getIsActive={nav.getIsActive}
+                    item={item}
+                    key={item.label}
+                    onNavigate={onNavigate}
+                    variant="drawer"
+                  />
+                ))
+              : null}
           </div>
         </section>
       </aside>

@@ -8,16 +8,16 @@ import { HeaderDesktop } from './ui/desktop/HeaderDesktop';
 import { HeaderMobile } from './ui/mobile/HeaderMobile';
 
 export const Header = (): JSX.Element => {
-  const { mobileMenu, nav, search } = useHeader();
+  const { account, mobileMenu, nav, search } = useHeader();
 
   return (
     <header className={clsx(styles.root)}>
       <div className={clsx(styles.desktop)}>
-        <HeaderDesktop nav={nav} search={search} />
+        <HeaderDesktop account={account} nav={nav} search={search} />
       </div>
 
       <div className={clsx(styles.mobile)}>
-        <HeaderMobile mobileMenu={mobileMenu} nav={nav} search={search} />
+        <HeaderMobile account={account} mobileMenu={mobileMenu} nav={nav} search={search} />
       </div>
     </header>
   );

@@ -37,7 +37,13 @@ export const HEADER_SEARCH_PLACEHOLDER = 'Поиск по артикулу, на
 
 export const HEADER_MOBILE_SEARCH_PLACEHOLDER = 'Поиск товара...';
 
-export const HEADER_ACCOUNT_HREF = '#';
+export const HEADER_ACCOUNT_HREF = AppPath.Cabinet;
+
+export const HEADER_AUTH_HREF = AppPath.Login;
+
+export const HEADER_ACCOUNT_LABEL = 'Кабинет';
+
+export const HEADER_AUTH_LABEL = 'Авторизация';
 
 export const HEADER_CART_HREF = '#';
 

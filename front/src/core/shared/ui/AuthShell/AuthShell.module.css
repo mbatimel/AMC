@@ -1,0 +1,63 @@
+.root {
+  --accent: var(--header-brand);
+  --accent-foreground: var(--palette-white);
+  --field-border: var(--border);
+  --field-border-width: 1px;
+  --field-radius: 6px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-block-size: 100dvh;
+  padding: 32px 16px;
+  background: var(--auth-bg);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  inline-size: 100%;
+  max-inline-size: var(--auth-max-width);
+  gap: 24px;
+}
+
+.innerWide {
+  max-inline-size: var(--auth-max-width-wide);
+}
+
+.logoLink {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.logoImage {
+  block-size: 40px;
+  inline-size: auto;
+  max-inline-size: 100%;
+}
+
+.card {
+  box-sizing: border-box;
+  inline-size: 100%;
+  padding: 40px;
+  border-radius: var(--auth-card-radius);
+  background: var(--palette-white);
+  box-shadow: var(--auth-card-shadow);
+
+  @mixin mobileOnly {
+    padding: 24px 20px;
+  }
+}
+
+.backLink {
+  color: var(--palette-dark);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--header-brand);
+}
