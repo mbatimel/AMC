@@ -3,14 +3,16 @@ package models
 import "time"
 
 type Cart struct {
-	ID        string     `json:"id"`
-	UserID    string     `json:"user_id"`
-	ClientID  string     `json:"client_id"`
-	Items     []CartItem `json:"items"`
-	Total     float64    `json:"total"`
-	VAT       float64    `json:"vat"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	ID            string     `json:"id"`
+	UserID        string     `json:"user_id"`
+	ClientID      string     `json:"client_id"`
+	Items         []CartItem `json:"items"`
+	Subtotal      float64    `json:"subtotal"`
+	DiscountTotal float64    `json:"discount_total"`
+	Total         float64    `json:"total"`
+	VAT           float64    `json:"vat"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
 }
 
 type CartItem struct {
@@ -33,6 +35,8 @@ type Order struct {
 	UserID          string             `json:"user_id"`
 	ClientID        string             `json:"client_id"`
 	Items           []OrderItem        `json:"items"`
+	Subtotal        float64            `json:"subtotal"`
+	DiscountTotal   float64            `json:"discount_total"`
 	Total           float64            `json:"total"`
 	VAT             float64            `json:"vat"`
 	DeliveryType    string             `json:"delivery_type"`
