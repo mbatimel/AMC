@@ -560,6 +560,6 @@ func (s *service) GetOrderHistory(ctx context.Context, orderID uuid.UUID, userID
 	return response, customErrors.NotImplementedError()
 }
 
-func (s *service) UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
+func (s *service) UpdateOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
 	return response, customErrors.NotImplementedError()
 }

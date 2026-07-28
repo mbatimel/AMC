@@ -21,7 +21,7 @@ type OrdersAPICancelOrder func(ctx context.Context, orderID uuid.UUID, userID uu
 type OrdersAPIRepeatOrder func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, clientID string) (response models.RepeatOrderResponse, err error)
 type OrdersAPIGetOrderDocuments func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderDocumentsResponse, err error)
 type OrdersAPIGetOrderHistory func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderHistoryResponse, err error)
-type OrdersAPIUpdateOrderStatus func(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error)
+type OrdersAPIUpdateOrderStatus func(ctx context.Context, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error)
 type OrdersAPIGetCities func(ctx context.Context) (response []models.GetCities, err error)
 
 type MiddlewareOrdersAPI func(next externalapi.OrdersAPI) externalapi.OrdersAPI

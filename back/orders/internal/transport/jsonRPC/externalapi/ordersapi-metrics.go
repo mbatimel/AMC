@@ -296,7 +296,7 @@ func (m metricsOrdersAPI) GetOrderHistory(ctx context.Context, orderID uuid.UUID
 	return m.next.GetOrderHistory(ctx, orderID, userID)
 }
 
-func (m metricsOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
+func (m metricsOrdersAPI) UpdateOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
 
 	defer func(_begin time.Time) {
 		var (
@@ -316,7 +316,7 @@ func (m metricsOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.UU
 		RequestLatency.WithLabelValues("ordersAPI", "updateOrderStatus", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
 	}(time.Now())
 
-	return m.next.UpdateOrderStatus(ctx, orderID, status, paymentStatus, comment, changedBy)
+	return m.next.UpdateOrderStatus(ctx, userID, orderID, status, paymentStatus, comment, changedBy)
 }
 
 func (m metricsOrdersAPI) GetCities(ctx context.Context) (response []models.GetCities, err error) {
