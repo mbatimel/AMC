@@ -7,6 +7,7 @@ import (
 var (
 	AccessDeniedError     = func() *Error { return New("access denied", fasthttp.StatusForbidden, ErrAccessDenied) }
 	ForbiddenError        = func() *Error { return New("forbidden", fasthttp.StatusForbidden, ErrForbidden) }
+	BadRequestError       = func() *Error { return New("bad request", fasthttp.StatusBadRequest, ErrBadRequest) }
 	MethodNotAllowedError = func() *Error { return New("method not allowed", fasthttp.StatusBadRequest, ErrMethodNotAllowed) }
 	InternalServerError   = func() *Error {
 		return New("internal server error", fasthttp.StatusInternalServerError, ErrInternal)

@@ -134,6 +134,7 @@ type responseOrdersAPIGetOrderHistory struct {
 }
 
 type requestOrdersAPIUpdateOrderStatus struct {
+	UserID        uuid.UUID `json:"userID,omitempty"`
 	OrderID       uuid.UUID `json:"orderID,omitempty"`
 	Status        string    `json:"status,omitempty"`
 	PaymentStatus string    `json:"paymentStatus,omitempty"`

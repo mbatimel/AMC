@@ -134,8 +134,8 @@ func (srv *serverOrdersAPI) GetOrderHistory(ctx context.Context, orderID uuid.UU
 	return srv.getOrderHistory(ctx, orderID, userID)
 }
 
-func (srv *serverOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
-	return srv.updateOrderStatus(ctx, orderID, status, paymentStatus, comment, changedBy)
+func (srv *serverOrdersAPI) UpdateOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
+	return srv.updateOrderStatus(ctx, userID, orderID, status, paymentStatus, comment, changedBy)
 }
 
 func (srv *serverOrdersAPI) GetCities(ctx context.Context) (response []models.GetCities, err error) {

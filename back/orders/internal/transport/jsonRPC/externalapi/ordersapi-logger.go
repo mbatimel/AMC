@@ -318,7 +318,7 @@ func (m loggerOrdersAPI) GetOrderHistory(ctx context.Context, orderID uuid.UUID,
 	return m.next.GetOrderHistory(ctx, orderID, userID)
 }
 
-func (m loggerOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
+func (m loggerOrdersAPI) UpdateOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "OrdersAPI").Str("method", "updateOrderStatus").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
@@ -330,6 +330,7 @@ func (m loggerOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.UUI
 					OrderID:       orderID,
 					PaymentStatus: paymentStatus,
 					Status:        status,
+					UserID:        userID,
 				}),
 				"response": viewer.Sprintf("%+v", responseOrdersAPIUpdateOrderStatus{Response: response}),
 			}
@@ -341,7 +342,7 @@ func (m loggerOrdersAPI) UpdateOrderStatus(ctx context.Context, orderID uuid.UUI
 		}
 		logger.Info().Func(logHandle).Msg("call updateOrderStatus")
 	}(time.Now())
-	return m.next.UpdateOrderStatus(ctx, orderID, status, paymentStatus, comment, changedBy)
+	return m.next.UpdateOrderStatus(ctx, userID, orderID, status, paymentStatus, comment, changedBy)
 }
 
 func (m loggerOrdersAPI) GetCities(ctx context.Context) (response []models.GetCities, err error) {

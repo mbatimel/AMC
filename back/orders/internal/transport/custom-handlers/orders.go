@@ -144,7 +144,7 @@ func GetOrderHistory(ctx *fiber.Ctx, svc externalapi.OrdersAPI, orderID uuid.UUI
 	})
 }
 
-func UpdateOrderStatus(ctx *fiber.Ctx, svc externalapi.OrdersAPI, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) error {
+func UpdateOrderStatus(ctx *fiber.Ctx, svc externalapi.OrdersAPI,userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) error {
 	return handle(ctx, "patch", "/v1/admin/orders/{orderID}/status", "UpdateOrderStatus", map[string]interface{}{
 		"orderID":       orderID,
 		"status":        status,
@@ -152,7 +152,7 @@ func UpdateOrderStatus(ctx *fiber.Ctx, svc externalapi.OrdersAPI, orderID uuid.U
 		"comment":       comment,
 		"changedBy":     changedBy,
 	}, func() (interface{}, error) {
-		return svc.UpdateOrderStatus(ctx.UserContext(), orderID, status, paymentStatus, comment, changedBy)
+		return svc.UpdateOrderStatus(ctx.UserContext(),userID, orderID, status, paymentStatus, comment, changedBy)
 	})
 }
 

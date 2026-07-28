@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -15,6 +16,26 @@ import (
 // Storage is implemented by internal/storage/postgres.Storage.
 type Storage interface {
 	GetCities(ctx context.Context) ([]postgres.City, error)
+
+	GetUserCounterpartyID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
+	GetCounterpartyPriceGroupID(ctx context.Context, counterpartyID uuid.UUID) (uuid.NullUUID, error)
+	InsertDeliveryAddress(ctx context.Context, counterpartyID uuid.UUID, addrType string, address string) (uuid.UUID, error)
+	InsertContact(ctx context.Context, counterpartyID uuid.UUID, fullName string, phone string, email string) (uuid.UUID, error)
+
+	GetOrCreateCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (uuid.UUID, error)
+	GetCartItems(ctx context.Context, cartID uuid.UUID) ([]postgres.CartItemRow, error)
+	ResolveProductPrice(ctx context.Context, productID uuid.UUID, priceGroupID uuid.NullUUID) (float64, error)
+	UpsertCartItem(ctx context.Context, cartID uuid.UUID, productID uuid.UUID, qty int, price float64) error
+	SetCartItemQuantity(ctx context.Context, cartItemID uuid.UUID, cartID uuid.UUID, qty int) error
+	DeleteCartItem(ctx context.Context, cartItemID uuid.UUID, cartID uuid.UUID) error
+	ClearCartItems(ctx context.Context, cartID uuid.UUID) error
+
+	GetVolumeDiscountPercent(ctx context.Context, counterpartyID uuid.UUID, priceGroupID uuid.NullUUID, subtotal float64) (float64, error)
+
+	CreateOrder(ctx context.Context, params postgres.CreateOrderParams) (postgres.CreatedOrder, error)
+	ListOrders(ctx context.Context, params postgres.ListOrdersParams) ([]postgres.OrderRow, int, error)
+	GetOrderItems(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderItemRow, error)
+	GetOrderDocumentsByOrderID(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderDocumentRow, error)
 }
 
 // AccessClient is implemented by internal/access.Client.
@@ -26,19 +47,104 @@ type service struct {
 	logger       zerolog.Logger
 	storage      Storage
 	accessClient AccessClient
+	vatRate      float64
 }
 
-func NewOrdersApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient) externalapi.OrdersAPI {
+func NewOrdersApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient, vatRate float64) externalapi.OrdersAPI {
 	return &service{
 		logger:       logger,
 		storage:      storage,
 		accessClient: accessClient,
+		vatRate:      vatRate,
 	}
+}
+
+func (s *service) checkBuyerAccess(ctx context.Context, userID uuid.UUID) error {
+	allowed, err := s.accessClient.CheckAccess(ctx, userID, RoleCodeBuyer)
+	if err != nil {
+		return customErrors.InternalServerError().SetOuterError(err)
+	}
+	if !allowed {
+		return customErrors.ForbiddenError()
+	}
+	return nil
+}
+
+func (s *service) resolveCounterpartyID(ctx context.Context, userID uuid.UUID, clientID string) (uuid.UUID, error) {
+	if clientID != "" {
+		id, err := uuid.Parse(clientID)
+		if err != nil {
+			return uuid.Nil, customErrors.BadRequestError().SetOuterError(err).AddCause("field", "clientID")
+		}
+		return id, nil
+	}
+
+	id, err := s.storage.GetUserCounterpartyID(ctx, userID)
+	if err != nil {
+		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
+	}
+	if id == uuid.Nil {
+		return uuid.Nil, customErrors.BadRequestError().AddCause("field", "clientID")
+	}
+	return id, nil
+}
+
+func (s *service) buildCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (models.Cart, error) {
+	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
+	if err != nil {
+		return models.Cart{}, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	rows, err := s.storage.GetCartItems(ctx, cartID)
+	if err != nil {
+		return models.Cart{}, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	priceGroupID, err := s.storage.GetCounterpartyPriceGroupID(ctx, counterpartyID)
+	if err != nil {
+		return models.Cart{}, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	calcItems := make([]CartCalcItem, 0, len(rows))
+	items := make([]models.CartItem, 0, len(rows))
+	for _, row := range rows {
+		lineTotal := round2(float64(row.Qty) * row.Price)
+		calcItems = append(calcItems, CartCalcItem{Qty: row.Qty, Price: row.Price})
+		items = append(items, models.CartItem{
+			ID:          row.ID.String(),
+			CartID:      cartID.String(),
+			ProductID:   row.ProductID.String(),
+			SKU:         row.SKU,
+			ProductName: row.ProductName,
+			Qty:         row.Qty,
+			Price:       row.Price,
+			Total:       lineTotal,
+		})
+	}
+
+	subtotal := sumLineTotals(calcItems)
+
+	discountPercent, err := s.storage.GetVolumeDiscountPercent(ctx, counterpartyID, priceGroupID, subtotal)
+	if err != nil {
+		return models.Cart{}, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	totals := calcCartTotals(subtotal, discountPercent, s.vatRate)
+
+	return models.Cart{
+		ID:            cartID.String(),
+		UserID:        userID.String(),
+		ClientID:      counterpartyID.String(),
+		Items:         items,
+		Subtotal:      totals.Subtotal,
+		DiscountTotal: totals.DiscountTotal,
+		VAT:           totals.VATTotal,
+		Total:         totals.Total,
+	}, nil
 }
 
 // GetCities returns all cities from the cities table. Only buyers may call it.
 func (s *service) GetCities(ctx context.Context) (response []models.GetCities, err error) {
-	
 	cities, err := s.storage.GetCities(ctx)
 	if err != nil {
 		return nil, customErrors.InternalServerError().SetOuterError(err)
@@ -56,27 +162,295 @@ func (s *service) GetCities(ctx context.Context) (response []models.GetCities, e
 }
 
 func (s *service) GetCart(ctx context.Context, userID uuid.UUID, clientID string) (response models.GetCartResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, clientID)
+	if err != nil {
+		return response, err
+	}
+
+	cart, err := s.buildCart(ctx, userID, counterpartyID)
+	if err != nil {
+		return response, err
+	}
+
+	return models.GetCartResponse{Cart: cart}, nil
 }
 
 func (s *service) AddCartItem(ctx context.Context, userID uuid.UUID, clientID string, productID string, qty int) (response models.AddCartItemResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+	if qty <= 0 {
+		return response, customErrors.BadRequestError().AddCause("field", "qty")
+	}
+
+	productUUID, err := uuid.Parse(productID)
+	if err != nil {
+		return response, customErrors.BadRequestError().SetOuterError(err).AddCause("field", "productID")
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, clientID)
+	if err != nil {
+		return response, err
+	}
+
+	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	priceGroupID, err := s.storage.GetCounterpartyPriceGroupID(ctx, counterpartyID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	price, err := s.storage.ResolveProductPrice(ctx, productUUID, priceGroupID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrProductPriceNotFound) {
+			return response, customErrors.NotFoundError().AddCause("field", "productID")
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	if err = s.storage.UpsertCartItem(ctx, cartID, productUUID, qty, price); err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	cart, err := s.buildCart(ctx, userID, counterpartyID)
+	if err != nil {
+		return response, err
+	}
+
+	return models.AddCartItemResponse{Cart: cart}, nil
 }
 
 func (s *service) UpdateCartItem(ctx context.Context, userID uuid.UUID, clientID string, cartItemID string, qty int) (response models.UpdateCartItemResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+	if qty <= 0 {
+		return response, customErrors.BadRequestError().AddCause("field", "qty")
+	}
+
+	itemUUID, err := uuid.Parse(cartItemID)
+	if err != nil {
+		return response, customErrors.BadRequestError().SetOuterError(err).AddCause("field", "cartItemID")
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, clientID)
+	if err != nil {
+		return response, err
+	}
+
+	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	if err = s.storage.SetCartItemQuantity(ctx, itemUUID, cartID, qty); err != nil {
+		if errors.Is(err, postgres.ErrCartItemNotFound) {
+			return response, customErrors.NotFoundError().AddCause("field", "cartItemID")
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	cart, err := s.buildCart(ctx, userID, counterpartyID)
+	if err != nil {
+		return response, err
+	}
+
+	return models.UpdateCartItemResponse{Cart: cart}, nil
 }
 
 func (s *service) DeleteCartItem(ctx context.Context, userID uuid.UUID, clientID string, cartItemID string) (response models.DeleteCartItemResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+
+	itemUUID, err := uuid.Parse(cartItemID)
+	if err != nil {
+		return response, customErrors.BadRequestError().SetOuterError(err).AddCause("field", "cartItemID")
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, clientID)
+	if err != nil {
+		return response, err
+	}
+
+	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	if err = s.storage.DeleteCartItem(ctx, itemUUID, cartID); err != nil {
+		if errors.Is(err, postgres.ErrCartItemNotFound) {
+			return response, customErrors.NotFoundError().AddCause("field", "cartItemID")
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	cart, err := s.buildCart(ctx, userID, counterpartyID)
+	if err != nil {
+		return response, err
+	}
+
+	return models.DeleteCartItemResponse{Deleted: true, Cart: cart}, nil
 }
 
 func (s *service) ClearCart(ctx context.Context, userID uuid.UUID, clientID string) (response models.ClearCartResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, clientID)
+	if err != nil {
+		return response, err
+	}
+
+	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	if err = s.storage.ClearCartItems(ctx, cartID); err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	cart, err := s.buildCart(ctx, userID, counterpartyID)
+	if err != nil {
+		return response, err
+	}
+
+	return models.ClearCartResponse{Cleared: true, Cart: cart}, nil
 }
 
 func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID string, deliveryType string, deliveryAddress string, contactName string, phone string, email string, comment string) (response models.CreateOrderResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+	if deliveryType == "" {
+		return response, customErrors.BadRequestError().AddCause("field", "deliveryType")
+	}
+	if deliveryAddress == "" {
+		return response, customErrors.BadRequestError().AddCause("field", "deliveryAddress")
+	}
+	if contactName == "" {
+		return response, customErrors.BadRequestError().AddCause("field", "contactName")
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, clientID)
+	if err != nil {
+		return response, err
+	}
+
+	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	cartRows, err := s.storage.GetCartItems(ctx, cartID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+	if len(cartRows) == 0 {
+		return response, customErrors.BadRequestError().AddCause("field", "cart")
+	}
+
+	priceGroupID, err := s.storage.GetCounterpartyPriceGroupID(ctx, counterpartyID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	calcItems := make([]CartCalcItem, 0, len(cartRows))
+	for _, row := range cartRows {
+		calcItems = append(calcItems, CartCalcItem{Qty: row.Qty, Price: row.Price})
+	}
+	subtotal := sumLineTotals(calcItems)
+
+	discountPercent, err := s.storage.GetVolumeDiscountPercent(ctx, counterpartyID, priceGroupID, subtotal)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	totals := calcCartTotals(subtotal, discountPercent, s.vatRate)
+
+	addressID, err := s.storage.InsertDeliveryAddress(ctx, counterpartyID, deliveryType, deliveryAddress)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	contactID, err := s.storage.InsertContact(ctx, counterpartyID, contactName, phone, email)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	orderItems := make([]postgres.OrderItemInput, 0, len(cartRows))
+	responseItems := make([]models.OrderItem, 0, len(cartRows))
+	for _, row := range cartRows {
+		lineTotal := round2(float64(row.Qty) * row.Price)
+		orderItems = append(orderItems, postgres.OrderItemInput{
+			ProductID:       row.ProductID,
+			SKU:             row.SKU,
+			Name:            row.ProductName,
+			Quantity:        row.Qty,
+			UnitPrice:       row.Price,
+			DiscountPercent: discountPercent,
+			VATRate:         s.vatRate,
+			LineTotal:       lineTotal,
+		})
+		responseItems = append(responseItems, models.OrderItem{
+			ProductID:   row.ProductID.String(),
+			SKU:         row.SKU,
+			ProductName: row.ProductName,
+			Qty:         row.Qty,
+			Price:       row.Price,
+			Total:       lineTotal,
+		})
+	}
+
+	created, err := s.storage.CreateOrder(ctx, postgres.CreateOrderParams{
+		UserID:            userID,
+		CounterpartyID:    counterpartyID,
+		CartID:            cartID,
+		DeliveryMethod:    deliveryType,
+		DeliveryAddressID: addressID,
+		ContactID:         contactID,
+		Comment:           comment,
+		Subtotal:          totals.Subtotal,
+		DiscountTotal:     totals.DiscountTotal,
+		VATTotal:          totals.VATTotal,
+		Total:             totals.Total,
+		Items:             orderItems,
+	})
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	order := models.Order{
+		ID:              created.ID.String(),
+		Number:          created.Number,
+		UserID:          userID.String(),
+		ClientID:        counterpartyID.String(),
+		Items:           responseItems,
+		Subtotal:        totals.Subtotal,
+		DiscountTotal:   totals.DiscountTotal,
+		Total:           totals.Total,
+		VAT:             totals.VATTotal,
+		DeliveryType:    deliveryType,
+		DeliveryAddress: deliveryAddress,
+		ContactName:     contactName,
+		Phone:           phone,
+		Email:           email,
+		Comment:         comment,
+		Status:          "new",
+		PaymentStatus:   "not_paid",
+		CreatedAt:       created.CreatedAt,
+	}
+
+	return models.CreateOrderResponse{Order: order}, nil
 }
 
 func (s *service) GetOrder(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, clientID string) (response models.GetOrderResponse, err error) {
@@ -84,7 +458,90 @@ func (s *service) GetOrder(ctx context.Context, orderID uuid.UUID, userID uuid.U
 }
 
 func (s *service) ListOrders(ctx context.Context, userID uuid.UUID, clientID string, status string, paymentStatus string, limit int, offset int, sort string) (response models.ListOrdersResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, clientID)
+	if err != nil {
+		return response, err
+	}
+
+	rows, total, err := s.storage.ListOrders(ctx, postgres.ListOrdersParams{
+		CounterpartyID: counterpartyID,
+		Status:         status,
+		PaymentStatus:  paymentStatus,
+		Limit:          limit,
+		Offset:         offset,
+		Sort:           sort,
+	})
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	orders := make([]models.Order, 0, len(rows))
+	for _, row := range rows {
+		itemRows, itemsErr := s.storage.GetOrderItems(ctx, row.ID)
+		if itemsErr != nil {
+			return response, customErrors.InternalServerError().SetOuterError(itemsErr)
+		}
+
+		docRows, docsErr := s.storage.GetOrderDocumentsByOrderID(ctx, row.ID)
+		if docsErr != nil {
+			return response, customErrors.InternalServerError().SetOuterError(docsErr)
+		}
+
+		items := make([]models.OrderItem, 0, len(itemRows))
+		for _, item := range itemRows {
+			items = append(items, models.OrderItem{
+				ID:          item.ID.String(),
+				OrderID:     row.ID.String(),
+				ProductID:   item.ProductID.String(),
+				SKU:         item.SKU,
+				ProductName: item.Name,
+				Qty:         item.Quantity,
+				Price:       item.UnitPrice,
+				Total:       item.LineTotal,
+			})
+		}
+
+		docs := make([]models.OrderDocument, 0, len(docRows))
+		for _, doc := range docRows {
+			docs = append(docs, models.OrderDocument{
+				ID:        doc.ID.String(),
+				OrderID:   row.ID.String(),
+				Type:      doc.Type,
+				Name:      doc.Number,
+				URL:       doc.URL,
+				CreatedAt: doc.CreatedAt,
+			})
+		}
+
+		orders = append(orders, models.Order{
+			ID:            row.ID.String(),
+			Number:        row.Number,
+			ClientID:      counterpartyID.String(),
+			Items:         items,
+			Subtotal:      row.Subtotal,
+			DiscountTotal: row.DiscountTotal,
+			Total:         row.Total,
+			VAT:           row.VATTotal,
+			DeliveryType:  row.DeliveryMethod,
+			Status:        row.Status,
+			PaymentStatus: row.PaymentStatus,
+			Documents:     docs,
+			CreatedAt:     row.CreatedAt,
+		})
+	}
+
+	return models.ListOrdersResponse{
+		Items: orders,
+		Pagination: models.Pagination{
+			Limit:  limit,
+			Offset: offset,
+			Total:  total,
+		},
+	}, nil
 }
 
 func (s *service) CancelOrder(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, comment string) (response models.CancelOrderResponse, err error) {
@@ -103,6 +560,6 @@ func (s *service) GetOrderHistory(ctx context.Context, orderID uuid.UUID, userID
 	return response, customErrors.NotImplementedError()
 }
 
-func (s *service) UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
+func (s *service) UpdateOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
 	return response, customErrors.NotImplementedError()
 }

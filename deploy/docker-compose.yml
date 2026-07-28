@@ -66,7 +66,8 @@ services:
       PG_DB: ${PG_DB}
       PG_USER: ${PG_USER}
       PG_PASSWORD: ${PG_PASSWORD}
-      ACCESS_INTERNAL_ADDRESS: ":8082"
+      ACCESS_URL: "http://access:8080"
+      NDS_VALUE: ${NDS_VALUE}
     depends_on:
       migrations:
         condition: service_completed_successfully

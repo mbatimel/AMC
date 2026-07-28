@@ -3,6 +3,7 @@ package config
 import (
 	"bufio"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -16,6 +17,7 @@ type Config struct {
 	PGPassword string
 	BindAddr   string
 	AccessURL  string
+	VATRate    float64
 }
 
 func LoadConfig() Config {
@@ -36,6 +38,14 @@ func LoadConfig() Config {
 		cfg.AccessURL = "http://localhost:8080"
 		log.Warn().Msg("ACCESS_URL must be specified")
 	}
+
+	vatRateStr := GetEnv("NDS_VALUE", "22")
+	vatRate, err := strconv.ParseFloat(vatRateStr, 64)
+	if err != nil {
+		log.Fatal().Err(err).Str("NDS_VALUE", vatRateStr).Msg("invalid NDS_VALUE")
+	}
+	cfg.VATRate = vatRate
+
 	return cfg
 }
 

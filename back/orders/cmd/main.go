@@ -36,7 +36,7 @@ func main() {
 
 	postgresStorage := postgres.New(pool)
 	access := accessTransport.NewClientAccessAPI(cfg.AccessURL)
-	svc := ordersService.NewOrdersApiService(log.Logger, postgresStorage, access)
+	svc := ordersService.NewOrdersApiService(log.Logger, postgresStorage, access, cfg.VATRate)
 
 	app := externalapi.New(log.Logger, externalapi.OrdersAPI(externalapi.NewOrdersAPI(svc))).WithLog().WithMetrics()
 	server := &fasthttp.Server{

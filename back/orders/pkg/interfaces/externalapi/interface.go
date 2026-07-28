@@ -176,6 +176,7 @@ type OrdersAPI interface {
 	// UpdateOrderStatus updates order and payment statuses.
 	// @tg http-method=PATCH
 	// @tg http-path=/v1/admin/orders/{orderID}/status
+	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=orderID|orderID
 	// @tg http-args=status|status
 	// @tg http-args=paymentStatus|paymentStatus
@@ -185,7 +186,7 @@ type OrdersAPI interface {
 	// @tg summary=`Обновление статуса заказа`
 	// @tg desc=`Администраторское изменение статуса заказа и оплаты`
 	// @tg uuidPackage=github.com/google/uuid
-	UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error)
+	UpdateOrderStatus(ctx context.Context,userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error)
 
 	// GetCities ...
 	// @tg http-method=GET
