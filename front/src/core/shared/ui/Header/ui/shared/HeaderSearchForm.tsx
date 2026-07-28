@@ -32,7 +32,9 @@ export const HeaderSearchForm = ({ search, variant }: HeaderSearchFormProps): JS
 
   return (
     <form className={formClassName} onSubmit={search.onSearchSubmit} role="search">
-      {variant === 'drawer' && <IconSearch className={clsx(mobileStyles.searchDrawerIcon)} height={16} width={16} />}
+      {variant === 'drawer' && (
+        <IconSearch className={clsx(mobileStyles.searchDrawerIcon)} height={16} width={16} />
+      )}
       <input
         className={clsx(styles.searchInput)}
         name="query"

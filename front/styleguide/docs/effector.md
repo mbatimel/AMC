@@ -2,8 +2,10 @@
 
 ## Именование
 
-**Stores** 
+**Stores**
+
 - префикс `$`:
+
   ```typescript
   export const $theme = createStore<Theme>({});
   export const $user = createStore<User | null>(null);
@@ -12,31 +14,32 @@
 
 - избегаем обобщенных названий:
   ```typescript
-  export const $store = createStore<Settings>({});    // 🚫
+  export const $store = createStore<Settings>({}); // 🚫
   export const $settings = createStore<Settings>({}); // ✅
   ```
 
-
-**Events** 
+**Events**
 
 - стараемся именовать в прошедшем времени, чтобы имя отражало "что произошло", также избегаем сеттеров (`set<name>`)
+
   ```typescript
-  export const setShiftR = createEvent<boolean>();     // 🚫
+  export const setShiftR = createEvent<boolean>(); // 🚫
   export const shiftRUpdated = createEvent<boolean>(); // ✅
-  
-  export const toggleShiftR = createEvent<boolean>();        // 🚫
-  export const shiftRToggled = createEvent<boolean>();       // ✅
+
+  export const toggleShiftR = createEvent<boolean>(); // 🚫
+  export const shiftRToggled = createEvent<boolean>(); // ✅
   // если событие вызывается в ui слое - не зазорно это упомянуть
   export const shiftRButtonClicked = createEvent<boolean>(); // ✅
   ```
 
 - желательно чтобы имя относилось к побудившему действию, а не к реализации
   ```ts
-  const initIntl = createEvent();    // 🚫
-  const appStarted = createEvent();  // ✅
+  const initIntl = createEvent(); // 🚫
+  const appStarted = createEvent(); // ✅
   ```
 
 **Effects** - суффикс `Fx`:
+
 ```typescript
 const setShiftCookieFx = createEffect(() => {
   setCookie(Cookie.SHIFT_R, '1', { maxAge: 3600 });
@@ -51,6 +54,7 @@ const setupIntlFx = attach({
 ## Создание stores
 
 **Простой store:**
+
 ```typescript
 import { createStore } from 'effector';
 
@@ -59,6 +63,7 @@ export const $user = createStore<User | null>(null);
 ```
 
 **Store с начальным значением:**
+
 ```typescript
 export const $settings = createStore<Settings>({
   [Setting.BLOG_FEED_URL]: '',
@@ -70,6 +75,7 @@ export const $settings = createStore<Settings>({
 ## Обновление stores
 
 **Через `.on()` для простых случаев:**
+
 ```typescript
 export const $shiftR = createStore(false);
 export const shiftRUpdated = createEvent<boolean>();
@@ -80,6 +86,7 @@ $shiftR.on(shiftRToggled, (state) => !state);
 ```
 
 **Через `.on()` с трансформацией:**
+
 ```typescript
 $theme.on(updateMainButtonColors, (theme, payload) => {
   const mainButtonColor = getMainButtonColors(payload);
@@ -92,6 +99,7 @@ $theme.on(updateMainButtonColors, (theme, payload) => {
 ```
 
 **Через `sample()` для сложной логики:**
+
 ```typescript
 sample({
   clock: resetTheme,
@@ -104,6 +112,7 @@ sample({
 ## Sample паттерны
 
 **Простая передача события:**
+
 ```typescript
 sample({
   clock: createNotification,
@@ -112,6 +121,7 @@ sample({
 ```
 
 **С фильтрацией:**
+
 ```typescript
 sample({
   clock: shiftRToggled,
@@ -121,8 +131,9 @@ sample({
 });
 
 // Также filter может принимать значение типа Store
-const $isShiftRApplicable = $userAreaLogin.map(userAreaLogin => 
-  !!userAreaLogin && isShiftRApplicable(userAreaLogin.currentContract))
+const $isShiftRApplicable = $userAreaLogin.map(
+  (userAreaLogin) => !!userAreaLogin && isShiftRApplicable(userAreaLogin.currentContract),
+);
 
 sample({
   clock: shiftREvent,
@@ -132,6 +143,7 @@ sample({
 ```
 
 **С трансформацией:**
+
 ```typescript
 sample({
   clock: setupIntlFx.doneData,
@@ -141,6 +153,7 @@ sample({
 ```
 
 **С несколькими источниками:**
+
 ```typescript
 sample({
   clock: add,
@@ -150,7 +163,7 @@ sample({
   },
   fn: ({ storeA, storeB }, addValue) => ({
     combined: storeA + storeB,
-    eventValue: addValue
+    eventValue: addValue,
   }),
   target: calculateFx,
 });
@@ -159,20 +172,21 @@ sample({
 ## Combine для вычисляемых значений
 
 **Используйте `combine` для значений, зависящих от нескольких stores:**
+
 ```typescript
 import { combine } from 'effector';
 
 export const $areTransfersEnabled = combine(
   $settings,
   isTest(AB_TRANSFERS_SLUG),
-  (settings, isInTest) =>
-    !!(settings[Setting.OWL_SELECTIONS_TRANSFERS_ENABLED] && isInTest)
+  (settings, isInTest) => !!(settings[Setting.OWL_SELECTIONS_TRANSFERS_ENABLED] && isInTest),
 );
 ```
 
 ## Effects
 
 **Простой effect:**
+
 ```typescript
 const setShiftCookieFx = createEffect(() => {
   setCookie(Cookie.SHIFT_R, '1', {
@@ -183,6 +197,7 @@ const setShiftCookieFx = createEffect(() => {
 ```
 
 **Effect через `attach` (для использования значений из stores):**
+
 ```typescript
 const setupIntlFx = attach({
   source: { l10n: $l10n },
@@ -193,12 +208,9 @@ const setupIntlFx = attach({
 ```
 
 **Effect с типами:**
+
 ```typescript
-export const createNotificationFx = createEffect<
-  NotificationConfig,
-  void,
-  Error
->();
+export const createNotificationFx = createEffect<NotificationConfig, void, Error>();
 
 // Созданному таким способом эффекту хендлер можно добавить в другом месте
 createNotificationFx.use(handler);
@@ -209,6 +221,7 @@ createNotificationFx.use(handler);
 ## Использование в компонентах
 
 **Один store:**
+
 ```typescript
 import { useUnit } from 'effector-react';
 import { $theme } from '@shared/model';
@@ -220,21 +233,24 @@ const Component = (): JSX.Element => {
 ```
 
 **Несколько stores:**
+
 ```typescript
 const [settings, user, page] = useUnit([$settings, $user, $page]);
 ```
 
 **Event:**
+
 ```jsx
 const shiftRToggled = useUnit(shiftRToggled);
 
 // Использование
-<button onClick={() => shiftRToggled()}>Toggle</button>
+<button onClick={() => shiftRToggled()}>Toggle</button>;
 ```
 
 ## Scope и изоляция состояния
 
 **Создание scope через `fork`:**
+
 ```jsx
 import { fork } from 'effector';
 import { Provider } from 'effector-react';
@@ -251,6 +267,7 @@ return <Provider value={scope}>{children}</Provider>;
 ```
 
 **Выполнение эффектов в scope:**
+
 ```typescript
 import { allSettled } from 'effector';
 
@@ -260,6 +277,7 @@ await allSettled(initIntl, { scope });
 ## Структура файлов
 
 **Модели хранятся в `src/shared/model/`:**
+
 ```
 src/shared/model/
   theme.ts      # $theme, updateMainButtonColors, resetTheme
@@ -270,12 +288,14 @@ src/shared/model/
 ```
 
 **Каждый файл экспортирует:**
+
 - Stores (с префиксом `$`)
 - Events (для обновления stores)
 - Effects (если нужны сайд-эффекты)
 - Computed stores через `combine` (если нужны)
 
 **Пример структуры файла:**
+
 ```typescript
 import { createEvent, createStore, sample } from 'effector';
 
@@ -309,12 +329,12 @@ sample({
 
 Farfetched оперирует такими понятиями как query и mutation, и помимо выполнения запросов, берет на себя вопросы хранения данных, их трансформации и кеширования.
 
-
 ### Фабрики
 
 Мы можем создать квери/мутации тремя способами:
 
 **createJsonQuery**
+
 ```ts
 export const bookingFormOrderQuery = createJsonQuery({
   params: declareParams<{ rateHash: string }>(),
@@ -329,11 +349,12 @@ export const bookingFormOrderQuery = createJsonQuery({
 ```
 
 **createQuery** c кастомным хендлером или эффектом, например для использования с существующими менеджерами или для `multipart/form-data` запросов
+
 ```ts
 export const brgMutation = createMutation({
   handler: async () => {
     // any async logic
-  }
+  },
 });
 
 // wrap manager
@@ -351,6 +372,7 @@ export const loadSubAgentsQuery = createQuery({
 ```
 
 **createQuery + createApiEffect** - для работы с готовой типизацией на основе openapi
+
 ```ts
 import { paths } from './types'; // https://openapi-ts.dev/
 
@@ -409,7 +431,7 @@ createAction({
     statusCheckFailed,
   },
   fn(target, res) {
-    if (res.status === 'done') {     
+    if (res.status === 'done') {
       if (res.result.status === 'ok') {
         target.statusReceived({ status: 'ok', result: res.result });
       } else {
@@ -421,7 +443,6 @@ createAction({
   },
 });
 ```
-
 
 ### Конфигурация
 
@@ -462,8 +483,7 @@ export const settingsQuery = createQuery({
   ...createApiEffect('get', '/partner/user_area/v2/common/login/settings', {
     mapParams: {
       source: $contractSlug,
-      fn: (slug, init) =>
-        mergeInitHeaders(init, { 'X-Partners-Contract-Slug': slug }),
+      fn: (slug, init) => mergeInitHeaders(init, { 'X-Partners-Contract-Slug': slug }),
     },
   }),
   validate: validateEnvelope,

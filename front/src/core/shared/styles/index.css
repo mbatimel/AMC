@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "@heroui/styles";
+@import 'tailwindcss';
+@import '@heroui/styles';
 @import './theme.css';
 @import './normalize.css';
 @import './fonts.css';

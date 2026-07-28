@@ -22,12 +22,14 @@
 ### Palette
 
 Базовые цвета:
+
 - `--palette-black`, `--palette-dark`, `--palette-gray`, `--palette-light`, `--palette-ulight`, `--palette-white`
 - `--palette-disabled` — неактивные элементы
 - `--palette-main` — акцентный цвет темы
 - `--palette-sec` — вторичный цвет
 
 **Когда использовать:**
+
 - `--palette-white`, `--palette-ulight` — фоны
 - `--palette-black`, `--palette-dark` — текст
 - `--palette-main` — акценты, брендовые элементы
@@ -137,6 +139,7 @@
 **В своём коде Tailwind utility-классы не используем** (`flex`, `p-6`, `text-sm` и т.п.).
 
 **Как стилизуем:**
+
 - **Своя вёрстка** — CSS Modules (`.module.css`) + переменные из `theme.css` + логические свойства
 - **UI-компоненты** — HeroUI через пропсы (`variant`, `size`, `isDisabled` и т.д.)
 - **Кастомизация HeroUI** — `className` с классами из CSS Module, не Tailwind
@@ -184,6 +187,7 @@ Tailwind остаётся только как инфраструктурная �
 ```
 
 **Маппинг:**
+
 - `margin-left` → `margin-inline-start`
 - `margin-right` → `margin-inline-end`
 - `padding-left` → `padding-inline-start`
@@ -239,6 +243,7 @@ Tailwind остаётся только как инфраструктурная �
 ```
 
 **Когда использовать:**
+
 - Скрытие элементов на мобильных (`display: none`)
 - Изменение layout на мобильных (flex-direction: column)
 - Уменьшение отступов и размеров шрифтов
@@ -262,6 +267,7 @@ Tailwind остаётся только как инфраструктурная �
 ```
 
 **Когда использовать:**
+
 - Показ элементов на планшетах и десктопах (`display: block`, `display: flex`)
 - Изменение layout для больших экранов
 - Увеличение отступов и размеров
@@ -286,6 +292,7 @@ Tailwind остаётся только как инфраструктурная �
 ```
 
 **Когда использовать:**
+
 - Специфичные стили только для десктопов
 - Многоколоночная верстка (column-count)
 - Увеличенные отступы и размеры для больших экранов

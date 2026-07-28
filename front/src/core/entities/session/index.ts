@@ -1,3 +1,4 @@
+export { buildRegisterPayload, RegisterType } from './lib/buildRegisterPayload';
 export { USER_ID_COOKIE } from './lib/constants';
 export { clearUserIdCookie, readUserIdCookie, writeUserIdCookie } from './lib/cookie';
 export { splitFullName } from './lib/splitFullName';

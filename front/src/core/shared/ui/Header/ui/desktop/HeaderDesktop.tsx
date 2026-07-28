@@ -2,9 +2,7 @@ import clsx from 'clsx';
 
 import {
   IconCart,
-  IconChevronDown,
   IconEmail,
-  IconLocation,
   IconLogin,
   IconOrders,
   IconPhone,
@@ -15,27 +13,29 @@ import type { HeaderViewProps } from '../../model/types';
 
 import {
   HEADER_CART_HREF,
-  HEADER_CITY,
   HEADER_EMAIL,
   HEADER_ORDERS_HREF,
   HEADER_PHONE_EXTENSIONS,
   HEADER_PHONE_MAIN,
 } from '../../constants';
 import rootStyles from '../../Header.module.css';
+import { HeaderCitySelect } from '../shared/HeaderCitySelect';
 import { HeaderLogo } from '../shared/HeaderLogo';
 import { HeaderMenuLink } from '../shared/HeaderMenuLink';
 import { HeaderSearchForm } from '../shared/HeaderSearchForm';
 import styles from './HeaderDesktop.module.css';
 
-export const HeaderDesktopTopBar = (): JSX.Element => {
+export const HeaderDesktopTopBar = ({ city }: Pick<HeaderViewProps, 'city'>): JSX.Element => {
   return (
     <div className={clsx(styles.topBar)}>
       <div className={clsx(rootStyles.container, styles.topBarInner)}>
-        <button className={clsx(styles.cityButton)} type="button">
-          <IconLocation className={clsx(styles.cityIcon)} height={14} width={14} />
-          <span>{HEADER_CITY}</span>
-          <IconChevronDown className={clsx(styles.cityChevron)} height={12} width={12} />
-        </button>
+        <HeaderCitySelect
+          cities={city.cities}
+          isPending={city.isCitiesPending}
+          onCitySelect={city.selectCity}
+          selectedCityId={city.selectedCityId}
+          selectedCityName={city.selectedCityName}
+        />
 
         <div className={clsx(styles.contacts)}>
           <a className={clsx(styles.contactLink)} href={`mailto:${HEADER_EMAIL}`}>
@@ -117,10 +117,10 @@ export const HeaderDesktopNav = ({ nav }: Pick<HeaderViewProps, 'nav'>): JSX.Ele
   );
 };
 
-export const HeaderDesktop = ({ account, nav, search }: HeaderViewProps): JSX.Element => {
+export const HeaderDesktop = ({ account, city, nav, search }: HeaderViewProps): JSX.Element => {
   return (
     <>
-      <HeaderDesktopTopBar />
+      <HeaderDesktopTopBar city={city} />
       <HeaderDesktopMain account={account} search={search} />
       <HeaderDesktopNav nav={nav} />
     </>

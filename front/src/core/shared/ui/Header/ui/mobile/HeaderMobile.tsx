@@ -50,7 +50,11 @@ export const HeaderMobile = ({
             <a aria-label={account.label} className={clsx(styles.iconButton)} href={account.href}>
               <AccountIcon height={18} width={18} />
             </a>
-            <a aria-label="Мои заказы" className={clsx(styles.iconButton)} href={HEADER_ORDERS_HREF}>
+            <a
+              aria-label="Мои заказы"
+              className={clsx(styles.iconButton)}
+              href={HEADER_ORDERS_HREF}
+            >
               <IconOrders height={18} width={18} />
             </a>
           </div>

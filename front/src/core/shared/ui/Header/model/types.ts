@@ -1,5 +1,7 @@
 import type { RefObject } from 'react';
 
+import type { useCity } from '@/core/entities/city';
+
 import type { useHeaderNav } from './useHeaderNav';
 import type { useHeaderSearch } from './useHeaderSearch';
 import type { useMobileMenu } from './useMobileMenu';
@@ -26,9 +28,12 @@ export type HeaderMobileViewProps = HeaderViewProps & {
 
 export type HeaderViewProps = {
   account: HeaderAccountLink;
+  city: UseCityResult;
   nav: UseHeaderNavResult;
   search: UseHeaderSearchResult;
 };
+
+export type UseCityResult = ReturnType<typeof useCity>;
 
 export type UseHeaderNavResult = ReturnType<typeof useHeaderNav>;
 

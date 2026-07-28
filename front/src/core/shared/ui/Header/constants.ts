@@ -19,8 +19,6 @@ export type HeaderMenuItem = {
   label: string;
 };
 
-export const HEADER_CITY = 'Самара';
-
 export const HEADER_EMAIL = 'order@amc.ru';
 
 export const HEADER_PHONE_MAIN = '+7 846 265-93-10';

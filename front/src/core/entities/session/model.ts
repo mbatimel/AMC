@@ -1,9 +1,12 @@
 import { createEffect, createEvent, createStore, sample } from 'effector';
 
-import type { AuthCredentials, AuthUserResponse, SignUpPayload } from '@/core/shared/api/auth';
+import type { AuthCredentials, AuthUserResponse } from '@/core/shared/api/auth';
 
-import { loginRequest, signupRequest } from '@/core/shared/api/auth';
+import { loginRequest, registerIndividualRequest, registerIpRequest } from '@/core/shared/api/auth';
 
+import type { RegisterPayload } from './lib/buildRegisterPayload';
+
+import { RegisterType } from './lib/buildRegisterPayload';
 import { clearUserIdCookie, readUserIdCookie, writeUserIdCookie } from './lib/cookie';
 
 export const sessionHydrated = createEvent();
@@ -12,7 +15,13 @@ export const sessionEnded = createEvent();
 export const authErrorCleared = createEvent();
 
 export const loginFx = createEffect<AuthCredentials, AuthUserResponse, Error>(loginRequest);
-export const signupFx = createEffect<SignUpPayload, AuthUserResponse, Error>(signupRequest);
+export const signupFx = createEffect<RegisterPayload, AuthUserResponse, Error>(async (payload) => {
+  if (payload.type === RegisterType.Organization) {
+    return registerIpRequest(payload.data);
+  }
+
+  return registerIndividualRequest(payload.data);
+});
 
 const persistSessionFx = createEffect((userId: string) => {
   writeUserIdCookie(userId);

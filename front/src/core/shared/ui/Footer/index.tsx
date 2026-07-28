@@ -17,10 +17,7 @@ const getCabinetLinks = (isAuthenticated: boolean): FooterLinkItem[] => {
     return FOOTER_CABINET_LINKS;
   }
 
-  return [
-    { href: AppPath.Login, label: 'Авторизация' },
-    ...FOOTER_CABINET_LINKS.slice(1),
-  ];
+  return [{ href: AppPath.Login, label: 'Авторизация' }, ...FOOTER_CABINET_LINKS.slice(1)];
 };
 
 export const Footer = (): JSX.Element => {

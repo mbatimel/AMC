@@ -13,22 +13,6 @@
   gap: 14px;
 }
 
-.cityButton {
-  cursor: pointer;
-  font: inherit;
-  align-items: center;
-  display: flex;
-  border: 1px solid var(--color-white-12, #ffffff1f);
-  block-size: 30px;
-  border-radius: 16px;
-  background: var(--color-white-8, #ffffff14);
-  padding: 4px 10px;
-  color: white;
-  gap: 6px;
-}
-
-.cityIcon,
-.cityChevron,
 .contactIcon {
   flex-shrink: 0;
 }

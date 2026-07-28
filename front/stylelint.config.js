@@ -2,7 +2,14 @@
 export default {
   extends: ['stylelint-config-standard'],
   plugins: ['stylelint-use-logical'],
-  ignoreFiles: ['**/node_modules/**', '**/.next/**', '**/dist/**', '**/build/**', '**/out/**', '**/vi-portal/**'],
+  ignoreFiles: [
+    '**/node_modules/**',
+    '**/.next/**',
+    '**/dist/**',
+    '**/build/**',
+    '**/out/**',
+    '**/vi-portal/**',
+  ],
   rules: {
     'at-rule-no-unknown': [
       true,

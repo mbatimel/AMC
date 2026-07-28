@@ -64,9 +64,11 @@ export const Login = (): JSX.Element => {
           <Input className={clsx(formStyles.input)} fullWidth placeholder="••••••••" />
           <FieldError />
         </TextField>
-        <Link className={clsx(formStyles.forgotLink)} href={AppPath.ForgotPassword}>
-          Забыли пароль?
-        </Link>
+        <div>
+          <Link className={clsx(formStyles.forgotLink)} href={AppPath.ForgotPassword}>
+            Забыли пароль?
+          </Link>
+        </div>
         {authError ? <p className={clsx(formStyles.error)}>{authError}</p> : null}
         <div className={clsx(formStyles.actions)}>
           <Button

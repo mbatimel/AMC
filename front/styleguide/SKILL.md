@@ -1,6 +1,6 @@
 ---
 name: styleguide
-description: "AMC Frontend стайлгайд — соглашения по TypeScript, React, CSS, Effector и FSD. Используй при написании, ревью или рефакторинге фронтенд-кода."
+description: 'AMC Frontend стайлгайд — соглашения по TypeScript, React, CSS, Effector и FSD. Используй при написании, ревью или рефакторинге фронтенд-кода.'
 ---
 
 # AMC Frontend Styleguide
@@ -21,12 +21,12 @@ description: "AMC Frontend стайлгайд — соглашения по Type
 
 ## Разделы
 
-| Раздел             | Файл                       | Фокус                                                         |
-| ------------------ | -------------------------- | ------------------------------------------------------------- |
-| TypeScript & React | [docs/ts-quick.md](docs/ts-quick.md) | Импорты, экспорты, именование, компоненты, хуки, формы |
-| CSS                | [docs/css-quick.md](docs/css-quick.md) | CSS-переменные, логические свойства, миксины, брейкпоинты |
-| Effector           | [docs/effector-quick.md](docs/effector-quick.md) | Сторы, события, эффекты, sample, Farfetched |
-| FSD                | [docs/fsd-quick.md](docs/fsd-quick.md) | Слои, стримы, сегменты, правила импортов, colocation |
+| Раздел             | Файл                                             | Фокус                                                     |
+| ------------------ | ------------------------------------------------ | --------------------------------------------------------- |
+| TypeScript & React | [docs/ts-quick.md](docs/ts-quick.md)             | Импорты, экспорты, именование, компоненты, хуки, формы    |
+| CSS                | [docs/css-quick.md](docs/css-quick.md)           | CSS-переменные, логические свойства, миксины, брейкпоинты |
+| Effector           | [docs/effector-quick.md](docs/effector-quick.md) | Сторы, события, эффекты, sample, Farfetched               |
+| FSD                | [docs/fsd-quick.md](docs/fsd-quick.md)           | Слои, стримы, сегменты, правила импортов, colocation      |
 
 ## Краткая справка
 

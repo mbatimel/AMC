@@ -11,12 +11,9 @@ export const useHeaderSearch = () => {
     setQuery(value);
   }, []);
 
-  const onSearchSubmit = useCallback(
-    (event: React.FormEvent<HTMLFormElement>): void => {
-      event.preventDefault();
-    },
-    [],
-  );
+  const onSearchSubmit = useCallback((event: React.FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+  }, []);
 
   return {
     desktopPlaceholder: HEADER_SEARCH_PLACEHOLDER,

@@ -1,28 +1,38 @@
 'use client';
 
-import { Button, FieldError, Form, Input, Label, Tab, TabList, Tabs, TextField } from '@heroui/react';
+import {
+  Button,
+  FieldError,
+  Form,
+  Input,
+  Label,
+  Tab,
+  TabList,
+  Tabs,
+  TextField,
+} from '@heroui/react';
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { $authError, $isAuthPending, signupFx, splitFullName } from '@/core/entities/session';
+import {
+  $authError,
+  $isAuthPending,
+  buildRegisterPayload,
+  RegisterType,
+  signupFx,
+} from '@/core/entities/session';
 import { IconBuilding } from '@/core/shared/icons/IconBuilding';
 import { IconUser } from '@/core/shared/icons/IconUser';
 import { IconUserPlus } from '@/core/shared/icons/IconUserPlus';
-import { readFormString } from '@/core/shared/lib/readFormString';
 import { AppPath } from '@/core/shared/router/paths';
 import { AuthShell } from '@/core/shared/ui/AuthShell';
 import { AuthCardHeader } from '@/core/shared/ui/AuthShell/AuthCardHeader';
 import formStyles from '@/core/shared/ui/AuthShell/AuthForm.module.css';
 
 import styles from './Register.module.css';
-
-enum RegisterType {
-  Individual = 'individual',
-  Organization = 'organization',
-}
 
 export const Register = (): JSX.Element => {
   const router = useRouter();
@@ -33,14 +43,8 @@ export const Register = (): JSX.Element => {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
-    const email = readFormString(formData, 'email').trim();
-    const password = readFormString(formData, 'password');
-    const fullNameKey =
-      registerType === RegisterType.Organization ? 'directorFullName' : 'fullName';
-    const fullName = readFormString(formData, fullNameKey).trim();
-    const { name, surename } = splitFullName(fullName);
 
-    void signup({ email, name, password, surename })
+    void signup(buildRegisterPayload(formData, registerType))
       .then(() => {
         router.replace(AppPath.Login);
       })
@@ -117,7 +121,11 @@ const OrganizationFields = (): JSX.Element => {
         <div className={clsx(formStyles.grid)}>
           <TextField className={clsx(formStyles.field, formStyles.gridFull)} name="fullCompanyName">
             <Label className={clsx(formStyles.label)}>Полное наименование</Label>
-            <Input className={clsx(formStyles.input)} fullWidth placeholder="Общество с ограниченной ответственностью «…»" />
+            <Input
+              className={clsx(formStyles.input)}
+              fullWidth
+              placeholder="Общество с ограниченной ответственностью «…»"
+            />
           </TextField>
           <TextField className={clsx(formStyles.field)} name="shortCompanyName">
             <Label className={clsx(formStyles.label)}>Краткое наименование</Label>
@@ -151,11 +159,19 @@ const OrganizationFields = (): JSX.Element => {
         <div className={clsx(formStyles.grid)}>
           <TextField className={clsx(formStyles.field, formStyles.gridFull)} name="legalAddress">
             <Label className={clsx(formStyles.label)}>Юридический адрес</Label>
-            <Input className={clsx(formStyles.input)} fullWidth placeholder="Индекс, регион, город, улица, дом" />
+            <Input
+              className={clsx(formStyles.input)}
+              fullWidth
+              placeholder="Индекс, регион, город, улица, дом"
+            />
           </TextField>
           <TextField className={clsx(formStyles.field, formStyles.gridFull)} name="actualAddress">
             <Label className={clsx(formStyles.label)}>Фактический адрес</Label>
-            <Input className={clsx(formStyles.input)} fullWidth placeholder="Совпадает с юридическим — оставьте пустым" />
+            <Input
+              className={clsx(formStyles.input)}
+              fullWidth
+              placeholder="Совпадает с юридическим — оставьте пустым"
+            />
           </TextField>
         </div>
       </section>
@@ -165,12 +181,20 @@ const OrganizationFields = (): JSX.Element => {
         <div className={clsx(formStyles.grid)}>
           <TextField className={clsx(formStyles.field)} isRequired name="directorFullName">
             <Label className={clsx(formStyles.label)}>ФИО руководителя</Label>
-            <Input className={clsx(formStyles.input)} fullWidth placeholder="Иванов Иван Иванович" />
+            <Input
+              className={clsx(formStyles.input)}
+              fullWidth
+              placeholder="Иванов Иван Иванович"
+            />
             <FieldError />
           </TextField>
           <TextField className={clsx(formStyles.field)} name="directorPosition">
             <Label className={clsx(formStyles.label)}>Должность</Label>
-            <Input className={clsx(formStyles.input)} fullWidth placeholder="Генеральный директор" />
+            <Input
+              className={clsx(formStyles.input)}
+              fullWidth
+              placeholder="Генеральный директор"
+            />
           </TextField>
         </div>
       </section>
@@ -229,18 +253,27 @@ const IndividualFields = (): JSX.Element => {
       <section className={clsx(formStyles.section)}>
         <h2 className={clsx(formStyles.sectionTitle)}>Личные данные</h2>
         <div className={clsx(formStyles.grid)}>
-          <TextField className={clsx(formStyles.field, formStyles.gridFull)} isRequired name="fullName">
+          <TextField
+            className={clsx(formStyles.field, formStyles.gridFull)}
+            isRequired
+            name="fullName"
+          >
             <Label className={clsx(formStyles.label)}>ФИО</Label>
-            <Input className={clsx(formStyles.input)} fullWidth placeholder="Иванов Иван Иванович" />
+            <Input
+              className={clsx(formStyles.input)}
+              fullWidth
+              placeholder="Иванов Иван Иванович"
+            />
             <FieldError />
           </TextField>
           <TextField className={clsx(formStyles.field)} name="inn">
             <Label className={clsx(formStyles.label)}>ИНН (необязательно)</Label>
             <Input className={clsx(formStyles.input)} fullWidth placeholder="12 цифр" />
           </TextField>
-          <TextField className={clsx(formStyles.field)} name="city">
+          <TextField className={clsx(formStyles.field)} isRequired name="city">
             <Label className={clsx(formStyles.label)}>Город</Label>
             <Input className={clsx(formStyles.input)} fullWidth placeholder="Самара" />
+            <FieldError />
           </TextField>
         </div>
       </section>
@@ -248,18 +281,28 @@ const IndividualFields = (): JSX.Element => {
       <section className={clsx(formStyles.section)}>
         <h2 className={clsx(formStyles.sectionTitle)}>Контакты и доставка</h2>
         <div className={clsx(formStyles.grid)}>
-          <TextField className={clsx(formStyles.field)} name="phone">
+          <TextField className={clsx(formStyles.field)} isRequired name="phone">
             <Label className={clsx(formStyles.label)}>Телефон</Label>
             <Input className={clsx(formStyles.input)} fullWidth placeholder="+7" />
+            <FieldError />
           </TextField>
           <TextField className={clsx(formStyles.field)} isRequired name="email" type="email">
             <Label className={clsx(formStyles.label)}>E-mail</Label>
             <Input className={clsx(formStyles.input)} fullWidth placeholder="ivan@mail.ru" />
             <FieldError />
           </TextField>
-          <TextField className={clsx(formStyles.field, formStyles.gridFull)} name="deliveryAddress">
+          <TextField
+            className={clsx(formStyles.field, formStyles.gridFull)}
+            isRequired
+            name="deliveryAddress"
+          >
             <Label className={clsx(formStyles.label)}>Адрес доставки</Label>
-            <Input className={clsx(formStyles.input)} fullWidth placeholder="Индекс, город, улица, дом, квартира" />
+            <Input
+              className={clsx(formStyles.input)}
+              fullWidth
+              placeholder="Индекс, город, улица, дом, квартира"
+            />
+            <FieldError />
           </TextField>
         </div>
       </section>

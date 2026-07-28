@@ -1,5 +1,6 @@
 'use client';
 
+import { useCity } from '@/core/entities/city';
 import { useSession } from '@/core/entities/session';
 
 import {
@@ -16,6 +17,7 @@ export const useHeader = () => {
   const nav = useHeaderNav();
   const search = useHeaderSearch();
   const mobileMenu = useMobileMenu();
+  const city = useCity();
   const { isAuthenticated } = useSession();
 
   const account = {
@@ -26,6 +28,7 @@ export const useHeader = () => {
 
   return {
     account,
+    city,
     mobileMenu,
     nav,
     search,

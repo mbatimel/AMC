@@ -21,7 +21,8 @@ export const FOOTER_BRANDS = [
 
 export const FOOTER_BRANDS_TITLE = 'Бренды на портале';
 
-export const FOOTER_DESCRIPTION = 'Производитель и оптовый поставщик профессионального инструмента.';
+export const FOOTER_DESCRIPTION =
+  'Производитель и оптовый поставщик профессионального инструмента.';
 
 export const FOOTER_CATALOG_LINKS: FooterLinkItem[] = [
   { href: '#', label: 'Металлорежущий' },

@@ -13,6 +13,7 @@ import useLayoutType from '../hooks/useLayoutType';
 ```
 
 **Правила:**
+
 - `@/` — алиас для `src/` (настроен в `tsconfig.json`)
 - Относительные импорты — для файлов внутри одного слайса (`./Home.module.css`, `./ui/Sidebar.tsx`)
 - Порядок импортов поддерживает `eslint-plugin-perfectionist` (правило `sort-imports`)
@@ -110,12 +111,7 @@ const createUser = ({
 };
 
 // ❌ Неправильно - слишком много параметров
-const createUser = (
-  email: string,
-  name: string,
-  password: string,
-  role: string
-): void => {
+const createUser = (email: string, name: string, password: string, role: string): void => {
   // ...
 };
 ```
@@ -170,11 +166,11 @@ enum OrderingType {
 export const foo = (orderingType: OrderingType) => {
   switch (orderingType) {
     case OrderingType.ASC:
-      // ...
+    // ...
     case OrderingType.DESC:
-      // ...
+    // ...
     default:
-      // ...
+    // ...
   }
 };
 ```
@@ -231,6 +227,7 @@ export type Props = { ... };
 **Сортируйте свойства объектов, типов и JSX-пропсов** — в проекте это обеспечивает [`eslint-plugin-perfectionist`](https://perfectionist.dev/). Не сортируйте вручную: запустите `eslint --fix`.
 
 Плагин покрывает, в частности:
+
 - `sort-imports`, `sort-named-imports`, `sort-named-exports`
 - `sort-object-types`, `sort-objects`
 - `sort-jsx-props`
@@ -294,6 +291,7 @@ const AbArticlesSlug = 'ab_selections_articles_slug';
 ```
 
 **Когда использовать:**
+
 - Магические числа и строки
 - Конфигурационные значения
 - Имена для cookies, localStorage keys
@@ -319,6 +317,7 @@ const dropdownWithContent = !!(list.length || emptyText || loading);
 ```
 
 **Правила:**
+
 - `is` - для состояний и проверок (`isLoading`, `isVisible`, `isActive`)
 - `has` - для наличия чего-либо (`hasError`, `hasData`, `hasFocus`)
 - `should` - для условий (`shouldShow`, `shouldRender`)
@@ -372,6 +371,7 @@ const onClickHandler = () => {}; // не используем такой фор�
 ```
 
 **Правила:**
+
 - `on*` - для пропсов компонента (что передается извне)
 - `handle*` или `on*` - для внутренних обработчиков
 - `*Internal` - для внутренних обработчиков, которые оборачивают внешние
@@ -500,6 +500,7 @@ export const Component: FC<Props> = ({ prop }) => {
 ```
 
 **Причины:**
+
 - Более явное указание типа возвращаемого значения
 - Не добавляет неявные пропсы (children) в типы
 - Лучше работает с generics
@@ -510,10 +511,7 @@ export const Component: FC<Props> = ({ prop }) => {
 
 ```typescript
 // ✅ Правильно
-export const Dropdown = <T,>({
-  list,
-  children,
-}: Props<T>): JSX.Element => {
+export const Dropdown = <T>({ list, children }: Props<T>): JSX.Element => {
   // ...
 };
 ```
@@ -565,6 +563,7 @@ type Props = {
 ```
 
 **Правила:**
+
 - `onClick`, `onFocus`, `onChange` - пропсы компонента (что передается извне)
 - `handleClick`, `handleFocus`, `handleChange` - внутренние обработчики (логика внутри компонента)
 
@@ -686,7 +685,7 @@ const Component = (): JSX.Element => {
     <div>
       {/* Через intl.formatMessage */}
       <h1>{intl.formatMessage(messages.title)}</h1>
-      
+
       {/* Через FormattedMessage */}
       <p>
         <FormattedMessage {...messages.description} />
@@ -697,6 +696,7 @@ const Component = (): JSX.Element => {
 ```
 
 **Когда использовать:**
+
 - `intl.formatMessage` - для текста в атрибутах, переменных, сложных случаях
 - `<FormattedMessage>` - для простого текста в JSX, когда нужна поддержка форматирования
 
@@ -718,6 +718,7 @@ import icon from '../../assets/icons/icon.svg';
 ```
 
 **Структура:**
+
 ```
 ComponentName/
   assets/
@@ -757,6 +758,7 @@ const Component = ({ className, isActive, size }: Props): JSX.Element => {
 ```
 
 **Паттерны:**
+
 - Базовый класс: `styles.block`
 - Boolean-модификатор: `isActive && styles.block_active`
 - Enum/union-модификатор: `size && styles[\`block_size_${size}\`]`
@@ -820,6 +822,7 @@ export const WithCustomProps: StoryFn<typeof ComponentName> = () => (
 ```
 
 **Правила:**
+
 - Название файла: `ComponentName.stories.tsx` (название компонента + `.stories.tsx`)
 - `title` должен отражать путь к компоненту в Storybook
 - Используйте `StoryFn<typeof ComponentName>` для типизации stories
@@ -827,6 +830,7 @@ export const WithCustomProps: StoryFn<typeof ComponentName> = () => (
 - Добавляйте дополнительные stories для разных состояний компонента
 
 **Когда создавать stories:**
+
 - Для переиспользуемых компонентов
 - Для компонентов с разными состояниями (loading, error, empty)
 - Для компонентов, которые нужно демонстрировать в документации
@@ -894,6 +898,7 @@ const Component = (): JSX.Element => {
 ```
 
 **Паттерны валидации:**
+
 - Используйте `composeValidators` для комбинации нескольких валидаторов
 - Валидаторы возвращают `string | undefined` (строка = ошибка, undefined = валидно)
 
@@ -946,6 +951,7 @@ export const useCustomHook = (param: string) => {
 ```
 
 **Паттерны:**
+
 - Возвращайте объект для множественных значений
 - Используйте `useMemo` для мемоизации вычислений
 - Очищайте ресурсы в `useEffect` cleanup (timeouts, subscriptions)
@@ -966,7 +972,7 @@ export default class SelectionsManager extends Manager {
       `/selections/api/public/v1/selections/${uid}/`,
       undefined,
       undefined,
-      'selection'
+      'selection',
     );
   }
 
@@ -976,7 +982,7 @@ export default class SelectionsManager extends Manager {
       data,
       undefined,
       undefined,
-      'updateSelection'
+      'updateSelection',
     );
   }
 }
@@ -1001,6 +1007,7 @@ const Component = (): JSX.Element => {
 ```
 
 **Паттерны:**
+
 - Все методы возвращают `Promise<T>`
 - Используйте `CancellablePromise` для отмены запросов
 - Обрабатывайте ошибки через `HttpClientError`
@@ -1049,7 +1056,8 @@ export const maxLength = {
 import { IntlShape } from 'react-intl';
 import errorMessages from '@messages/error';
 
-export const validateEmail = (intl: IntlShape) => 
+export const validateEmail =
+  (intl: IntlShape) =>
   (value?: string): string | undefined => {
     if (!value || !value.length || EmailValidator.validate(value)) {
       return undefined;
@@ -1059,6 +1067,7 @@ export const validateEmail = (intl: IntlShape) =>
 ```
 
 **Паттерны:**
+
 - Валидаторы - функции высшего порядка
 - Принимают `IntlShape` для локализации ошибок
 - Возвращают `string | undefined` (строка = ошибка)
@@ -1076,7 +1085,7 @@ import { composeValidators } from '@/core/shared/ui/Form/validators';
     validateEmail(intl),
     validateMaxLength(intl, 100),
   ])}
-/>
+/>;
 ```
 
 ### Модели данных
@@ -1094,6 +1103,7 @@ src/models/
 ```
 
 **Паттерны:**
+
 - Backend модели соответствуют структуре API
 - Frontend модели оптимизированы для UI
 - Используйте сериализаторы для преобразования данных
@@ -1112,6 +1122,7 @@ export const parseQueryParam = (param: string | string[] | undefined): string =>
 ```
 
 **Паттерны:**
+
 - Парсеры валидируют и трансформируют данные
 - Обрабатывают edge cases (undefined, массивы)
 - Возвращают типизированные значения
@@ -1132,6 +1143,7 @@ export const setCookie = (name: string, value: string, options?: CookieOptions):
 ```
 
 **Паттерны:**
+
 - Утилиты - чистые функции
 - Экспортируйте именованными экспортами
 - Группируйте связанные функции в один файл
@@ -1152,6 +1164,7 @@ export default Page;
 ```
 
 **Когда использовать:**
+
 - Страницы с тяжёлыми клиентскими зависимостями (HeroUI, графики)
 - Виджеты, не нужные при первом рендере
 
@@ -1171,6 +1184,7 @@ type Config = Record<string, string>;
 ```
 
 **Паттерны:**
+
 - Используйте generics для переиспользуемых типов
 - Создавайте утилитные типы для сложных случаев
 - Документируйте сложные типы через JSDoc
@@ -1234,28 +1248,25 @@ yarn add -D eslint eslint-plugin-perfectionist
 // eslint.config.js
 import perfectionist from 'eslint-plugin-perfectionist';
 
-export default [
-  perfectionist.configs['recommended-natural'],
-];
+export default [perfectionist.configs['recommended-natural']];
 ```
 
 Альтернативы: `recommended-alphabetical`, `recommended-line-length`, `recommended-custom` — см. [документацию](https://perfectionist.dev/configs/).
 
 ### Что сортируется
 
-| Правило | Что покрывает |
-| --- | --- |
-| `sort-imports` | Импорты и их группы |
-| `sort-named-imports` / `sort-named-exports` | Именованные импорты и экспорты |
-| `sort-object-types` / `sort-objects` | Свойства типов и объектов |
-| `sort-jsx-props` | JSX-пропсы |
-| `sort-enums` | Члены enum |
-| `sort-union-types` / `sort-intersection-types` | Union и intersection types |
-| `sort-switch-case` | Ветки `switch` |
+| Правило                                        | Что покрывает                  |
+| ---------------------------------------------- | ------------------------------ |
+| `sort-imports`                                 | Импорты и их группы            |
+| `sort-named-imports` / `sort-named-exports`    | Именованные импорты и экспорты |
+| `sort-object-types` / `sort-objects`           | Свойства типов и объектов      |
+| `sort-jsx-props`                               | JSX-пропсы                     |
+| `sort-enums`                                   | Члены enum                     |
+| `sort-union-types` / `sort-intersection-types` | Union и intersection types     |
+| `sort-switch-case`                             | Ветки `switch`                 |
 
 ### Практика
 
 - Включите автофикс ESLint в редакторе (format on save) или в pre-commit hook.
 - При ревью не придирайтесь к порядку свойств — это зона ответственности линтера.
 - Если нужно исключение, настройте конкретное правило в `eslint.config.js`, а не отключайте плагин целиком.
-
