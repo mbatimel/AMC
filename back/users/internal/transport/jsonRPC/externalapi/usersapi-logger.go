@@ -23,13 +23,14 @@ func loggerMiddlewareUsersAPI() MiddlewareUsersAPI {
 	}
 }
 
-func (m loggerUsersAPI) CreateUser(ctx context.Context, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive bool) (response models.CreateUserResponse, err error) {
+func (m loggerUsersAPI) CreateUser(ctx context.Context, adminUserID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive bool) (response models.CreateUserResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "createUser").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
 			fields := map[string]interface{}{
 				"method": "usersAPI.createUser",
 				"request": viewer.Sprintf("%+v", requestUsersAPICreateUser{
+					AdminUserID: adminUserID,
 					ClientID:    clientID,
 					CompanyName: companyName,
 					Email:       email,
@@ -52,7 +53,7 @@ func (m loggerUsersAPI) CreateUser(ctx context.Context, email string, phone stri
 		}
 		logger.Info().Func(logHandle).Msg("call createUser")
 	}(time.Now())
-	return m.next.CreateUser(ctx, email, phone, firstName, lastName, middleName, role, status, clientID, companyName, inn, isActive)
+	return m.next.CreateUser(ctx, adminUserID, email, phone, firstName, lastName, middleName, role, status, clientID, companyName, inn, isActive)
 }
 
 func (m loggerUsersAPI) GetUser(ctx context.Context, userID uuid.UUID) (response models.GetUserResponse, err error) {
@@ -75,7 +76,7 @@ func (m loggerUsersAPI) GetUser(ctx context.Context, userID uuid.UUID) (response
 	return m.next.GetUser(ctx, userID)
 }
 
-func (m loggerUsersAPI) ListUsers(ctx context.Context, q string, role string, status string, clientID string, isActive bool, limit int, offset int, sort string) (response models.ListUsersResponse, err error) {
+func (m loggerUsersAPI) ListUsers(ctx context.Context, q string, role string, status string, clientID string, isActive *bool, limit int, offset int, sort string) (response models.ListUsersResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "listUsers").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
@@ -104,13 +105,14 @@ func (m loggerUsersAPI) ListUsers(ctx context.Context, q string, role string, st
 	return m.next.ListUsers(ctx, q, role, status, clientID, isActive, limit, offset, sort)
 }
 
-func (m loggerUsersAPI) UpdateUser(ctx context.Context, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive bool) (response models.UpdateUserResponse, err error) {
+func (m loggerUsersAPI) UpdateUser(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive *bool) (response models.UpdateUserResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "updateUser").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
 			fields := map[string]interface{}{
 				"method": "usersAPI.updateUser",
 				"request": viewer.Sprintf("%+v", requestUsersAPIUpdateUser{
+					AdminUserID: adminUserID,
 					ClientID:    clientID,
 					CompanyName: companyName,
 					Email:       email,
@@ -134,7 +136,7 @@ func (m loggerUsersAPI) UpdateUser(ctx context.Context, userID uuid.UUID, email 
 		}
 		logger.Info().Func(logHandle).Msg("call updateUser")
 	}(time.Now())
-	return m.next.UpdateUser(ctx, userID, email, phone, firstName, lastName, middleName, role, status, clientID, companyName, inn, isActive)
+	return m.next.UpdateUser(ctx, adminUserID, userID, email, phone, firstName, lastName, middleName, role, status, clientID, companyName, inn, isActive)
 }
 
 func (m loggerUsersAPI) DeleteUser(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error) {
@@ -195,4 +197,206 @@ func (m loggerUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID) (r
 		logger.Info().Func(logHandle).Msg("call deactivateUser")
 	}(time.Now())
 	return m.next.DeactivateUser(ctx, userID)
+}
+
+func (m loggerUsersAPI) GetProfile(ctx context.Context, userID uuid.UUID) (response models.GetProfileResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "getProfile").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method":   "usersAPI.getProfile",
+				"request":  viewer.Sprintf("%+v", requestUsersAPIGetProfile{UserID: userID}),
+				"response": viewer.Sprintf("%+v", responseUsersAPIGetProfile{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call getProfile")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call getProfile")
+	}(time.Now())
+	return m.next.GetProfile(ctx, userID)
+}
+
+func (m loggerUsersAPI) UpdateProfile(ctx context.Context, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string) (response models.UpdateProfileResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "updateProfile").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "usersAPI.updateProfile",
+				"request": viewer.Sprintf("%+v", requestUsersAPIUpdateProfile{
+					Email:      email,
+					FirstName:  firstName,
+					LastName:   lastName,
+					MiddleName: middleName,
+					Phone:      phone,
+					UserID:     userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseUsersAPIUpdateProfile{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call updateProfile")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call updateProfile")
+	}(time.Now())
+	return m.next.UpdateProfile(ctx, userID, email, phone, firstName, lastName, middleName)
+}
+
+func (m loggerUsersAPI) ListUserClients(ctx context.Context, userID uuid.UUID) (response models.ListUserClientsResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "listUserClients").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method":   "usersAPI.listUserClients",
+				"request":  viewer.Sprintf("%+v", requestUsersAPIListUserClients{UserID: userID}),
+				"response": viewer.Sprintf("%+v", responseUsersAPIListUserClients{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call listUserClients")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call listUserClients")
+	}(time.Now())
+	return m.next.ListUserClients(ctx, userID)
+}
+
+func (m loggerUsersAPI) GetClientDetails(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (response models.GetClientDetailsResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "getClientDetails").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "usersAPI.getClientDetails",
+				"request": viewer.Sprintf("%+v", requestUsersAPIGetClientDetails{
+					ClientID: clientID,
+					UserID:   userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseUsersAPIGetClientDetails{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call getClientDetails")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call getClientDetails")
+	}(time.Now())
+	return m.next.GetClientDetails(ctx, userID, clientID)
+}
+
+func (m loggerUsersAPI) GetClientConditions(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (response models.GetClientConditionsResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "getClientConditions").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "usersAPI.getClientConditions",
+				"request": viewer.Sprintf("%+v", requestUsersAPIGetClientConditions{
+					ClientID: clientID,
+					UserID:   userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseUsersAPIGetClientConditions{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call getClientConditions")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call getClientConditions")
+	}(time.Now())
+	return m.next.GetClientConditions(ctx, userID, clientID)
+}
+
+func (m loggerUsersAPI) SwitchActiveClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (response models.SwitchActiveClientResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "switchActiveClient").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "usersAPI.switchActiveClient",
+				"request": viewer.Sprintf("%+v", requestUsersAPISwitchActiveClient{
+					ClientID: clientID,
+					UserID:   userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseUsersAPISwitchActiveClient{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call switchActiveClient")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call switchActiveClient")
+	}(time.Now())
+	return m.next.SwitchActiveClient(ctx, userID, clientID)
+}
+
+func (m loggerUsersAPI) ListFavorites(ctx context.Context, userID uuid.UUID) (response models.ListFavoritesResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "listFavorites").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method":   "usersAPI.listFavorites",
+				"request":  viewer.Sprintf("%+v", requestUsersAPIListFavorites{UserID: userID}),
+				"response": viewer.Sprintf("%+v", responseUsersAPIListFavorites{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call listFavorites")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call listFavorites")
+	}(time.Now())
+	return m.next.ListFavorites(ctx, userID)
+}
+
+func (m loggerUsersAPI) AddFavorite(ctx context.Context, userID uuid.UUID, productID string) (response models.AddFavoriteResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "addFavorite").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "usersAPI.addFavorite",
+				"request": viewer.Sprintf("%+v", requestUsersAPIAddFavorite{
+					ProductID: productID,
+					UserID:    userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseUsersAPIAddFavorite{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call addFavorite")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call addFavorite")
+	}(time.Now())
+	return m.next.AddFavorite(ctx, userID, productID)
+}
+
+func (m loggerUsersAPI) DeleteFavorites(ctx context.Context, userID uuid.UUID, productIDs []string) (response models.DeleteFavoritesResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "deleteFavorites").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "usersAPI.deleteFavorites",
+				"request": viewer.Sprintf("%+v", requestUsersAPIDeleteFavorites{
+					ProductIDs: productIDs,
+					UserID:     userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseUsersAPIDeleteFavorites{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call deleteFavorites")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call deleteFavorites")
+	}(time.Now())
+	return m.next.DeleteFavorites(ctx, userID, productIDs)
 }

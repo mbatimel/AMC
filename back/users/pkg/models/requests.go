@@ -14,23 +14,7 @@ type CreateUserRequest struct {
 	IsActive    bool   `json:"is_active"`
 }
 
-type GetUserRequest struct {
-	UserID string `json:"user_id"`
-}
-
-type ListUsersRequest struct {
-	Q        string `json:"q,omitempty"`
-	Role     string `json:"role,omitempty"`
-	Status   string `json:"status,omitempty"`
-	ClientID string `json:"client_id,omitempty"`
-	IsActive bool   `json:"is_active,omitempty"`
-	Limit    int    `json:"limit,omitempty"`
-	Offset   int    `json:"offset,omitempty"`
-	Sort     string `json:"sort,omitempty"`
-}
-
 type UpdateUserRequest struct {
-	UserID      string `json:"user_id"`
 	Email       string `json:"email,omitempty"`
 	Phone       string `json:"phone,omitempty"`
 	FirstName   string `json:"first_name,omitempty"`
@@ -41,17 +25,21 @@ type UpdateUserRequest struct {
 	ClientID    string `json:"client_id,omitempty"`
 	CompanyName string `json:"company_name,omitempty"`
 	INN         string `json:"inn,omitempty"`
-	IsActive    bool   `json:"is_active,omitempty"`
+	IsActive    *bool  `json:"is_active,omitempty"`
 }
 
-type DeleteUserRequest struct {
-	UserID string `json:"user_id"`
+type UpdateProfileRequest struct {
+	Email      string `json:"email,omitempty"`
+	Phone      string `json:"phone,omitempty"`
+	FirstName  string `json:"first_name,omitempty"`
+	LastName   string `json:"last_name,omitempty"`
+	MiddleName string `json:"middle_name,omitempty"`
 }
 
-type ActivateUserRequest struct {
-	UserID string `json:"user_id"`
+type AddFavoriteRequest struct {
+	ProductID string `json:"product_id"`
 }
 
-type DeactivateUserRequest struct {
-	UserID string `json:"user_id"`
+type DeleteFavoritesRequest struct {
+	ProductIDs []string `json:"product_ids"`
 }
