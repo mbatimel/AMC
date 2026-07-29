@@ -25,12 +25,12 @@ export const FOOTER_DESCRIPTION =
   'Производитель и оптовый поставщик профессионального инструмента.';
 
 export const FOOTER_CATALOG_LINKS: FooterLinkItem[] = [
-  { href: '#', label: 'Металлорежущий' },
-  { href: '#', label: 'Метчики' },
-  { href: '#', label: 'Сверла' },
-  { href: '#', label: 'Плашки' },
-  { href: '#', label: 'Слесарный' },
-  { href: '#', label: 'Садовый' },
+  { href: AppPath.Catalog, label: 'Металлорежущий' },
+  { href: AppPath.Catalog, label: 'Метчики' },
+  { href: AppPath.Catalog, label: 'Сверла' },
+  { href: AppPath.Catalog, label: 'Плашки' },
+  { href: AppPath.Catalog, label: 'Слесарный' },
+  { href: AppPath.Catalog, label: 'Садовый' },
 ];
 
 export const FOOTER_CABINET_LINKS: FooterLinkItem[] = [

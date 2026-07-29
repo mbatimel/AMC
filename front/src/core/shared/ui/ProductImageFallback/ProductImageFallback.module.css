@@ -1,0 +1,24 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  block-size: 100%;
+  inline-size: 100%;
+  border-radius: 12px;
+  background: #f5f7fa;
+  color: #6b7280;
+}
+
+.icon {
+  block-size: 64px;
+  inline-size: 64px;
+}
+
+.label {
+  max-inline-size: 80%;
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+}

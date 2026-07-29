@@ -35,6 +35,7 @@
 }
 
 .iconButtonCart {
+  position: relative;
   border-color: transparent;
   background: var(--header-cart-bg);
   color: var(--palette-white);
@@ -42,6 +43,24 @@
 
 .iconButtonCart:hover {
   background: var(--header-cart-bg-hover);
+}
+
+.cartBadge {
+  position: absolute;
+  inset-block-start: -4px;
+  inset-inline-end: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 16px;
+  border-radius: 999px;
+  background: var(--header-brand);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding-block: 2px;
+  padding-inline: 4px;
 }
 
 .toolbarActions {

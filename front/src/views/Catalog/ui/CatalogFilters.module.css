@@ -1,0 +1,111 @@
+.root {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--palette-white);
+  margin-block-end: 20px;
+  padding: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block-end: 16px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.badge {
+  min-inline-size: 22px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-block-end: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  color: var(--palette-dark);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.input {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--palette-white);
+  color: var(--palette-black);
+  font-size: 14px;
+  min-block-size: 40px;
+  padding-block: 10px;
+  padding-inline: 12px;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block-end: 16px;
+}
+
+.checkbox {
+  font-size: 14px;
+}
+
+.profile {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: #fafbfc;
+  padding: 14px;
+}
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block-end: 6px;
+  color: var(--palette-dark);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.devBadge {
+  font-size: 11px;
+}
+
+.profileHint {
+  margin: 0;
+  color: var(--palette-dark);
+  font-size: 13px;
+}
+
+@media (width < 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

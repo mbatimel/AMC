@@ -23,17 +23,24 @@ export const signupFx = createEffect<RegisterPayload, AuthUserResponse, Error>(a
   return registerIndividualRequest(payload.data);
 });
 
-const persistSessionFx = createEffect((userId: string) => {
-  writeUserIdCookie(userId);
-});
-
-const clearSessionFx = createEffect(() => {
-  clearUserIdCookie();
-});
+export const $isSessionHydrated = createStore(false).on(sessionHydrated, () => true);
 
 export const $userId = createStore<null | string>(null)
-  .on(sessionStarted, (_, userId) => userId)
-  .on(sessionEnded, () => null);
+  .on(sessionStarted, (_, userId) => {
+    writeUserIdCookie(userId);
+
+    return userId;
+  })
+  .on(sessionEnded, () => {
+    clearUserIdCookie();
+
+    return null;
+  })
+  /**
+   * Cookie есть — восстанавливаем. Пустая cookie не затирает текущую сессию:
+   * иначе hydrate в Header/Footer после логина успевал обнулить $userId.
+   */
+  .on(sessionHydrated, (current) => readUserIdCookie() ?? current);
 
 export const $isAuthPending = createStore(false)
   .on(loginFx, () => true)
@@ -50,23 +57,7 @@ export const $authError = createStore<null | string>(null)
   .on(sessionEnded, () => null);
 
 sample({
-  clock: sessionHydrated,
-  fn: () => readUserIdCookie(),
-  target: $userId,
-});
-
-sample({
   clock: loginFx.doneData,
   fn: ({ userID }) => userID,
   target: sessionStarted,
-});
-
-sample({
-  clock: sessionStarted,
-  target: persistSessionFx,
-});
-
-sample({
-  clock: sessionEnded,
-  target: clearSessionFx,
 });

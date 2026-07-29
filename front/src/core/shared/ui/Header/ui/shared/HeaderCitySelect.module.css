@@ -12,7 +12,8 @@
   gap: 6px;
 }
 
-.trigger:disabled {
+.trigger:disabled,
+.trigger[data-disabled='true'] {
   cursor: default;
   opacity: 0.7;
 }

@@ -3,13 +3,14 @@
 import { useUnit } from 'effector-react';
 import { useEffect } from 'react';
 
-import { $userId, sessionHydrated } from '../model';
+import { $isSessionHydrated, $userId, sessionHydrated } from '../model';
 
 export const useSession = (): {
   isAuthenticated: boolean;
+  isHydrated: boolean;
   userId: null | string;
 } => {
-  const [userId, hydrate] = useUnit([$userId, sessionHydrated]);
+  const [userId, isHydrated, hydrate] = useUnit([$userId, $isSessionHydrated, sessionHydrated]);
 
   useEffect(() => {
     hydrate();
@@ -17,6 +18,7 @@ export const useSession = (): {
 
   return {
     isAuthenticated: userId !== null,
+    isHydrated,
     userId,
   };
 };

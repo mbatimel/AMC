@@ -12,6 +12,11 @@ export type HeaderAccountLink = {
   label: string;
 };
 
+export type HeaderCartLink = {
+  count: number;
+  href: string;
+};
+
 export type HeaderMobileMenuProps = {
   account: HeaderAccountLink;
   closeMenu: () => void;
@@ -28,6 +33,7 @@ export type HeaderMobileViewProps = HeaderViewProps & {
 
 export type HeaderViewProps = {
   account: HeaderAccountLink;
+  cart: HeaderCartLink;
   city: UseCityResult;
   nav: UseHeaderNavResult;
   search: UseHeaderSearchResult;

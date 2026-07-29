@@ -8,7 +8,16 @@ import { HEADER_CABINET_ITEMS, HEADER_NAV_ITEMS } from '../constants';
 export const useHeaderNav = () => {
   const pathname = usePathname();
 
-  const getIsActive = useCallback((href: string): boolean => href === pathname, [pathname]);
+  const getIsActive = useCallback(
+    (href: string): boolean => {
+      if (href === '/') {
+        return pathname === '/';
+      }
+
+      return pathname === href || pathname.startsWith(`${href}/`);
+    },
+    [pathname],
+  );
 
   return {
     cabinetItems: HEADER_CABINET_ITEMS,

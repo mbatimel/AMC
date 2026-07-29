@@ -1,5 +1,6 @@
 'use client';
 
+import { useCart } from '@/core/entities/cart';
 import { useCity } from '@/core/entities/city';
 import { useSession } from '@/core/entities/session';
 
@@ -8,6 +9,7 @@ import {
   HEADER_ACCOUNT_LABEL,
   HEADER_AUTH_HREF,
   HEADER_AUTH_LABEL,
+  HEADER_CART_HREF,
 } from '../constants';
 import { useHeaderNav } from './useHeaderNav';
 import { useHeaderSearch } from './useHeaderSearch';
@@ -19,6 +21,7 @@ export const useHeader = () => {
   const mobileMenu = useMobileMenu();
   const city = useCity();
   const { isAuthenticated } = useSession();
+  const { cartCount } = useCart();
 
   const account = {
     href: isAuthenticated ? HEADER_ACCOUNT_HREF : HEADER_AUTH_HREF,
@@ -26,8 +29,14 @@ export const useHeader = () => {
     label: isAuthenticated ? HEADER_ACCOUNT_LABEL : HEADER_AUTH_LABEL,
   };
 
+  const cart = {
+    count: cartCount,
+    href: HEADER_CART_HREF,
+  };
+
   return {
     account,
+    cart,
     city,
     mobileMenu,
     nav,

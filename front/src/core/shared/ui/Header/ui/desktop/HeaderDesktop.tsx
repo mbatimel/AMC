@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import Link from 'next/link';
 
 import {
   IconCart,
@@ -12,7 +13,6 @@ import {
 import type { HeaderViewProps } from '../../model/types';
 
 import {
-  HEADER_CART_HREF,
   HEADER_EMAIL,
   HEADER_ORDERS_HREF,
   HEADER_PHONE_EXTENSIONS,
@@ -68,8 +68,9 @@ export const HeaderDesktopTopBar = ({ city }: Pick<HeaderViewProps, 'city'>): JS
 
 export const HeaderDesktopMain = ({
   account,
+  cart,
   search,
-}: Pick<HeaderViewProps, 'account' | 'search'>): JSX.Element => {
+}: Pick<HeaderViewProps, 'account' | 'cart' | 'search'>): JSX.Element => {
   const AccountIcon = account.isAuthenticated ? IconUser : IconLogin;
 
   return (
@@ -80,10 +81,11 @@ export const HeaderDesktopMain = ({
         <HeaderSearchForm search={search} variant="desktop" />
 
         <div className={clsx(styles.actions)}>
-          <a className={clsx(styles.cartButton)} href={HEADER_CART_HREF}>
+          <Link className={clsx(styles.cartButton)} href={cart.href}>
             <IconCart height={16} width={16} />
             <span>Корзина</span>
-          </a>
+            {cart.count > 0 ? <span className={clsx(styles.cartBadge)}>{cart.count}</span> : null}
+          </Link>
 
           <div className={clsx(styles.accountBlock)}>
             <a className={clsx(styles.accountLink)} href={account.href}>
@@ -117,11 +119,17 @@ export const HeaderDesktopNav = ({ nav }: Pick<HeaderViewProps, 'nav'>): JSX.Ele
   );
 };
 
-export const HeaderDesktop = ({ account, city, nav, search }: HeaderViewProps): JSX.Element => {
+export const HeaderDesktop = ({
+  account,
+  cart,
+  city,
+  nav,
+  search,
+}: HeaderViewProps): JSX.Element => {
   return (
     <>
       <HeaderDesktopTopBar city={city} />
-      <HeaderDesktopMain account={account} search={search} />
+      <HeaderDesktopMain account={account} cart={cart} search={search} />
       <HeaderDesktopNav nav={nav} />
     </>
   );

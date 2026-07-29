@@ -1,10 +1,11 @@
 import clsx from 'clsx';
+import Link from 'next/link';
 
 import { IconCart, IconLogin, IconMenu, IconOrders, IconUser } from '@/core/shared/icons';
 
 import type { HeaderMobileViewProps } from '../../model/types';
 
-import { HEADER_CART_HREF, HEADER_ORDERS_HREF } from '../../constants';
+import { HEADER_ORDERS_HREF } from '../../constants';
 import rootStyles from '../../Header.module.css';
 import { HeaderLogo } from '../shared/HeaderLogo';
 import { HeaderSearchForm } from '../shared/HeaderSearchForm';
@@ -13,6 +14,7 @@ import { HeaderMobileMenu } from './HeaderMobileMenu';
 
 export const HeaderMobile = ({
   account,
+  cart,
   mobileMenu,
   nav,
   search,
@@ -40,13 +42,14 @@ export const HeaderMobile = ({
           <HeaderLogo />
 
           <div className={clsx(styles.toolbarActions)}>
-            <a
-              aria-label="Корзина"
+            <Link
+              aria-label={cart.count > 0 ? `Корзина, ${cart.count}` : 'Корзина'}
               className={clsx(styles.iconButton, styles.iconButtonCart)}
-              href={HEADER_CART_HREF}
+              href={cart.href}
             >
               <IconCart height={18} width={18} />
-            </a>
+              {cart.count > 0 ? <span className={clsx(styles.cartBadge)}>{cart.count}</span> : null}
+            </Link>
             <a aria-label={account.label} className={clsx(styles.iconButton)} href={account.href}>
               <AccountIcon height={18} width={18} />
             </a>

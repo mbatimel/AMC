@@ -7,7 +7,11 @@
 
 #### HeroUI и Tailwind
 
-- HeroUI v3 подключён; Tailwind v4 — только инфраструктура для HeroUI в сборке.
+- HeroUI v3 — **основная UI-библиотека проекта** (`@heroui/react`).
+- При реализации экранов и компонентов **сначала ищи готовый примитив в HeroUI** (Button, Input, TextField, Select, Dropdown, Modal, Tabs, Checkbox, Switch, Badge и т.д.) и используй его.
+- Свой HTML-контрол или полностью кастомный виджет — только если подходящего компонента в HeroUI нет или его API не закрывает нужное поведение.
+- Кастомизация HeroUI — через пропсы и `className` из CSS Module, не через переписывание с нуля.
+- Tailwind v4 — только инфраструктура для HeroUI в сборке.
 - **В своём коде Tailwind utility-классы не пишем** — CSS Modules + `theme.css` + пропсы HeroUI.
 
 #### Логические свойства
