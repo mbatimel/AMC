@@ -73,6 +73,24 @@ services:
         condition: service_completed_successfully
     networks: [amc_net]
 
+  users:
+    image: ghcr.io/mbatimel/amc-users:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      PG_HOST: postgres
+      PG_PORT: "5432"
+      PG_DB: ${PG_DB}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      BIND_ADDR: ":8083"
+      ACCESS_URL: "http://access:8080"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      access:
+        condition: service_started
+    networks: [amc_net]
+
   front:
     image: ghcr.io/mbatimel/amc-front:${IMAGE_TAG}
     restart: unless-stopped
@@ -92,12 +110,14 @@ services:
         [
           {"url": "/docs/specs/access.yaml", "name": "Access (internal)"},
           {"url": "/docs/specs/auth.yaml", "name": "Auth"},
-          {"url": "/docs/specs/orders.yaml", "name": "Orders"}
+          {"url": "/docs/specs/orders.yaml", "name": "Orders"},
+          {"url": "/docs/specs/users.yaml", "name": "Users"}
         ]
     volumes:
       - ../back/access/swaggers/internalapi/swagger.yaml:/usr/share/nginx/html/specs/access.yaml:ro
       - ../back/auth/swaggers/externalapi/swagger.yaml:/usr/share/nginx/html/specs/auth.yaml:ro
       - ../back/orders/swaggers/externalapi/swagger.yaml:/usr/share/nginx/html/specs/orders.yaml:ro
+      - ../back/users/swaggers/externalapi/swagger.yaml:/usr/share/nginx/html/specs/users.yaml:ro
     networks: [amc_net]
 
   nginx:
@@ -112,6 +132,7 @@ services:
       - access
       - auth
       - orders
+      - users
       - front
       - swagger-ui
     networks: [amc_net]
