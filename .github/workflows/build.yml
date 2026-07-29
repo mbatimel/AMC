@@ -25,6 +25,9 @@ jobs:
           - name: orders
             dockerfile: ./back/orders/Dockerfile
             image: ghcr.io/mbatimel/amc-orders
+          - name: users
+            dockerfile: ./back/users/Dockerfile
+            image: ghcr.io/mbatimel/amc-users
           - name: front
             dockerfile: ./front/Dockerfile
             image: ghcr.io/mbatimel/amc-front
