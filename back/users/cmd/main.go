@@ -9,9 +9,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp"
 
-	accessTransport "github.com/mbatimel/AMC/access/pkg/client/transport"
+	"github.com/mbatimel/AMC/users/internal/clients"
 	"github.com/mbatimel/AMC/users/internal/config"
-	"github.com/mbatimel/AMC/users/internal/repository"
 	usersService "github.com/mbatimel/AMC/users/internal/service"
 	postgres "github.com/mbatimel/AMC/users/internal/storage/postgres"
 	transportHttp "github.com/mbatimel/AMC/users/internal/transport/http"
@@ -35,9 +34,8 @@ func main() {
 	defer pool.Close()
 
 	postgresStorage := postgres.New(pool)
-	usersRepository := repository.New(postgresStorage)
-	access := accessTransport.NewClientAccessAPI(cfg.AccessURL)
-	svc := usersService.New(log.Logger, usersRepository, access)
+	accessClient := clients.NewAccessClient(cfg.AccessURL)
+	svc := usersService.New(log.Logger, postgresStorage, accessClient)
 
 	app := externalapi.New(log.Logger, externalapi.UsersAPI(externalapi.NewUsersAPI(svc))).WithLog().WithMetrics()
 	server := &fasthttp.Server{Handler: app.Fiber().Handler()}

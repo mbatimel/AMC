@@ -2,17 +2,17 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"embed"
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+
+	internalModels "github.com/mbatimel/AMC/users/internal/models"
 )
 
 var (
@@ -70,113 +70,6 @@ var (
 	sqlDeleteFavorites       = query("deleteFavorites.sql")
 )
 
-type UserRow struct {
-	ID             uuid.UUID
-	Email          string
-	Phone          string
-	FirstName      string
-	LastName       string
-	MiddleName     string
-	Role           string
-	Status         string
-	ClientID       uuid.NullUUID
-	CompanyName    string
-	INN            string
-	IsActive       bool
-	ActiveClientID uuid.NullUUID
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	DeletedAt      sql.NullTime
-}
-
-type ClientRow struct {
-	ID          uuid.UUID
-	CompanyName string
-	CompanyType string
-	INN         string
-	OGRN        string
-	Address     string
-	ContactName string
-	Phone       string
-	Email       string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	IsActive    bool
-}
-
-type CategoryDiscountRow struct {
-	CategoryID      uuid.UUID
-	CategoryName    string
-	DiscountPercent float64
-	ValidFrom       sql.NullTime
-	ValidTo         sql.NullTime
-}
-
-type ClientConditionsRow struct {
-	ClientID          uuid.UUID
-	PriceGroup        string
-	CreditLimit       float64
-	CreditUsed        float64
-	PaymentTerms      string
-	SalesContact      string
-	ContactChannel    string
-	CategoryDiscounts []CategoryDiscountRow
-}
-
-type FavoriteRow struct {
-	UserID    uuid.UUID
-	ClientID  uuid.UUID
-	ProductID uuid.UUID
-	CreatedAt time.Time
-}
-
-type CreateUserParams struct {
-	Email       string
-	Phone       string
-	FirstName   string
-	LastName    string
-	MiddleName  string
-	Status      string
-	IsActive    bool
-	ClientID    *uuid.UUID
-	CompanyName string
-	INN         string
-}
-
-type UpdateUserParams struct {
-	UserID      uuid.UUID
-	Email       string
-	Phone       string
-	FirstName   string
-	LastName    string
-	MiddleName  string
-	Status      string
-	IsActive    *bool
-	ClientID    *uuid.UUID
-	CompanyName string
-	INN         string
-}
-
-type ListUsersParams struct {
-	Q        string
-	Role     string
-	Status   string
-	ClientID *uuid.UUID
-	IsActive *bool
-	Limit    int
-	Offset   int
-	Sort     string
-}
-
-type UpdateProfileParams struct {
-	UserID     uuid.UUID
-	Email      string
-	Phone      string
-	FirstName  string
-	LastName   string
-	MiddleName string
-}
-
 type Storage struct {
 	pool *pgxpool.Pool
 }
@@ -189,8 +82,8 @@ type rowScanner interface {
 	Scan(dest ...interface{}) error
 }
 
-func scanUser(row rowScanner) (UserRow, error) {
-	var user UserRow
+func scanUser(row rowScanner) (internalModels.User, error) {
+	var user internalModels.User
 	err := row.Scan(
 		&user.ID,
 		&user.Email,
@@ -212,8 +105,8 @@ func scanUser(row rowScanner) (UserRow, error) {
 	return user, err
 }
 
-func scanClient(row rowScanner, withActive bool) (ClientRow, error) {
-	var client ClientRow
+func scanClient(row rowScanner, withActive bool) (internalModels.Client, error) {
+	var client internalModels.Client
 	dest := []interface{}{
 		&client.ID,
 		&client.CompanyName,
@@ -252,10 +145,10 @@ func classifyWriteError(err error) error {
 	return err
 }
 
-func (s *Storage) CreateUser(ctx context.Context, params CreateUserParams) (UserRow, error) {
+func (s *Storage) CreateUser(ctx context.Context, params internalModels.CreateUserParams) (internalModels.User, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return UserRow{}, fmt.Errorf("begin create user: %w", err)
+		return internalModels.User{}, fmt.Errorf("begin create user: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
@@ -270,62 +163,62 @@ func (s *Storage) CreateUser(ctx context.Context, params CreateUserParams) (User
 		params.IsActive,
 	).Scan(&userID)
 	if err != nil {
-		return UserRow{}, classifyWriteError(fmt.Errorf("insert user: %w", err))
+		return internalModels.User{}, classifyWriteError(fmt.Errorf("insert user: %w", err))
 	}
 
 	clientID := params.ClientID
 	if clientID == nil && (params.CompanyName != "" || params.INN != "") {
 		var createdClientID uuid.UUID
 		if err = tx.QueryRow(ctx, sqlCreateClient, params.CompanyName, params.INN).Scan(&createdClientID); err != nil {
-			return UserRow{}, fmt.Errorf("insert client: %w", err)
+			return internalModels.User{}, fmt.Errorf("insert client: %w", err)
 		}
 		clientID = &createdClientID
 	}
 	if clientID != nil {
 		var exists bool
 		if err = tx.QueryRow(ctx, sqlClientExists, *clientID).Scan(&exists); err != nil {
-			return UserRow{}, fmt.Errorf("check client: %w", err)
+			return internalModels.User{}, fmt.Errorf("check client: %w", err)
 		}
 		if !exists {
-			return UserRow{}, ErrClientNotFound
+			return internalModels.User{}, ErrClientNotFound
 		}
 		if _, err = tx.Exec(ctx, sqlLinkUserClient, userID, *clientID, true); err != nil {
-			return UserRow{}, fmt.Errorf("link user client: %w", err)
+			return internalModels.User{}, fmt.Errorf("link user client: %w", err)
 		}
 		if _, err = tx.Exec(ctx, sqlSetInitialClient, userID, *clientID); err != nil {
-			return UserRow{}, fmt.Errorf("set initial client: %w", err)
+			return internalModels.User{}, fmt.Errorf("set initial client: %w", err)
 		}
 	}
 	if err = tx.Commit(ctx); err != nil {
-		return UserRow{}, fmt.Errorf("commit create user: %w", err)
+		return internalModels.User{}, fmt.Errorf("commit create user: %w", err)
 	}
 	return s.GetUserByID(ctx, userID)
 }
 
-func (s *Storage) GetUserByID(ctx context.Context, userID uuid.UUID) (UserRow, error) {
+func (s *Storage) GetUserByID(ctx context.Context, userID uuid.UUID) (internalModels.User, error) {
 	user, err := scanUser(s.pool.QueryRow(ctx, sqlGetUserByID, userID))
 	if errors.Is(err, pgx.ErrNoRows) {
-		return UserRow{}, ErrUserNotFound
+		return internalModels.User{}, ErrUserNotFound
 	}
 	if err != nil {
-		return UserRow{}, fmt.Errorf("get user by id: %w", err)
+		return internalModels.User{}, fmt.Errorf("get user by id: %w", err)
 	}
 	return user, nil
 }
 
-func (s *Storage) GetUserByEmail(ctx context.Context, email string) (UserRow, error) {
+func (s *Storage) GetUserByEmail(ctx context.Context, email string) (internalModels.User, error) {
 	var userID uuid.UUID
 	err := s.pool.QueryRow(ctx, sqlGetUserByEmail, email).Scan(&userID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return UserRow{}, ErrUserNotFound
+		return internalModels.User{}, ErrUserNotFound
 	}
 	if err != nil {
-		return UserRow{}, fmt.Errorf("get user by email: %w", err)
+		return internalModels.User{}, fmt.Errorf("get user by email: %w", err)
 	}
 	return s.GetUserByID(ctx, userID)
 }
 
-func (s *Storage) userFilter(params ListUsersParams) (string, []interface{}) {
+func (s *Storage) userFilter(params internalModels.ListUsersParams) (string, []interface{}) {
 	clauses := []string{"u.deleted_at IS NULL"}
 	args := make([]interface{}, 0, 5)
 	add := func(clause string, value interface{}) {
@@ -386,7 +279,7 @@ func safeSort(sort string) (string, error) {
 	return order, nil
 }
 
-func (s *Storage) ListUsers(ctx context.Context, params ListUsersParams) ([]UserRow, error) {
+func (s *Storage) ListUsers(ctx context.Context, params internalModels.ListUsersParams) ([]internalModels.User, error) {
 	order, err := safeSort(params.Sort)
 	if err != nil {
 		return nil, err
@@ -400,7 +293,7 @@ func (s *Storage) ListUsers(ctx context.Context, params ListUsersParams) ([]User
 		return nil, fmt.Errorf("list users: %w", err)
 	}
 	defer rows.Close()
-	users := make([]UserRow, 0)
+	users := make([]internalModels.User, 0)
 	for rows.Next() {
 		user, scanErr := scanUser(rows)
 		if scanErr != nil {
@@ -414,7 +307,7 @@ func (s *Storage) ListUsers(ctx context.Context, params ListUsersParams) ([]User
 	return users, nil
 }
 
-func (s *Storage) CountUsers(ctx context.Context, params ListUsersParams) (int, error) {
+func (s *Storage) CountUsers(ctx context.Context, params internalModels.ListUsersParams) (int, error) {
 	where, args := s.userFilter(params)
 	var total int
 	if err := s.pool.QueryRow(ctx, sqlCountUsers+where, args...).Scan(&total); err != nil {
@@ -423,10 +316,10 @@ func (s *Storage) CountUsers(ctx context.Context, params ListUsersParams) (int, 
 	return total, nil
 }
 
-func (s *Storage) UpdateUser(ctx context.Context, params UpdateUserParams) (UserRow, error) {
+func (s *Storage) UpdateUser(ctx context.Context, params internalModels.UpdateUserParams) (internalModels.User, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return UserRow{}, fmt.Errorf("begin update user: %w", err)
+		return internalModels.User{}, fmt.Errorf("begin update user: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
@@ -444,30 +337,30 @@ func (s *Storage) UpdateUser(ctx context.Context, params UpdateUserParams) (User
 		params.IsActive,
 	).Scan(&updatedID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return UserRow{}, ErrUserNotFound
+		return internalModels.User{}, ErrUserNotFound
 	}
 	if err != nil {
-		return UserRow{}, classifyWriteError(fmt.Errorf("update user: %w", err))
+		return internalModels.User{}, classifyWriteError(fmt.Errorf("update user: %w", err))
 	}
 	if params.ClientID != nil {
 		var exists bool
 		if err = tx.QueryRow(ctx, sqlClientExists, *params.ClientID).Scan(&exists); err != nil {
-			return UserRow{}, fmt.Errorf("check client: %w", err)
+			return internalModels.User{}, fmt.Errorf("check client: %w", err)
 		}
 		if !exists {
-			return UserRow{}, ErrClientNotFound
+			return internalModels.User{}, ErrClientNotFound
 		}
 		if _, err = tx.Exec(ctx, sqlLinkUserClient, params.UserID, *params.ClientID, false); err != nil {
-			return UserRow{}, fmt.Errorf("link user client: %w", err)
+			return internalModels.User{}, fmt.Errorf("link user client: %w", err)
 		}
 		if params.CompanyName != "" || params.INN != "" {
 			if _, err = tx.Exec(ctx, sqlUpdateClient, *params.ClientID, params.CompanyName, params.INN); err != nil {
-				return UserRow{}, fmt.Errorf("update client: %w", err)
+				return internalModels.User{}, fmt.Errorf("update client: %w", err)
 			}
 		}
 	}
 	if err = tx.Commit(ctx); err != nil {
-		return UserRow{}, fmt.Errorf("commit update user: %w", err)
+		return internalModels.User{}, fmt.Errorf("commit update user: %w", err)
 	}
 	return s.GetUserByID(ctx, updatedID)
 }
@@ -483,37 +376,37 @@ func (s *Storage) SoftDeleteUser(ctx context.Context, userID uuid.UUID) error {
 	return nil
 }
 
-func (s *Storage) SetUserActive(ctx context.Context, userID uuid.UUID, active bool) (UserRow, error) {
+func (s *Storage) SetUserActive(ctx context.Context, userID uuid.UUID, active bool) (internalModels.User, error) {
 	status := "inactive"
 	if active {
 		status = "active"
 	}
 	tag, err := s.pool.Exec(ctx, sqlSetUserActive, userID, active, status)
 	if err != nil {
-		return UserRow{}, fmt.Errorf("set user active: %w", err)
+		return internalModels.User{}, fmt.Errorf("set user active: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return UserRow{}, ErrUserNotFound
+		return internalModels.User{}, ErrUserNotFound
 	}
 	return s.GetUserByID(ctx, userID)
 }
 
-func (s *Storage) GetProfile(ctx context.Context, userID uuid.UUID) (UserRow, *ClientRow, error) {
+func (s *Storage) GetProfile(ctx context.Context, userID uuid.UUID) (internalModels.User, *internalModels.Client, error) {
 	user, err := s.GetUserByID(ctx, userID)
 	if err != nil {
-		return UserRow{}, nil, err
+		return internalModels.User{}, nil, err
 	}
 	if !user.ActiveClientID.Valid {
 		return user, nil, nil
 	}
 	client, err := s.GetClientDetails(ctx, userID, user.ActiveClientID.UUID)
 	if err != nil {
-		return UserRow{}, nil, err
+		return internalModels.User{}, nil, err
 	}
 	return user, &client, nil
 }
 
-func (s *Storage) UpdateProfile(ctx context.Context, params UpdateProfileParams) (UserRow, *ClientRow, error) {
+func (s *Storage) UpdateProfile(ctx context.Context, params internalModels.UpdateProfileParams) (internalModels.User, *internalModels.Client, error) {
 	middleSet := params.MiddleName != ""
 	var userID uuid.UUID
 	err := s.pool.QueryRow(ctx, sqlUpdateProfile,
@@ -526,21 +419,21 @@ func (s *Storage) UpdateProfile(ctx context.Context, params UpdateProfileParams)
 		middleSet,
 	).Scan(&userID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return UserRow{}, nil, ErrUserNotFound
+		return internalModels.User{}, nil, ErrUserNotFound
 	}
 	if err != nil {
-		return UserRow{}, nil, classifyWriteError(fmt.Errorf("update profile: %w", err))
+		return internalModels.User{}, nil, classifyWriteError(fmt.Errorf("update profile: %w", err))
 	}
 	return s.GetProfile(ctx, userID)
 }
 
-func (s *Storage) ListUserClients(ctx context.Context, userID uuid.UUID) ([]ClientRow, error) {
+func (s *Storage) ListUserClients(ctx context.Context, userID uuid.UUID) ([]internalModels.Client, error) {
 	rows, err := s.pool.Query(ctx, sqlListUserClients, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list user clients: %w", err)
 	}
 	defer rows.Close()
-	clients := make([]ClientRow, 0)
+	clients := make([]internalModels.Client, 0)
 	for rows.Next() {
 		client, scanErr := scanClient(rows, true)
 		if scanErr != nil {
@@ -562,19 +455,19 @@ func (s *Storage) UserHasClient(ctx context.Context, userID uuid.UUID, clientID 
 	return exists, nil
 }
 
-func (s *Storage) GetClientDetails(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (ClientRow, error) {
+func (s *Storage) GetClientDetails(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (internalModels.Client, error) {
 	client, err := scanClient(s.pool.QueryRow(ctx, sqlGetClientDetails, userID, clientID), false)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return ClientRow{}, ErrClientNotFound
+		return internalModels.Client{}, ErrClientNotFound
 	}
 	if err != nil {
-		return ClientRow{}, fmt.Errorf("get client details: %w", err)
+		return internalModels.Client{}, fmt.Errorf("get client details: %w", err)
 	}
 	return client, nil
 }
 
-func (s *Storage) GetClientConditions(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (ClientConditionsRow, error) {
-	var conditions ClientConditionsRow
+func (s *Storage) GetClientConditions(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (internalModels.ClientConditions, error) {
+	var conditions internalModels.ClientConditions
 	err := s.pool.QueryRow(ctx, sqlGetClientConditions, userID, clientID).Scan(
 		&conditions.ClientID,
 		&conditions.PriceGroup,
@@ -585,19 +478,19 @@ func (s *Storage) GetClientConditions(ctx context.Context, userID uuid.UUID, cli
 		&conditions.ContactChannel,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return ClientConditionsRow{}, ErrClientNotFound
+		return internalModels.ClientConditions{}, ErrClientNotFound
 	}
 	if err != nil {
-		return ClientConditionsRow{}, fmt.Errorf("get client conditions: %w", err)
+		return internalModels.ClientConditions{}, fmt.Errorf("get client conditions: %w", err)
 	}
 	rows, err := s.pool.Query(ctx, sqlListCategoryDiscounts, clientID)
 	if err != nil {
-		return ClientConditionsRow{}, fmt.Errorf("list category discounts: %w", err)
+		return internalModels.ClientConditions{}, fmt.Errorf("list category discounts: %w", err)
 	}
 	defer rows.Close()
-	conditions.CategoryDiscounts = make([]CategoryDiscountRow, 0)
+	conditions.CategoryDiscounts = make([]internalModels.CategoryDiscount, 0)
 	for rows.Next() {
-		var discount CategoryDiscountRow
+		var discount internalModels.CategoryDiscount
 		if err = rows.Scan(
 			&discount.CategoryID,
 			&discount.CategoryName,
@@ -605,43 +498,43 @@ func (s *Storage) GetClientConditions(ctx context.Context, userID uuid.UUID, cli
 			&discount.ValidFrom,
 			&discount.ValidTo,
 		); err != nil {
-			return ClientConditionsRow{}, fmt.Errorf("scan category discount: %w", err)
+			return internalModels.ClientConditions{}, fmt.Errorf("scan category discount: %w", err)
 		}
 		conditions.CategoryDiscounts = append(conditions.CategoryDiscounts, discount)
 	}
 	if err = rows.Err(); err != nil {
-		return ClientConditionsRow{}, fmt.Errorf("iterate category discounts: %w", err)
+		return internalModels.ClientConditions{}, fmt.Errorf("iterate category discounts: %w", err)
 	}
 	return conditions, nil
 }
 
-func (s *Storage) SetActiveClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (ClientRow, error) {
+func (s *Storage) SetActiveClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (internalModels.Client, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return ClientRow{}, fmt.Errorf("begin set active client: %w", err)
+		return internalModels.Client{}, fmt.Errorf("begin set active client: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	var linkedClientID uuid.UUID
 	err = tx.QueryRow(ctx, sqlLockUserClient, userID, clientID).Scan(&linkedClientID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return ClientRow{}, ErrClientNotFound
+		return internalModels.Client{}, ErrClientNotFound
 	}
 	if err != nil {
-		return ClientRow{}, fmt.Errorf("lock user client: %w", err)
+		return internalModels.Client{}, fmt.Errorf("lock user client: %w", err)
 	}
 	tag, err := tx.Exec(ctx, sqlSetActiveClient, userID, linkedClientID)
 	if err != nil {
-		return ClientRow{}, fmt.Errorf("set active client: %w", err)
+		return internalModels.Client{}, fmt.Errorf("set active client: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return ClientRow{}, ErrUserNotFound
+		return internalModels.Client{}, ErrUserNotFound
 	}
 	if err = tx.Commit(ctx); err != nil {
-		return ClientRow{}, fmt.Errorf("commit set active client: %w", err)
+		return internalModels.Client{}, fmt.Errorf("commit set active client: %w", err)
 	}
 	client, err := s.GetClientDetails(ctx, userID, clientID)
 	if err != nil {
-		return ClientRow{}, err
+		return internalModels.Client{}, err
 	}
 	client.IsActive = true
 	return client, nil
@@ -662,19 +555,19 @@ func (s *Storage) GetActiveClient(ctx context.Context, userID uuid.UUID) (uuid.U
 	return activeClientID.UUID, nil
 }
 
-func scanFavorite(row rowScanner) (FavoriteRow, error) {
-	var favorite FavoriteRow
+func scanFavorite(row rowScanner) (internalModels.Favorite, error) {
+	var favorite internalModels.Favorite
 	err := row.Scan(&favorite.UserID, &favorite.ClientID, &favorite.ProductID, &favorite.CreatedAt)
 	return favorite, err
 }
 
-func (s *Storage) ListFavorites(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) ([]FavoriteRow, error) {
+func (s *Storage) ListFavorites(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) ([]internalModels.Favorite, error) {
 	rows, err := s.pool.Query(ctx, sqlListFavorites, userID, clientID)
 	if err != nil {
 		return nil, fmt.Errorf("list favorites: %w", err)
 	}
 	defer rows.Close()
-	favorites := make([]FavoriteRow, 0)
+	favorites := make([]internalModels.Favorite, 0)
 	for rows.Next() {
 		favorite, scanErr := scanFavorite(rows)
 		if scanErr != nil {
@@ -688,17 +581,17 @@ func (s *Storage) ListFavorites(ctx context.Context, userID uuid.UUID, clientID 
 	return favorites, nil
 }
 
-func (s *Storage) AddFavorite(ctx context.Context, userID uuid.UUID, clientID uuid.UUID, productID uuid.UUID) (FavoriteRow, bool, error) {
+func (s *Storage) AddFavorite(ctx context.Context, userID uuid.UUID, clientID uuid.UUID, productID uuid.UUID) (internalModels.Favorite, bool, error) {
 	favorite, err := scanFavorite(s.pool.QueryRow(ctx, sqlAddFavorite, userID, clientID, productID))
 	if errors.Is(err, pgx.ErrNoRows) {
 		existing, getErr := scanFavorite(s.pool.QueryRow(ctx, sqlGetFavorite, userID, clientID, productID))
 		if getErr != nil {
-			return FavoriteRow{}, false, fmt.Errorf("get existing favorite: %w", getErr)
+			return internalModels.Favorite{}, false, fmt.Errorf("get existing favorite: %w", getErr)
 		}
 		return existing, false, nil
 	}
 	if err != nil {
-		return FavoriteRow{}, false, classifyWriteError(fmt.Errorf("add favorite: %w", err))
+		return internalModels.Favorite{}, false, classifyWriteError(fmt.Errorf("add favorite: %w", err))
 	}
 	return favorite, true, nil
 }

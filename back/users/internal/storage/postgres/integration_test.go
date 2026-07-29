@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
+
+	internalModels "github.com/mbatimel/AMC/users/internal/models"
 )
 
 func TestStorageUserClientsAndFavoritesIntegration(t *testing.T) {
@@ -59,7 +61,7 @@ func TestStorageUserClientsAndFavoritesIntegration(t *testing.T) {
 
 	storage := New(pool)
 	email := "integration-" + uuid.NewString() + "@example.com"
-	created, err := storage.CreateUser(ctx, CreateUserParams{
+	created, err := storage.CreateUser(ctx, internalModels.CreateUserParams{
 		Email: email, FirstName: "Integration", LastName: "User",
 		Status: "active", IsActive: true, ClientID: &firstClientID,
 	})
@@ -71,7 +73,7 @@ func TestStorageUserClientsAndFavoritesIntegration(t *testing.T) {
 		t.Fatalf("unexpected initial active client: %+v", created.ActiveClientID)
 	}
 
-	updated, err := storage.UpdateUser(ctx, UpdateUserParams{
+	updated, err := storage.UpdateUser(ctx, internalModels.UpdateUserParams{
 		UserID: userID, ClientID: &secondClientID,
 	})
 	if err != nil {
@@ -128,7 +130,7 @@ func TestStorageUserClientsAndFavoritesIntegration(t *testing.T) {
 	}
 
 	active := true
-	listParams := ListUsersParams{
+	listParams := internalModels.ListUsersParams{
 		Q: email, ClientID: &secondClientID, IsActive: &active,
 		Limit: 10, Sort: "-email",
 	}

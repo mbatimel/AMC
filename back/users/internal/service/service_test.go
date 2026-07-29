@@ -11,96 +11,92 @@ import (
 	"github.com/rs/zerolog"
 
 	customErrors "github.com/mbatimel/AMC/users/internal/errors"
-	"github.com/mbatimel/AMC/users/internal/repository"
+	internalModels "github.com/mbatimel/AMC/users/internal/models"
 	"github.com/mbatimel/AMC/users/internal/storage/postgres"
 )
 
-type fakeRepository struct {
-	createUserFn          func(context.Context, repository.CreateUserParams) (repository.User, error)
-	getUserByIDFn         func(context.Context, uuid.UUID) (repository.User, error)
-	getUserByEmailFn      func(context.Context, string) (repository.User, error)
-	listUsersFn           func(context.Context, repository.ListUsersParams) ([]repository.User, error)
-	countUsersFn          func(context.Context, repository.ListUsersParams) (int, error)
-	updateUserFn          func(context.Context, repository.UpdateUserParams) (repository.User, error)
+type fakeStorage struct {
+	createUserFn          func(context.Context, internalModels.CreateUserParams) (internalModels.User, error)
+	getUserByIDFn         func(context.Context, uuid.UUID) (internalModels.User, error)
+	listUsersFn           func(context.Context, internalModels.ListUsersParams) ([]internalModels.User, error)
+	countUsersFn          func(context.Context, internalModels.ListUsersParams) (int, error)
+	updateUserFn          func(context.Context, internalModels.UpdateUserParams) (internalModels.User, error)
 	softDeleteUserFn      func(context.Context, uuid.UUID) error
-	setUserActiveFn       func(context.Context, uuid.UUID, bool) (repository.User, error)
-	getProfileFn          func(context.Context, uuid.UUID) (repository.User, *repository.Client, error)
-	updateProfileFn       func(context.Context, repository.UpdateProfileParams) (repository.User, *repository.Client, error)
-	listUserClientsFn     func(context.Context, uuid.UUID) ([]repository.Client, error)
+	setUserActiveFn       func(context.Context, uuid.UUID, bool) (internalModels.User, error)
+	getProfileFn          func(context.Context, uuid.UUID) (internalModels.User, *internalModels.Client, error)
+	updateProfileFn       func(context.Context, internalModels.UpdateProfileParams) (internalModels.User, *internalModels.Client, error)
+	listUserClientsFn     func(context.Context, uuid.UUID) ([]internalModels.Client, error)
 	userHasClientFn       func(context.Context, uuid.UUID, uuid.UUID) (bool, error)
-	getClientDetailsFn    func(context.Context, uuid.UUID, uuid.UUID) (repository.Client, error)
-	getClientConditionsFn func(context.Context, uuid.UUID, uuid.UUID) (repository.ClientConditions, error)
-	setActiveClientFn     func(context.Context, uuid.UUID, uuid.UUID) (repository.Client, error)
+	getClientDetailsFn    func(context.Context, uuid.UUID, uuid.UUID) (internalModels.Client, error)
+	getClientConditionsFn func(context.Context, uuid.UUID, uuid.UUID) (internalModels.ClientConditions, error)
+	setActiveClientFn     func(context.Context, uuid.UUID, uuid.UUID) (internalModels.Client, error)
 	getActiveClientFn     func(context.Context, uuid.UUID) (uuid.UUID, error)
-	listFavoritesFn       func(context.Context, uuid.UUID, uuid.UUID) ([]repository.Favorite, error)
-	addFavoriteFn         func(context.Context, uuid.UUID, uuid.UUID, uuid.UUID) (repository.Favorite, bool, error)
+	listFavoritesFn       func(context.Context, uuid.UUID, uuid.UUID) ([]internalModels.Favorite, error)
+	addFavoriteFn         func(context.Context, uuid.UUID, uuid.UUID, uuid.UUID) (internalModels.Favorite, bool, error)
 	deleteFavoritesFn     func(context.Context, uuid.UUID, uuid.UUID, []uuid.UUID) (int, error)
 }
 
-func (f *fakeRepository) CreateUser(ctx context.Context, params repository.CreateUserParams) (repository.User, error) {
+func (f *fakeStorage) CreateUser(ctx context.Context, params internalModels.CreateUserParams) (internalModels.User, error) {
 	return f.createUserFn(ctx, params)
 }
-func (f *fakeRepository) GetUserByID(ctx context.Context, userID uuid.UUID) (repository.User, error) {
+func (f *fakeStorage) GetUserByID(ctx context.Context, userID uuid.UUID) (internalModels.User, error) {
 	if f.getUserByIDFn == nil {
-		return repository.User{}, nil
+		return internalModels.User{}, nil
 	}
 	return f.getUserByIDFn(ctx, userID)
 }
-func (f *fakeRepository) GetUserByEmail(ctx context.Context, email string) (repository.User, error) {
-	return f.getUserByEmailFn(ctx, email)
-}
-func (f *fakeRepository) ListUsers(ctx context.Context, params repository.ListUsersParams) ([]repository.User, error) {
+func (f *fakeStorage) ListUsers(ctx context.Context, params internalModels.ListUsersParams) ([]internalModels.User, error) {
 	return f.listUsersFn(ctx, params)
 }
-func (f *fakeRepository) CountUsers(ctx context.Context, params repository.ListUsersParams) (int, error) {
+func (f *fakeStorage) CountUsers(ctx context.Context, params internalModels.ListUsersParams) (int, error) {
 	return f.countUsersFn(ctx, params)
 }
-func (f *fakeRepository) UpdateUser(ctx context.Context, params repository.UpdateUserParams) (repository.User, error) {
+func (f *fakeStorage) UpdateUser(ctx context.Context, params internalModels.UpdateUserParams) (internalModels.User, error) {
 	return f.updateUserFn(ctx, params)
 }
-func (f *fakeRepository) SoftDeleteUser(ctx context.Context, userID uuid.UUID) error {
+func (f *fakeStorage) SoftDeleteUser(ctx context.Context, userID uuid.UUID) error {
 	return f.softDeleteUserFn(ctx, userID)
 }
-func (f *fakeRepository) SetUserActive(ctx context.Context, userID uuid.UUID, active bool) (repository.User, error) {
+func (f *fakeStorage) SetUserActive(ctx context.Context, userID uuid.UUID, active bool) (internalModels.User, error) {
 	return f.setUserActiveFn(ctx, userID, active)
 }
-func (f *fakeRepository) GetProfile(ctx context.Context, userID uuid.UUID) (repository.User, *repository.Client, error) {
+func (f *fakeStorage) GetProfile(ctx context.Context, userID uuid.UUID) (internalModels.User, *internalModels.Client, error) {
 	return f.getProfileFn(ctx, userID)
 }
-func (f *fakeRepository) UpdateProfile(ctx context.Context, params repository.UpdateProfileParams) (repository.User, *repository.Client, error) {
+func (f *fakeStorage) UpdateProfile(ctx context.Context, params internalModels.UpdateProfileParams) (internalModels.User, *internalModels.Client, error) {
 	return f.updateProfileFn(ctx, params)
 }
-func (f *fakeRepository) ListUserClients(ctx context.Context, userID uuid.UUID) ([]repository.Client, error) {
+func (f *fakeStorage) ListUserClients(ctx context.Context, userID uuid.UUID) ([]internalModels.Client, error) {
 	return f.listUserClientsFn(ctx, userID)
 }
-func (f *fakeRepository) UserHasClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (bool, error) {
+func (f *fakeStorage) UserHasClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (bool, error) {
 	return f.userHasClientFn(ctx, userID, clientID)
 }
-func (f *fakeRepository) GetClientDetails(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (repository.Client, error) {
+func (f *fakeStorage) GetClientDetails(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (internalModels.Client, error) {
 	return f.getClientDetailsFn(ctx, userID, clientID)
 }
-func (f *fakeRepository) GetClientConditions(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (repository.ClientConditions, error) {
+func (f *fakeStorage) GetClientConditions(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (internalModels.ClientConditions, error) {
 	return f.getClientConditionsFn(ctx, userID, clientID)
 }
-func (f *fakeRepository) SetActiveClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (repository.Client, error) {
+func (f *fakeStorage) SetActiveClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (internalModels.Client, error) {
 	return f.setActiveClientFn(ctx, userID, clientID)
 }
-func (f *fakeRepository) GetActiveClient(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
+func (f *fakeStorage) GetActiveClient(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
 	return f.getActiveClientFn(ctx, userID)
 }
-func (f *fakeRepository) ListFavorites(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) ([]repository.Favorite, error) {
+func (f *fakeStorage) ListFavorites(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) ([]internalModels.Favorite, error) {
 	return f.listFavoritesFn(ctx, userID, clientID)
 }
-func (f *fakeRepository) AddFavorite(ctx context.Context, userID uuid.UUID, clientID uuid.UUID, productID uuid.UUID) (repository.Favorite, bool, error) {
+func (f *fakeStorage) AddFavorite(ctx context.Context, userID uuid.UUID, clientID uuid.UUID, productID uuid.UUID) (internalModels.Favorite, bool, error) {
 	return f.addFavoriteFn(ctx, userID, clientID, productID)
 }
-func (f *fakeRepository) DeleteFavorites(ctx context.Context, userID uuid.UUID, clientID uuid.UUID, productIDs []uuid.UUID) (int, error) {
+func (f *fakeStorage) DeleteFavorites(ctx context.Context, userID uuid.UUID, clientID uuid.UUID, productIDs []uuid.UUID) (int, error) {
 	return f.deleteFavoritesFn(ctx, userID, clientID, productIDs)
 }
 
-func testUser(userID uuid.UUID, clientID uuid.UUID) repository.User {
+func testUser(userID uuid.UUID, clientID uuid.UUID) internalModels.User {
 	now := time.Date(2026, 7, 29, 10, 0, 0, 0, time.UTC)
-	return repository.User{
+	return internalModels.User{
 		ID: userID, Email: "user@example.com", Phone: "+79990000000",
 		FirstName: "Иван", LastName: "Иванов", Status: "active",
 		IsActive: true, ActiveClientID: uuid.NullUUID{UUID: clientID, Valid: clientID != uuid.Nil},
@@ -108,15 +104,78 @@ func testUser(userID uuid.UUID, clientID uuid.UUID) repository.User {
 	}
 }
 
-func testService(repo Repository) *Service {
-	return New(zerolog.Nop(), repo, nil)
+type fakeAccessClient struct {
+	checkAccessFn func(context.Context, uuid.UUID, int) (bool, error)
+	addRoleFn     func(context.Context, uuid.UUID, uuid.UUID, int) (bool, error)
+	updateRoleFn  func(context.Context, uuid.UUID, uuid.UUID, int) (bool, error)
+}
+
+func (f *fakeAccessClient) CheckAccess(ctx context.Context, userID uuid.UUID, role int) (bool, error) {
+	if f.checkAccessFn == nil {
+		return true, nil
+	}
+	return f.checkAccessFn(ctx, userID, role)
+}
+
+func (f *fakeAccessClient) AddRole(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, role int) (bool, error) {
+	if f.addRoleFn == nil {
+		return true, nil
+	}
+	return f.addRoleFn(ctx, adminUserID, userID, role)
+}
+
+func (f *fakeAccessClient) UpdateRole(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, role int) (bool, error) {
+	if f.updateRoleFn == nil {
+		return true, nil
+	}
+	return f.updateRoleFn(ctx, adminUserID, userID, role)
+}
+
+func testService(storage Storage) *Service {
+	return New(zerolog.Nop(), storage, &fakeAccessClient{})
+}
+
+func TestCheckBuyerAccess(t *testing.T) {
+	userID := uuid.New()
+	access := &fakeAccessClient{checkAccessFn: func(_ context.Context, gotUserID uuid.UUID, role int) (bool, error) {
+		if gotUserID != userID {
+			t.Fatalf("unexpected user id: %s", gotUserID)
+		}
+		if role != RoleCodeBuyer {
+			t.Fatalf("role = %d, want %d", role, RoleCodeBuyer)
+		}
+		return true, nil
+	}}
+
+	if err := New(zerolog.Nop(), &fakeStorage{}, access).checkBuyerAccess(context.Background(), userID); err != nil {
+		t.Fatalf("checkBuyerAccess() error = %v", err)
+	}
+}
+
+func TestGetProfileRejectsNonBuyerBeforeStorage(t *testing.T) {
+	storageCalled := false
+	storage := &fakeStorage{getProfileFn: func(context.Context, uuid.UUID) (internalModels.User, *internalModels.Client, error) {
+		storageCalled = true
+		return internalModels.User{}, nil, nil
+	}}
+	access := &fakeAccessClient{checkAccessFn: func(context.Context, uuid.UUID, int) (bool, error) {
+		return false, nil
+	}}
+
+	_, err := New(zerolog.Nop(), storage, access).GetProfile(context.Background(), uuid.New())
+	if err == nil || !errors.Is(err, customErrors.ErrForbidden) {
+		t.Fatalf("expected forbidden, got %v", err)
+	}
+	if storageCalled {
+		t.Fatal("storage was called for a non-buyer")
+	}
 }
 
 func TestGetProfileOwnProfile(t *testing.T) {
 	userID, clientID := uuid.New(), uuid.New()
 	user := testUser(userID, clientID)
-	client := repository.Client{ID: clientID, CompanyName: "ООО Тест"}
-	repo := &fakeRepository{getProfileFn: func(_ context.Context, gotUserID uuid.UUID) (repository.User, *repository.Client, error) {
+	client := internalModels.Client{ID: clientID, CompanyName: "ООО Тест"}
+	repo := &fakeStorage{getProfileFn: func(_ context.Context, gotUserID uuid.UUID) (internalModels.User, *internalModels.Client, error) {
 		if gotUserID != userID {
 			t.Fatalf("unexpected user id: %s", gotUserID)
 		}
@@ -137,8 +196,8 @@ func TestGetProfileOwnProfile(t *testing.T) {
 
 func TestUpdateProfile(t *testing.T) {
 	userID := uuid.New()
-	var captured repository.UpdateProfileParams
-	repo := &fakeRepository{updateProfileFn: func(_ context.Context, params repository.UpdateProfileParams) (repository.User, *repository.Client, error) {
+	var captured internalModels.UpdateProfileParams
+	repo := &fakeStorage{updateProfileFn: func(_ context.Context, params internalModels.UpdateProfileParams) (internalModels.User, *internalModels.Client, error) {
 		captured = params
 		user := testUser(userID, uuid.Nil)
 		user.Email = params.Email
@@ -161,7 +220,7 @@ func TestUpdateProfile(t *testing.T) {
 }
 
 func TestUpdateProfileRejectsNameLongerThanDatabaseColumn(t *testing.T) {
-	repo := &fakeRepository{}
+	repo := &fakeStorage{}
 
 	_, err := testService(repo).UpdateProfile(
 		context.Background(), uuid.New(), "", "", strings.Repeat("я", maxUserNameLength+1), "", "",
@@ -172,7 +231,7 @@ func TestUpdateProfileRejectsNameLongerThanDatabaseColumn(t *testing.T) {
 }
 
 func TestCreateUserRejectsNameLongerThanDatabaseColumn(t *testing.T) {
-	repo := &fakeRepository{}
+	repo := &fakeStorage{}
 
 	_, err := testService(repo).CreateUser(
 		context.Background(), uuid.Nil, "user@example.com", "",
@@ -186,13 +245,13 @@ func TestCreateUserRejectsNameLongerThanDatabaseColumn(t *testing.T) {
 func TestSwitchActiveClientAllowed(t *testing.T) {
 	userID, clientID := uuid.New(), uuid.New()
 	var switched bool
-	repo := &fakeRepository{
+	repo := &fakeStorage{
 		userHasClientFn: func(_ context.Context, gotUserID, gotClientID uuid.UUID) (bool, error) {
 			return gotUserID == userID && gotClientID == clientID, nil
 		},
-		setActiveClientFn: func(_ context.Context, gotUserID, gotClientID uuid.UUID) (repository.Client, error) {
+		setActiveClientFn: func(_ context.Context, gotUserID, gotClientID uuid.UUID) (internalModels.Client, error) {
 			switched = gotUserID == userID && gotClientID == clientID
-			return repository.Client{ID: clientID, CompanyName: "ИП Тест"}, nil
+			return internalModels.Client{ID: clientID, CompanyName: "ИП Тест"}, nil
 		},
 	}
 
@@ -206,7 +265,7 @@ func TestSwitchActiveClientAllowed(t *testing.T) {
 }
 
 func TestSwitchActiveClientForeignForbidden(t *testing.T) {
-	repo := &fakeRepository{userHasClientFn: func(context.Context, uuid.UUID, uuid.UUID) (bool, error) {
+	repo := &fakeStorage{userHasClientFn: func(context.Context, uuid.UUID, uuid.UUID) (bool, error) {
 		return false, nil
 	}}
 
@@ -218,15 +277,15 @@ func TestSwitchActiveClientForeignForbidden(t *testing.T) {
 
 func TestListUserClients(t *testing.T) {
 	userID, firstClientID, secondClientID := uuid.New(), uuid.New(), uuid.New()
-	repo := &fakeRepository{
-		getUserByIDFn: func(context.Context, uuid.UUID) (repository.User, error) {
+	repo := &fakeStorage{
+		getUserByIDFn: func(context.Context, uuid.UUID) (internalModels.User, error) {
 			return testUser(userID, firstClientID), nil
 		},
-		listUserClientsFn: func(_ context.Context, gotUserID uuid.UUID) ([]repository.Client, error) {
+		listUserClientsFn: func(_ context.Context, gotUserID uuid.UUID) ([]internalModels.Client, error) {
 			if gotUserID != userID {
 				t.Fatalf("unexpected user id: %s", gotUserID)
 			}
-			return []repository.Client{
+			return []internalModels.Client{
 				{ID: firstClientID, CompanyName: "ООО", IsActive: true},
 				{ID: secondClientID, CompanyName: "ИП"},
 			}, nil
@@ -246,13 +305,13 @@ func TestAddFavoriteIsIdempotent(t *testing.T) {
 	userID, clientID, productID := uuid.New(), uuid.New(), uuid.New()
 	createdAt := time.Now()
 	calls := 0
-	repo := &fakeRepository{
+	repo := &fakeStorage{
 		getActiveClientFn: func(context.Context, uuid.UUID) (uuid.UUID, error) {
 			return clientID, nil
 		},
-		addFavoriteFn: func(_ context.Context, gotUserID, gotClientID, gotProductID uuid.UUID) (repository.Favorite, bool, error) {
+		addFavoriteFn: func(_ context.Context, gotUserID, gotClientID, gotProductID uuid.UUID) (internalModels.Favorite, bool, error) {
 			calls++
-			return repository.Favorite{
+			return internalModels.Favorite{
 				UserID: gotUserID, ClientID: gotClientID, ProductID: gotProductID, CreatedAt: createdAt,
 			}, calls == 1, nil
 		},
@@ -275,7 +334,7 @@ func TestAddFavoriteIsIdempotent(t *testing.T) {
 func TestDeleteFavoritesBulk(t *testing.T) {
 	userID, clientID := uuid.New(), uuid.New()
 	productIDs := []uuid.UUID{uuid.New(), uuid.New()}
-	repo := &fakeRepository{
+	repo := &fakeStorage{
 		getActiveClientFn: func(context.Context, uuid.UUID) (uuid.UUID, error) {
 			return clientID, nil
 		},
@@ -303,7 +362,7 @@ func TestDeleteFavoritesBulk(t *testing.T) {
 
 func TestDeleteFavoritesCannotDeleteForeignScope(t *testing.T) {
 	userID, activeClientID, productID := uuid.New(), uuid.New(), uuid.New()
-	repo := &fakeRepository{
+	repo := &fakeStorage{
 		getActiveClientFn: func(context.Context, uuid.UUID) (uuid.UUID, error) {
 			return activeClientID, nil
 		},
@@ -325,8 +384,8 @@ func TestDeleteFavoritesCannotDeleteForeignScope(t *testing.T) {
 }
 
 func TestGetUserNotFound(t *testing.T) {
-	repo := &fakeRepository{getUserByIDFn: func(context.Context, uuid.UUID) (repository.User, error) {
-		return repository.User{}, postgres.ErrUserNotFound
+	repo := &fakeStorage{getUserByIDFn: func(context.Context, uuid.UUID) (internalModels.User, error) {
+		return internalModels.User{}, postgres.ErrUserNotFound
 	}}
 
 	_, err := testService(repo).GetUser(context.Background(), uuid.New())
@@ -338,13 +397,13 @@ func TestGetUserNotFound(t *testing.T) {
 func TestListUsersFiltersAndPagination(t *testing.T) {
 	clientID := uuid.New()
 	active := false
-	var listParams, countParams repository.ListUsersParams
-	repo := &fakeRepository{
-		listUsersFn: func(_ context.Context, params repository.ListUsersParams) ([]repository.User, error) {
+	var listParams, countParams internalModels.ListUsersParams
+	repo := &fakeStorage{
+		listUsersFn: func(_ context.Context, params internalModels.ListUsersParams) ([]internalModels.User, error) {
 			listParams = params
-			return []repository.User{testUser(uuid.New(), clientID)}, nil
+			return []internalModels.User{testUser(uuid.New(), clientID)}, nil
 		},
-		countUsersFn: func(_ context.Context, params repository.ListUsersParams) (int, error) {
+		countUsersFn: func(_ context.Context, params internalModels.ListUsersParams) (int, error) {
 			countParams = params
 			return 7, nil
 		},
@@ -369,7 +428,7 @@ func TestListUsersFiltersAndPagination(t *testing.T) {
 
 func TestActivateAndDeactivateUser(t *testing.T) {
 	userID := uuid.New()
-	repo := &fakeRepository{setUserActiveFn: func(_ context.Context, gotUserID uuid.UUID, active bool) (repository.User, error) {
+	repo := &fakeStorage{setUserActiveFn: func(_ context.Context, gotUserID uuid.UUID, active bool) (internalModels.User, error) {
 		user := testUser(gotUserID, uuid.Nil)
 		user.IsActive = active
 		if active {

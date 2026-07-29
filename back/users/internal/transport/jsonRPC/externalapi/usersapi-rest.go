@@ -73,6 +73,21 @@ func (http *httpUsersAPI) serveListUsers(ctx *fiber.Ctx) (err error) {
 
 	var request requestUsersAPIListUsers
 
+	if _q := ctx.Query("q"); _q != "" {
+		var q string
+		q = _q
+		request.Q = q
+	}
+	if _role := ctx.Query("role"); _role != "" {
+		var role string
+		role = _role
+		request.Role = role
+	}
+	if _status := ctx.Query("status"); _status != "" {
+		var status string
+		status = _status
+		request.Status = status
+	}
 	if _clientID := ctx.Query("clientID"); _clientID != "" {
 		var clientID string
 		clientID = _clientID
@@ -109,21 +124,6 @@ func (http *httpUsersAPI) serveListUsers(ctx *fiber.Ctx) (err error) {
 		var sort string
 		sort = _sort
 		request.Sort = sort
-	}
-	if _q := ctx.Query("q"); _q != "" {
-		var q string
-		q = _q
-		request.Q = q
-	}
-	if _role := ctx.Query("role"); _role != "" {
-		var role string
-		role = _role
-		request.Role = role
-	}
-	if _status := ctx.Query("status"); _status != "" {
-		var status string
-		status = _status
-		request.Status = status
 	}
 
 	return customhandlers.ListUsers(ctx, http.svc, request.Q, request.Role, request.Status, request.ClientID, request.IsActive, request.Limit, request.Offset, request.Sort)

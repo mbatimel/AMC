@@ -11,8 +11,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 
+	"github.com/mbatimel/AMC/users/internal/clients"
 	customErrors "github.com/mbatimel/AMC/users/internal/errors"
-	"github.com/mbatimel/AMC/users/internal/repository"
+	internalModels "github.com/mbatimel/AMC/users/internal/models"
 	"github.com/mbatimel/AMC/users/internal/storage/postgres"
 	"github.com/mbatimel/AMC/users/pkg/models"
 )
@@ -24,41 +25,35 @@ const (
 	maxCompanyNameLength = 255
 )
 
-type Repository interface {
-	CreateUser(ctx context.Context, params repository.CreateUserParams) (repository.User, error)
-	GetUserByID(ctx context.Context, userID uuid.UUID) (repository.User, error)
-	GetUserByEmail(ctx context.Context, email string) (repository.User, error)
-	ListUsers(ctx context.Context, params repository.ListUsersParams) ([]repository.User, error)
-	CountUsers(ctx context.Context, params repository.ListUsersParams) (int, error)
-	UpdateUser(ctx context.Context, params repository.UpdateUserParams) (repository.User, error)
+type Storage interface {
+	CreateUser(ctx context.Context, params internalModels.CreateUserParams) (internalModels.User, error)
+	GetUserByID(ctx context.Context, userID uuid.UUID) (internalModels.User, error)
+	ListUsers(ctx context.Context, params internalModels.ListUsersParams) ([]internalModels.User, error)
+	CountUsers(ctx context.Context, params internalModels.ListUsersParams) (int, error)
+	UpdateUser(ctx context.Context, params internalModels.UpdateUserParams) (internalModels.User, error)
 	SoftDeleteUser(ctx context.Context, userID uuid.UUID) error
-	SetUserActive(ctx context.Context, userID uuid.UUID, active bool) (repository.User, error)
-	GetProfile(ctx context.Context, userID uuid.UUID) (repository.User, *repository.Client, error)
-	UpdateProfile(ctx context.Context, params repository.UpdateProfileParams) (repository.User, *repository.Client, error)
-	ListUserClients(ctx context.Context, userID uuid.UUID) ([]repository.Client, error)
+	SetUserActive(ctx context.Context, userID uuid.UUID, active bool) (internalModels.User, error)
+	GetProfile(ctx context.Context, userID uuid.UUID) (internalModels.User, *internalModels.Client, error)
+	UpdateProfile(ctx context.Context, params internalModels.UpdateProfileParams) (internalModels.User, *internalModels.Client, error)
+	ListUserClients(ctx context.Context, userID uuid.UUID) ([]internalModels.Client, error)
 	UserHasClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (bool, error)
-	GetClientDetails(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (repository.Client, error)
-	GetClientConditions(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (repository.ClientConditions, error)
-	SetActiveClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (repository.Client, error)
+	GetClientDetails(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (internalModels.Client, error)
+	GetClientConditions(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (internalModels.ClientConditions, error)
+	SetActiveClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (internalModels.Client, error)
 	GetActiveClient(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
-	ListFavorites(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) ([]repository.Favorite, error)
-	AddFavorite(ctx context.Context, userID uuid.UUID, clientID uuid.UUID, productID uuid.UUID) (repository.Favorite, bool, error)
+	ListFavorites(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) ([]internalModels.Favorite, error)
+	AddFavorite(ctx context.Context, userID uuid.UUID, clientID uuid.UUID, productID uuid.UUID) (internalModels.Favorite, bool, error)
 	DeleteFavorites(ctx context.Context, userID uuid.UUID, clientID uuid.UUID, productIDs []uuid.UUID) (int, error)
-}
-
-type AccessClient interface {
-	AddRole(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, role int) (success bool, err error)
-	UpdateRole(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, role int) (success bool, err error)
 }
 
 type Service struct {
 	logger       zerolog.Logger
-	repository   Repository
-	accessClient AccessClient
+	storage      Storage
+	accessClient clients.AccessClient
 }
 
-func New(logger zerolog.Logger, repository Repository, accessClient AccessClient) *Service {
-	return &Service{logger: logger, repository: repository, accessClient: accessClient}
+func New(logger zerolog.Logger, storage Storage, accessClient clients.AccessClient) *Service {
+	return &Service{logger: logger, storage: storage, accessClient: accessClient}
 }
 
 func validation(field string) error {
@@ -154,7 +149,7 @@ func mapStorageError(err error) error {
 	}
 }
 
-func modelUser(row repository.User) models.User {
+func modelUser(row internalModels.User) models.User {
 	user := models.User{
 		ID:          row.ID.String(),
 		Email:       row.Email,
@@ -183,7 +178,7 @@ func modelUser(row repository.User) models.User {
 	return user
 }
 
-func modelClient(row repository.Client) models.Client {
+func modelClient(row internalModels.Client) models.Client {
 	return models.Client{
 		ID:          row.ID.String(),
 		CompanyName: row.CompanyName,
@@ -199,7 +194,7 @@ func modelClient(row repository.Client) models.Client {
 	}
 }
 
-func modelProfile(user repository.User, client *repository.Client) models.Profile {
+func modelProfile(user internalModels.User, client *internalModels.Client) models.Profile {
 	profile := models.Profile{
 		UserID:     user.ID.String(),
 		Email:      user.Email,
@@ -222,7 +217,7 @@ func modelProfile(user repository.User, client *repository.Client) models.Profil
 	return profile
 }
 
-func modelFavorite(row repository.Favorite) models.Favorite {
+func modelFavorite(row internalModels.Favorite) models.Favorite {
 	return models.Favorite{
 		UserID:    row.UserID.String(),
 		ClientID:  row.ClientID.String(),
@@ -234,6 +229,23 @@ func modelFavorite(row repository.Favorite) models.Favorite {
 func requireUserID(userID uuid.UUID) error {
 	if userID == uuid.Nil {
 		return validation("X-User-Id")
+	}
+	return nil
+}
+
+func (s *Service) checkBuyerAccess(ctx context.Context, userID uuid.UUID) error {
+	if err := requireUserID(userID); err != nil {
+		return err
+	}
+	if s.accessClient == nil {
+		return customErrors.ErrInternal
+	}
+	allowed, err := s.accessClient.CheckAccess(ctx, userID, RoleCodeBuyer)
+	if err != nil {
+		return customErrors.ErrInternal
+	}
+	if !allowed {
+		return customErrors.ErrForbidden
 	}
 	return nil
 }
@@ -293,7 +305,7 @@ func (s *Service) CreateUser(
 			return response, customErrors.ErrInternal
 		}
 	}
-	row, err := s.repository.CreateUser(ctx, repository.CreateUserParams{
+	row, err := s.storage.CreateUser(ctx, internalModels.CreateUserParams{
 		Email: email, Phone: phone, FirstName: strings.TrimSpace(firstName),
 		LastName: strings.TrimSpace(lastName), MiddleName: strings.TrimSpace(middleName),
 		Status: status, IsActive: isActive, ClientID: parsedClientID,
@@ -308,7 +320,7 @@ func (s *Service) CreateUser(
 			s.logger.Error().Err(accessErr).Str("userID", row.ID.String()).Msg("failed to assign user role")
 			return response, customErrors.ErrInternal
 		}
-		if row, err = s.repository.GetUserByID(ctx, row.ID); err != nil {
+		if row, err = s.storage.GetUserByID(ctx, row.ID); err != nil {
 			return response, mapStorageError(err)
 		}
 	}
@@ -319,7 +331,7 @@ func (s *Service) GetUser(ctx context.Context, userID uuid.UUID) (response model
 	if err = requireUserID(userID); err != nil {
 		return response, err
 	}
-	row, err := s.repository.GetUserByID(ctx, userID)
+	row, err := s.storage.GetUserByID(ctx, userID)
 	if err != nil {
 		return response, mapStorageError(err)
 	}
@@ -355,16 +367,16 @@ func (s *Service) ListUsers(
 	if err != nil {
 		return response, err
 	}
-	params := repository.ListUsersParams{
+	params := internalModels.ListUsersParams{
 		Q: strings.TrimSpace(q), Role: strings.ToLower(strings.TrimSpace(role)),
 		Status: strings.TrimSpace(status), ClientID: parsedClientID, IsActive: isActive,
 		Limit: limit, Offset: offset, Sort: strings.TrimSpace(sort),
 	}
-	rows, err := s.repository.ListUsers(ctx, params)
+	rows, err := s.storage.ListUsers(ctx, params)
 	if err != nil {
 		return response, mapStorageError(err)
 	}
-	total, err := s.repository.CountUsers(ctx, params)
+	total, err := s.storage.CountUsers(ctx, params)
 	if err != nil {
 		return response, mapStorageError(err)
 	}
@@ -397,7 +409,7 @@ func (s *Service) UpdateUser(
 	if err = requireUserID(userID); err != nil {
 		return response, err
 	}
-	if _, err = s.repository.GetUserByID(ctx, userID); err != nil {
+	if _, err = s.storage.GetUserByID(ctx, userID); err != nil {
 		return response, mapStorageError(err)
 	}
 	email, err = normalizeEmail(email, false)
@@ -435,7 +447,7 @@ func (s *Service) UpdateUser(
 			return response, customErrors.ErrInternal
 		}
 	}
-	row, err := s.repository.UpdateUser(ctx, repository.UpdateUserParams{
+	row, err := s.storage.UpdateUser(ctx, internalModels.UpdateUserParams{
 		UserID: userID, Email: email, Phone: phone,
 		FirstName: strings.TrimSpace(firstName), LastName: strings.TrimSpace(lastName),
 		MiddleName: strings.TrimSpace(middleName), Status: strings.TrimSpace(status),
@@ -451,7 +463,7 @@ func (s *Service) UpdateUser(
 			s.logger.Error().Err(accessErr).Str("userID", userID.String()).Msg("failed to update user role")
 			return response, customErrors.ErrInternal
 		}
-		if row, err = s.repository.GetUserByID(ctx, userID); err != nil {
+		if row, err = s.storage.GetUserByID(ctx, userID); err != nil {
 			return response, mapStorageError(err)
 		}
 	}
@@ -462,7 +474,7 @@ func (s *Service) DeleteUser(ctx context.Context, userID uuid.UUID) (response mo
 	if err = requireUserID(userID); err != nil {
 		return response, err
 	}
-	if err = s.repository.SoftDeleteUser(ctx, userID); err != nil {
+	if err = s.storage.SoftDeleteUser(ctx, userID); err != nil {
 		return response, mapStorageError(err)
 	}
 	return models.DeleteUserResponse{Deleted: true}, nil
@@ -484,22 +496,22 @@ func (s *Service) DeactivateUser(ctx context.Context, userID uuid.UUID) (respons
 	return models.DeactivateUserResponse{User: modelUser(row)}, nil
 }
 
-func (s *Service) setUserActive(ctx context.Context, userID uuid.UUID, active bool) (repository.User, error) {
+func (s *Service) setUserActive(ctx context.Context, userID uuid.UUID, active bool) (internalModels.User, error) {
 	if err := requireUserID(userID); err != nil {
-		return repository.User{}, err
+		return internalModels.User{}, err
 	}
-	row, err := s.repository.SetUserActive(ctx, userID, active)
+	row, err := s.storage.SetUserActive(ctx, userID, active)
 	if err != nil {
-		return repository.User{}, mapStorageError(err)
+		return internalModels.User{}, mapStorageError(err)
 	}
 	return row, nil
 }
 
 func (s *Service) GetProfile(ctx context.Context, userID uuid.UUID) (response models.GetProfileResponse, err error) {
-	if err = requireUserID(userID); err != nil {
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
 		return response, err
 	}
-	user, client, err := s.repository.GetProfile(ctx, userID)
+	user, client, err := s.storage.GetProfile(ctx, userID)
 	if err != nil {
 		return response, mapStorageError(err)
 	}
@@ -515,7 +527,7 @@ func (s *Service) UpdateProfile(
 	lastName string,
 	middleName string,
 ) (response models.UpdateProfileResponse, err error) {
-	if err = requireUserID(userID); err != nil {
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
 		return response, err
 	}
 	email, err = normalizeEmail(email, false)
@@ -533,7 +545,7 @@ func (s *Service) UpdateProfile(
 			return response, err
 		}
 	}
-	user, client, err := s.repository.UpdateProfile(ctx, repository.UpdateProfileParams{
+	user, client, err := s.storage.UpdateProfile(ctx, internalModels.UpdateProfileParams{
 		UserID: userID, Email: email, Phone: phone,
 		FirstName: strings.TrimSpace(firstName), LastName: strings.TrimSpace(lastName),
 		MiddleName: strings.TrimSpace(middleName),
@@ -545,13 +557,13 @@ func (s *Service) UpdateProfile(
 }
 
 func (s *Service) ListUserClients(ctx context.Context, userID uuid.UUID) (response models.ListUserClientsResponse, err error) {
-	if err = requireUserID(userID); err != nil {
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
 		return response, err
 	}
-	if _, err = s.repository.GetUserByID(ctx, userID); err != nil {
+	if _, err = s.storage.GetUserByID(ctx, userID); err != nil {
 		return response, mapStorageError(err)
 	}
-	rows, err := s.repository.ListUserClients(ctx, userID)
+	rows, err := s.storage.ListUserClients(ctx, userID)
 	if err != nil {
 		return response, mapStorageError(err)
 	}
@@ -563,13 +575,13 @@ func (s *Service) ListUserClients(ctx context.Context, userID uuid.UUID) (respon
 }
 
 func (s *Service) ensureClientAccess(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) error {
-	if err := requireUserID(userID); err != nil {
+	if err := s.checkBuyerAccess(ctx, userID); err != nil {
 		return err
 	}
 	if clientID == uuid.Nil {
 		return validation("clientID")
 	}
-	allowed, err := s.repository.UserHasClient(ctx, userID, clientID)
+	allowed, err := s.storage.UserHasClient(ctx, userID, clientID)
 	if err != nil {
 		return mapStorageError(err)
 	}
@@ -583,7 +595,7 @@ func (s *Service) GetClientDetails(ctx context.Context, userID uuid.UUID, client
 	if err = s.ensureClientAccess(ctx, userID, clientID); err != nil {
 		return response, err
 	}
-	row, err := s.repository.GetClientDetails(ctx, userID, clientID)
+	row, err := s.storage.GetClientDetails(ctx, userID, clientID)
 	if err != nil {
 		return response, mapStorageError(err)
 	}
@@ -594,7 +606,7 @@ func (s *Service) GetClientConditions(ctx context.Context, userID uuid.UUID, cli
 	if err = s.ensureClientAccess(ctx, userID, clientID); err != nil {
 		return response, err
 	}
-	row, err := s.repository.GetClientConditions(ctx, userID, clientID)
+	row, err := s.storage.GetClientConditions(ctx, userID, clientID)
 	if err != nil {
 		return response, mapStorageError(err)
 	}
@@ -624,7 +636,7 @@ func (s *Service) SwitchActiveClient(ctx context.Context, userID uuid.UUID, clie
 	if err = s.ensureClientAccess(ctx, userID, clientID); err != nil {
 		return response, err
 	}
-	row, err := s.repository.SetActiveClient(ctx, userID, clientID)
+	row, err := s.storage.SetActiveClient(ctx, userID, clientID)
 	if err != nil {
 		return response, mapStorageError(err)
 	}
@@ -634,10 +646,10 @@ func (s *Service) SwitchActiveClient(ctx context.Context, userID uuid.UUID, clie
 }
 
 func (s *Service) activeClient(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
-	if err := requireUserID(userID); err != nil {
+	if err := s.checkBuyerAccess(ctx, userID); err != nil {
 		return uuid.Nil, err
 	}
-	clientID, err := s.repository.GetActiveClient(ctx, userID)
+	clientID, err := s.storage.GetActiveClient(ctx, userID)
 	if errors.Is(err, postgres.ErrClientNotFound) {
 		return uuid.Nil, customErrors.ErrValidation.AddCause("field", "activeClientID")
 	}
@@ -652,7 +664,7 @@ func (s *Service) ListFavorites(ctx context.Context, userID uuid.UUID) (response
 	if err != nil {
 		return response, err
 	}
-	rows, err := s.repository.ListFavorites(ctx, userID, clientID)
+	rows, err := s.storage.ListFavorites(ctx, userID, clientID)
 	if err != nil {
 		return response, mapStorageError(err)
 	}
@@ -672,7 +684,7 @@ func (s *Service) AddFavorite(ctx context.Context, userID uuid.UUID, productID s
 	if err != nil {
 		return response, err
 	}
-	row, _, err := s.repository.AddFavorite(ctx, userID, clientID, productUUID)
+	row, _, err := s.storage.AddFavorite(ctx, userID, clientID, productUUID)
 	if err != nil {
 		return response, mapStorageError(err)
 	}
@@ -700,7 +712,7 @@ func (s *Service) DeleteFavorites(ctx context.Context, userID uuid.UUID, product
 	if err != nil {
 		return response, err
 	}
-	deleted, err := s.repository.DeleteFavorites(ctx, userID, clientID, ids)
+	deleted, err := s.storage.DeleteFavorites(ctx, userID, clientID, ids)
 	if err != nil {
 		return response, mapStorageError(err)
 	}
