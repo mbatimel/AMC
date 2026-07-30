@@ -73,6 +73,29 @@ func (http *httpUsersAPI) serveListUsers(ctx *fiber.Ctx) (err error) {
 
 	var request requestUsersAPIListUsers
 
+	if _clientID := ctx.Query("clientID"); _clientID != "" {
+		var clientID string
+		clientID = _clientID
+		request.ClientID = clientID
+	}
+	if _isActive := ctx.Query("isActive"); _isActive != "" {
+		var isActive bool
+		isActive, err = strconv.ParseBool(_isActive)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.IsActive = &isActive
+	}
+	if _limit := ctx.Query("limit"); _limit != "" {
+		var limit int
+		limit, err = strconv.Atoi(_limit)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Limit = limit
+	}
 	if _offset := ctx.Query("offset"); _offset != "" {
 		var offset int
 		offset, err = strconv.Atoi(_offset)
@@ -101,29 +124,6 @@ func (http *httpUsersAPI) serveListUsers(ctx *fiber.Ctx) (err error) {
 		var status string
 		status = _status
 		request.Status = status
-	}
-	if _clientID := ctx.Query("clientID"); _clientID != "" {
-		var clientID string
-		clientID = _clientID
-		request.ClientID = clientID
-	}
-	if _isActive := ctx.Query("isActive"); _isActive != "" {
-		var isActive bool
-		isActive, err = strconv.ParseBool(_isActive)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.IsActive = &isActive
-	}
-	if _limit := ctx.Query("limit"); _limit != "" {
-		var limit int
-		limit, err = strconv.Atoi(_limit)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Limit = limit
 	}
 
 	return customhandlers.ListUsers(ctx, http.svc, request.Q, request.Role, request.Status, request.ClientID, request.IsActive, request.Limit, request.Offset, request.Sort)
