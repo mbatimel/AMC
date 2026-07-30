@@ -43,7 +43,6 @@ type UsersAPI interface {
 	// @tg summary=`Получение пользователя`
 	// @tg desc=`Возвращает пользователя по идентификатору`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	GetUser(ctx context.Context, userID uuid.UUID) (response models.GetUserResponse, err error)
 
 	// ListUsers returns filtered users.
@@ -71,7 +70,6 @@ type UsersAPI interface {
 	// @tg desc=`Обновляет разрешённые поля пользователя и роль через access-сервис`
 	// @tg uuidPackage=github.com/google/uuid
 	// @tg adminUserID.format=uuid
-	// @tg userID.format=uuid
 	UpdateUser(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive *bool) (response models.UpdateUserResponse, err error)
 
 	// DeleteUser soft-deletes a user.
@@ -81,7 +79,6 @@ type UsersAPI interface {
 	// @tg summary=`Удаление пользователя`
 	// @tg desc=`Помечает пользователя удалённым и запрещает дальнейшее использование users API`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	DeleteUser(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error)
 
 	// ActivateUser activates a user.
@@ -91,7 +88,6 @@ type UsersAPI interface {
 	// @tg summary=`Активация пользователя`
 	// @tg desc=`Устанавливает активный статус пользователя`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	ActivateUser(ctx context.Context, userID uuid.UUID) (response models.ActivateUserResponse, err error)
 
 	// DeactivateUser deactivates a user.
@@ -101,7 +97,6 @@ type UsersAPI interface {
 	// @tg summary=`Деактивация пользователя`
 	// @tg desc=`Устанавливает неактивный статус пользователя`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	DeactivateUser(ctx context.Context, userID uuid.UUID) (response models.DeactivateUserResponse, err error)
 
 	// GetProfile returns the current user's profile.
@@ -112,7 +107,6 @@ type UsersAPI interface {
 	// @tg summary=`Профиль пользователя`
 	// @tg desc=`Возвращает профиль текущего пользователя и активный кабинет`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	GetProfile(ctx context.Context, userID uuid.UUID) (response models.GetProfileResponse, err error)
 
 	// UpdateProfile updates the current user's contact fields.
@@ -123,7 +117,6 @@ type UsersAPI interface {
 	// @tg summary=`Обновление профиля`
 	// @tg desc=`Обновляет только контактные данные текущего пользователя`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	UpdateProfile(ctx context.Context, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string) (response models.UpdateProfileResponse, err error)
 
 	// ListUserClients lists the current user's client cabinets.
@@ -134,7 +127,6 @@ type UsersAPI interface {
 	// @tg summary=`Кабинеты пользователя`
 	// @tg desc=`Возвращает только клиентские кабинеты, доступные текущему пользователю`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	ListUserClients(ctx context.Context, userID uuid.UUID) (response models.ListUserClientsResponse, err error)
 
 	// GetClientDetails returns linked client details.
@@ -145,7 +137,6 @@ type UsersAPI interface {
 	// @tg summary=`Реквизиты кабинета`
 	// @tg desc=`Возвращает реквизиты доступного пользователю клиентского кабинета`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	// @tg clientID.format=uuid
 	GetClientDetails(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (response models.GetClientDetailsResponse, err error)
 
@@ -157,7 +148,6 @@ type UsersAPI interface {
 	// @tg summary=`Индивидуальные условия`
 	// @tg desc=`Возвращает ценовую группу, кредитные условия и скидки доступного кабинета`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	// @tg clientID.format=uuid
 	GetClientConditions(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (response models.GetClientConditionsResponse, err error)
 
@@ -169,7 +159,6 @@ type UsersAPI interface {
 	// @tg summary=`Переключение кабинета`
 	// @tg desc=`Транзакционно сохраняет доступный клиентский кабинет как активный`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	// @tg clientID.format=uuid
 	SwitchActiveClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (response models.SwitchActiveClientResponse, err error)
 
@@ -181,7 +170,6 @@ type UsersAPI interface {
 	// @tg summary=`Список избранного`
 	// @tg desc=`Возвращает идентификаторы избранных товаров текущего пользователя и активного кабинета`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	ListFavorites(ctx context.Context, userID uuid.UUID) (response models.ListFavoritesResponse, err error)
 
 	// AddFavorite adds a product to favorites.
@@ -192,7 +180,6 @@ type UsersAPI interface {
 	// @tg summary=`Добавление в избранное`
 	// @tg desc=`Идемпотентно добавляет товар в избранное активного кабинета`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	AddFavorite(ctx context.Context, userID uuid.UUID, productID string) (response models.AddFavoriteResponse, err error)
 
 	// DeleteFavorites deletes several favorites at once.
@@ -203,6 +190,5 @@ type UsersAPI interface {
 	// @tg summary=`Массовое удаление из избранного`
 	// @tg desc=`Удаляет массив идентификаторов товаров одним параметризованным SQL-запросом`
 	// @tg uuidPackage=github.com/google/uuid
-	// @tg userID.format=uuid
 	DeleteFavorites(ctx context.Context, userID uuid.UUID, productIDs []string) (response models.DeleteFavoritesResponse, err error)
 }
