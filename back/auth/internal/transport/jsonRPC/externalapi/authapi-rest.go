@@ -296,6 +296,13 @@ func (http *httpAuthAPI) changePassword(ctx context.Context, request requestAuth
 func (http *httpAuthAPI) serveChangePassword(ctx *fiber.Ctx) (err error) {
 
 	var request requestAuthAPIChangePassword
+	if len(ctx.Body()) > 0 {
+		if err = ctx.BodyParser(&request); err != nil {
+			ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+			_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+			return
+		}
+	}
 
 	if _oldPassword := ctx.Query("oldPassword"); _oldPassword != "" {
 		var oldPassword string
