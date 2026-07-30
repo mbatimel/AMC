@@ -129,7 +129,7 @@ paths:
                                         type: string
                                         example: content.api.errors.auth.internalError
                                         description: Заголовок ошибки
-    /api/v1/cart:
+    /api/v1/orders/cart:
         get:
             tags:
                 - OrdersAPI
@@ -342,7 +342,7 @@ paths:
                                         type: string
                                         example: content.api.errors.auth.internalError
                                         description: Заголовок ошибки
-    /api/v1/cart/items:
+    /api/v1/orders/cart/items:
         post:
             tags:
                 - OrdersAPI
@@ -458,7 +458,7 @@ paths:
                                         type: string
                                         example: content.api.errors.auth.internalError
                                         description: Заголовок ошибки
-    /api/v1/cart/items/{cartItemID}:
+    /api/v1/orders/cart/items/{cartItemID}:
         patch:
             tags:
                 - OrdersAPI
