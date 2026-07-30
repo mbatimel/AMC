@@ -52,6 +52,8 @@ type Category struct {
 	Name      string    `json:"name"`
 	Slug      string    `json:"slug,omitempty"`
 	ParentID  string    `json:"parent_id,omitempty"`
+	SortOrder int       `json:"sort_order"`
+	IsActive  bool      `json:"is_active"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -60,6 +62,7 @@ type Brand struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Slug      string    `json:"slug,omitempty"`
+	IsActive  bool      `json:"is_active"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

@@ -6,6 +6,7 @@ export { useSession } from './lib/useSession';
 export {
   $authError,
   $isAuthPending,
+  $isSessionHydrated,
   $userId,
   authErrorCleared,
   loginFx,

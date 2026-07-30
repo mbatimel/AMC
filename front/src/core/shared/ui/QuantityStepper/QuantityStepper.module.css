@@ -1,0 +1,56 @@
+.root {
+  display: inline-flex;
+}
+
+.group {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--palette-white);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  block-size: 36px;
+  inline-size: 36px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--palette-black);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  min-inline-size: 36px;
+  padding: 0;
+}
+
+.button[data-disabled='true'],
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.button:hover:not([data-disabled='true'], :disabled) {
+  background: var(--palette-ulight);
+}
+
+.input {
+  block-size: 36px;
+  inline-size: 48px;
+  border: 0;
+  border-inline: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--palette-black);
+  font-size: 14px;
+  text-align: center;
+  box-shadow: none;
+}
+
+.input:focus {
+  outline: none;
+}

@@ -43,13 +43,13 @@ export const HEADER_ACCOUNT_LABEL = 'Кабинет';
 
 export const HEADER_AUTH_LABEL = 'Авторизация';
 
-export const HEADER_CART_HREF = '#';
+export const HEADER_CART_HREF = AppPath.Cart;
 
-export const HEADER_ORDERS_HREF = '#';
+export const HEADER_ORDERS_HREF = AppPath.CabinetOrders;
 
 export const HEADER_NAV_ITEMS: HeaderMenuItem[] = [
   { href: AppPath.Home, icon: IconHome, label: 'Главная' },
-  { href: '#', icon: IconCatalog, label: 'Каталог' },
+  { href: AppPath.Catalog, icon: IconCatalog, label: 'Каталог' },
   { href: '#', icon: IconBrands, label: 'Бренды' },
   { href: '#', icon: IconAbout, label: 'О компании' },
   { href: '#', icon: IconTerms, label: 'Условия работы' },

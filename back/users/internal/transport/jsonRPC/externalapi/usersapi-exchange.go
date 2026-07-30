@@ -7,17 +7,18 @@ import (
 )
 
 type requestUsersAPICreateUser struct {
-	Email       string `json:"email,omitempty"`
-	Phone       string `json:"phone,omitempty"`
-	FirstName   string `json:"firstName,omitempty"`
-	LastName    string `json:"lastName,omitempty"`
-	MiddleName  string `json:"middleName,omitempty"`
-	Role        string `json:"role,omitempty"`
-	Status      string `json:"status,omitempty"`
-	ClientID    string `json:"clientID,omitempty"`
-	CompanyName string `json:"companyName,omitempty"`
-	Inn         string `json:"inn,omitempty"`
-	IsActive    bool   `json:"isActive,omitempty"`
+	AdminUserID uuid.UUID `json:"adminUserID,omitempty"`
+	Email       string    `json:"email,omitempty"`
+	Phone       string    `json:"phone,omitempty"`
+	FirstName   string    `json:"firstName,omitempty"`
+	LastName    string    `json:"lastName,omitempty"`
+	MiddleName  string    `json:"middleName,omitempty"`
+	Role        string    `json:"role,omitempty"`
+	Status      string    `json:"status,omitempty"`
+	ClientID    string    `json:"clientID,omitempty"`
+	CompanyName string    `json:"companyName,omitempty"`
+	Inn         string    `json:"inn,omitempty"`
+	IsActive    bool      `json:"isActive,omitempty"`
 }
 
 type responseUsersAPICreateUser struct {
@@ -37,7 +38,7 @@ type requestUsersAPIListUsers struct {
 	Role     string `json:"role,omitempty"`
 	Status   string `json:"status,omitempty"`
 	ClientID string `json:"clientID,omitempty"`
-	IsActive bool   `json:"isActive,omitempty"`
+	IsActive *bool  `json:"isActive,omitempty"`
 	Limit    int    `json:"limit,omitempty"`
 	Offset   int    `json:"offset,omitempty"`
 	Sort     string `json:"sort,omitempty"`
@@ -48,6 +49,7 @@ type responseUsersAPIListUsers struct {
 }
 
 type requestUsersAPIUpdateUser struct {
+	AdminUserID uuid.UUID `json:"adminUserID,omitempty"`
 	UserID      uuid.UUID `json:"userID,omitempty"`
 	Email       string    `json:"email,omitempty"`
 	Phone       string    `json:"phone,omitempty"`
@@ -59,7 +61,7 @@ type requestUsersAPIUpdateUser struct {
 	ClientID    string    `json:"clientID,omitempty"`
 	CompanyName string    `json:"companyName,omitempty"`
 	Inn         string    `json:"inn,omitempty"`
-	IsActive    bool      `json:"isActive,omitempty"`
+	IsActive    *bool     `json:"isActive,omitempty"`
 }
 
 type responseUsersAPIUpdateUser struct {
@@ -88,4 +90,86 @@ type requestUsersAPIDeactivateUser struct {
 
 type responseUsersAPIDeactivateUser struct {
 	Response models.DeactivateUserResponse `json:"response,omitempty"`
+}
+
+type requestUsersAPIGetProfile struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+}
+
+type responseUsersAPIGetProfile struct {
+	Response models.GetProfileResponse `json:"response,omitempty"`
+}
+
+type requestUsersAPIUpdateProfile struct {
+	UserID     uuid.UUID `json:"userID,omitempty"`
+	Email      string    `json:"email,omitempty"`
+	Phone      string    `json:"phone,omitempty"`
+	FirstName  string    `json:"firstName,omitempty"`
+	LastName   string    `json:"lastName,omitempty"`
+	MiddleName string    `json:"middleName,omitempty"`
+}
+
+type responseUsersAPIUpdateProfile struct {
+	Response models.UpdateProfileResponse `json:"response,omitempty"`
+}
+
+type requestUsersAPIListUserClients struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+}
+
+type responseUsersAPIListUserClients struct {
+	Response models.ListUserClientsResponse `json:"response,omitempty"`
+}
+
+type requestUsersAPIGetClientDetails struct {
+	UserID   uuid.UUID `json:"userID,omitempty"`
+	ClientID uuid.UUID `json:"clientID,omitempty"`
+}
+
+type responseUsersAPIGetClientDetails struct {
+	Response models.GetClientDetailsResponse `json:"response,omitempty"`
+}
+
+type requestUsersAPIGetClientConditions struct {
+	UserID   uuid.UUID `json:"userID,omitempty"`
+	ClientID uuid.UUID `json:"clientID,omitempty"`
+}
+
+type responseUsersAPIGetClientConditions struct {
+	Response models.GetClientConditionsResponse `json:"response,omitempty"`
+}
+
+type requestUsersAPISwitchActiveClient struct {
+	UserID   uuid.UUID `json:"userID,omitempty"`
+	ClientID uuid.UUID `json:"clientID,omitempty"`
+}
+
+type responseUsersAPISwitchActiveClient struct {
+	Response models.SwitchActiveClientResponse `json:"response,omitempty"`
+}
+
+type requestUsersAPIListFavorites struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+}
+
+type responseUsersAPIListFavorites struct {
+	Response models.ListFavoritesResponse `json:"response,omitempty"`
+}
+
+type requestUsersAPIAddFavorite struct {
+	UserID    uuid.UUID `json:"userID,omitempty"`
+	ProductID string    `json:"productID,omitempty"`
+}
+
+type responseUsersAPIAddFavorite struct {
+	Response models.AddFavoriteResponse `json:"response,omitempty"`
+}
+
+type requestUsersAPIDeleteFavorites struct {
+	UserID     uuid.UUID `json:"userID,omitempty"`
+	ProductIDs []string  `json:"productIDs,omitempty"`
+}
+
+type responseUsersAPIDeleteFavorites struct {
+	Response models.DeleteFavoritesResponse `json:"response,omitempty"`
 }

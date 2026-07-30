@@ -6,12 +6,13 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	uuid "github.com/google/uuid"
 	customhandlers "github.com/mbatimel/AMC/products/internal/transport/custom-handlers"
 )
 
 func (http *httpProductsAPI) createProduct(ctx context.Context, request requestProductsAPICreateProduct) (response responseProductsAPICreateProduct, err error) {
 
-	response.Response, err = http.svc.CreateProduct(ctx, request.Sku, request.Name, request.Description, request.CategoryID, request.BrandID, request.Gost, request.Material, request.Size, request.PackageQty, request.StockQty, request.BasePrice, request.ClientPrice, request.DiscountPercent, request.IsPublished)
+	response.Response, err = http.svc.CreateProduct(ctx, request.UserID, request.Sku, request.Name, request.Description, request.CategoryID, request.BrandID, request.Gost, request.Material, request.Size, request.PackageQty, request.StockQty, request.BasePrice, request.ClientPrice, request.DiscountPercent, request.Images, request.IsPublished)
 	if err != nil {
 		if http.errorHandler != nil {
 			err = http.errorHandler(err)
@@ -22,103 +23,19 @@ func (http *httpProductsAPI) createProduct(ctx context.Context, request requestP
 func (http *httpProductsAPI) serveCreateProduct(ctx *fiber.Ctx) (err error) {
 
 	var request requestProductsAPICreateProduct
-
-	if _categoryID := ctx.Query("categoryID"); _categoryID != "" {
-		var categoryID string
-		categoryID = _categoryID
-		request.CategoryID = categoryID
-	}
-	if _brandID := ctx.Query("brandID"); _brandID != "" {
-		var brandID string
-		brandID = _brandID
-		request.BrandID = brandID
-	}
-	if _packageQty := ctx.Query("packageQty"); _packageQty != "" {
-		var packageQty int
-		packageQty, err = strconv.Atoi(_packageQty)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.PackageQty = packageQty
-	}
-	if _stockQty := ctx.Query("stockQty"); _stockQty != "" {
-		var stockQty int
-		stockQty, err = strconv.Atoi(_stockQty)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.StockQty = stockQty
-	}
-	if _clientPrice := ctx.Query("clientPrice"); _clientPrice != "" {
-		var clientPrice float64
-		clientPrice, err = strconv.ParseFloat(_clientPrice, 64)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.ClientPrice = clientPrice
-	}
-	if _discountPercent := ctx.Query("discountPercent"); _discountPercent != "" {
-		var discountPercent float64
-		discountPercent, err = strconv.ParseFloat(_discountPercent, 64)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.DiscountPercent = discountPercent
-	}
-	if _isPublished := ctx.Query("isPublished"); _isPublished != "" {
-		var isPublished bool
-		isPublished, err = strconv.ParseBool(_isPublished)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.IsPublished = isPublished
-	}
-	if _sku := ctx.Query("sku"); _sku != "" {
-		var sku string
-		sku = _sku
-		request.Sku = sku
-	}
-	if _description := ctx.Query("description"); _description != "" {
-		var description string
-		description = _description
-		request.Description = description
-	}
-	if _gost := ctx.Query("gost"); _gost != "" {
-		var gost string
-		gost = _gost
-		request.Gost = gost
-	}
-	if _material := ctx.Query("material"); _material != "" {
-		var material string
-		material = _material
-		request.Material = material
-	}
-	if _size := ctx.Query("size"); _size != "" {
-		var size string
-		size = _size
-		request.Size = size
-	}
-	if _basePrice := ctx.Query("basePrice"); _basePrice != "" {
-		var basePrice float64
-		basePrice, err = strconv.ParseFloat(_basePrice, 64)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.BasePrice = basePrice
-	}
-	if _name := ctx.Query("name"); _name != "" {
-		var name string
-		name = _name
-		request.Name = name
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
 	}
 
-	return customhandlers.CreateProduct(ctx, http.svc, request.Sku, request.Name, request.Description, request.CategoryID, request.BrandID, request.Gost, request.Material, request.Size, request.PackageQty, request.StockQty, request.BasePrice, request.ClientPrice, request.DiscountPercent, request.IsPublished)
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.CreateProduct(ctx, http.svc, request.UserID, request.Sku, request.Name, request.Description, request.CategoryID, request.BrandID, request.Gost, request.Material, request.Size, request.PackageQty, request.StockQty, request.BasePrice, request.ClientPrice, request.DiscountPercent, request.Images, request.IsPublished)
 }
 func (http *httpProductsAPI) getProduct(ctx context.Context, request requestProductsAPIGetProduct) (response responseProductsAPIGetProduct, err error) {
 
@@ -134,9 +51,9 @@ func (http *httpProductsAPI) serveGetProduct(ctx *fiber.Ctx) (err error) {
 
 	var request requestProductsAPIGetProduct
 
-	if _productID := ctx.Query("productID"); _productID != "" {
-		var productID string
-		productID = _productID
+	if _productID := ctx.Params("productID"); _productID != "" {
+		var productID uuid.UUID
+		productID, _ = uuid.Parse(_productID)
 		request.ProductID = productID
 	}
 
@@ -163,27 +80,7 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 			ctx.Status(fiber.StatusBadRequest)
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
-		request.InStock = inStock
-	}
-	if _sort := ctx.Query("sort"); _sort != "" {
-		var sort string
-		sort = _sort
-		request.Sort = sort
-	}
-	if _q := ctx.Query("q"); _q != "" {
-		var q string
-		q = _q
-		request.Q = q
-	}
-	if _brandID := ctx.Query("brandID"); _brandID != "" {
-		var brandID string
-		brandID = _brandID
-		request.BrandID = brandID
-	}
-	if _size := ctx.Query("size"); _size != "" {
-		var size string
-		size = _size
-		request.Size = size
+		request.InStock = &inStock
 	}
 	if _limit := ctx.Query("limit"); _limit != "" {
 		var limit int
@@ -192,7 +89,22 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 			ctx.Status(fiber.StatusBadRequest)
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
-		request.Limit = limit
+		request.Limit = &limit
+	}
+	if _q := ctx.Query("q"); _q != "" {
+		var q string
+		q = _q
+		request.Q = &q
+	}
+	if _material := ctx.Query("material"); _material != "" {
+		var material string
+		material = _material
+		request.Material = &material
+	}
+	if _size := ctx.Query("size"); _size != "" {
+		var size string
+		size = _size
+		request.Size = &size
 	}
 	if _offset := ctx.Query("offset"); _offset != "" {
 		var offset int
@@ -201,29 +113,34 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 			ctx.Status(fiber.StatusBadRequest)
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
-		request.Offset = offset
+		request.Offset = &offset
+	}
+	if _sort := ctx.Query("sort"); _sort != "" {
+		var sort string
+		sort = _sort
+		request.Sort = &sort
 	}
 	if _categoryID := ctx.Query("categoryID"); _categoryID != "" {
 		var categoryID string
 		categoryID = _categoryID
-		request.CategoryID = categoryID
+		request.CategoryID = &categoryID
 	}
-	if _material := ctx.Query("material"); _material != "" {
-		var material string
-		material = _material
-		request.Material = material
+	if _brandID := ctx.Query("brandID"); _brandID != "" {
+		var brandID string
+		brandID = _brandID
+		request.BrandID = &brandID
 	}
 	if _gost := ctx.Query("gost"); _gost != "" {
 		var gost string
 		gost = _gost
-		request.Gost = gost
+		request.Gost = &gost
 	}
 
 	return customhandlers.ListProducts(ctx, http.svc, request.Q, request.CategoryID, request.BrandID, request.Material, request.Size, request.Gost, request.InStock, request.Limit, request.Offset, request.Sort)
 }
 func (http *httpProductsAPI) updateProduct(ctx context.Context, request requestProductsAPIUpdateProduct) (response responseProductsAPIUpdateProduct, err error) {
 
-	response.Response, err = http.svc.UpdateProduct(ctx, request.ProductID, request.Sku, request.Name, request.Description, request.CategoryID, request.BrandID, request.Gost, request.Material, request.Size, request.PackageQty, request.StockQty, request.BasePrice, request.ClientPrice, request.DiscountPercent, request.IsPublished)
+	response.Response, err = http.svc.UpdateProduct(ctx, request.UserID, request.ProductID, request.Sku, request.Name, request.Description, request.CategoryID, request.BrandID, request.Gost, request.Material, request.Size, request.PackageQty, request.StockQty, request.BasePrice, request.ClientPrice, request.DiscountPercent, request.Images, request.IsPublished)
 	if err != nil {
 		if http.errorHandler != nil {
 			err = http.errorHandler(err)
@@ -234,112 +151,29 @@ func (http *httpProductsAPI) updateProduct(ctx context.Context, request requestP
 func (http *httpProductsAPI) serveUpdateProduct(ctx *fiber.Ctx) (err error) {
 
 	var request requestProductsAPIUpdateProduct
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
 
-	if _categoryID := ctx.Query("categoryID"); _categoryID != "" {
-		var categoryID string
-		categoryID = _categoryID
-		request.CategoryID = categoryID
-	}
-	if _brandID := ctx.Query("brandID"); _brandID != "" {
-		var brandID string
-		brandID = _brandID
-		request.BrandID = brandID
-	}
-	if _packageQty := ctx.Query("packageQty"); _packageQty != "" {
-		var packageQty int
-		packageQty, err = strconv.Atoi(_packageQty)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.PackageQty = packageQty
-	}
-	if _discountPercent := ctx.Query("discountPercent"); _discountPercent != "" {
-		var discountPercent float64
-		discountPercent, err = strconv.ParseFloat(_discountPercent, 64)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.DiscountPercent = discountPercent
-	}
-	if _clientPrice := ctx.Query("clientPrice"); _clientPrice != "" {
-		var clientPrice float64
-		clientPrice, err = strconv.ParseFloat(_clientPrice, 64)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.ClientPrice = clientPrice
-	}
-	if _productID := ctx.Query("productID"); _productID != "" {
-		var productID string
-		productID = _productID
+	if _productID := ctx.Params("productID"); _productID != "" {
+		var productID uuid.UUID
+		productID, _ = uuid.Parse(_productID)
 		request.ProductID = productID
 	}
-	if _sku := ctx.Query("sku"); _sku != "" {
-		var sku string
-		sku = _sku
-		request.Sku = sku
-	}
-	if _gost := ctx.Query("gost"); _gost != "" {
-		var gost string
-		gost = _gost
-		request.Gost = gost
-	}
-	if _material := ctx.Query("material"); _material != "" {
-		var material string
-		material = _material
-		request.Material = material
-	}
-	if _stockQty := ctx.Query("stockQty"); _stockQty != "" {
-		var stockQty int
-		stockQty, err = strconv.Atoi(_stockQty)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.StockQty = stockQty
-	}
-	if _isPublished := ctx.Query("isPublished"); _isPublished != "" {
-		var isPublished bool
-		isPublished, err = strconv.ParseBool(_isPublished)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.IsPublished = isPublished
-	}
-	if _basePrice := ctx.Query("basePrice"); _basePrice != "" {
-		var basePrice float64
-		basePrice, err = strconv.ParseFloat(_basePrice, 64)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.BasePrice = basePrice
-	}
-	if _name := ctx.Query("name"); _name != "" {
-		var name string
-		name = _name
-		request.Name = name
-	}
-	if _description := ctx.Query("description"); _description != "" {
-		var description string
-		description = _description
-		request.Description = description
-	}
-	if _size := ctx.Query("size"); _size != "" {
-		var size string
-		size = _size
-		request.Size = size
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
 	}
 
-	return customhandlers.UpdateProduct(ctx, http.svc, request.ProductID, request.Sku, request.Name, request.Description, request.CategoryID, request.BrandID, request.Gost, request.Material, request.Size, request.PackageQty, request.StockQty, request.BasePrice, request.ClientPrice, request.DiscountPercent, request.IsPublished)
+	return customhandlers.UpdateProduct(ctx, http.svc, request.UserID, request.ProductID, request.Sku, request.Name, request.Description, request.CategoryID, request.BrandID, request.Gost, request.Material, request.Size, request.PackageQty, request.StockQty, request.BasePrice, request.ClientPrice, request.DiscountPercent, request.Images, request.IsPublished)
 }
 func (http *httpProductsAPI) deleteProduct(ctx context.Context, request requestProductsAPIDeleteProduct) (response responseProductsAPIDeleteProduct, err error) {
 
-	response.Response, err = http.svc.DeleteProduct(ctx, request.ProductID)
+	response.Response, err = http.svc.DeleteProduct(ctx, request.UserID, request.ProductID)
 	if err != nil {
 		if http.errorHandler != nil {
 			err = http.errorHandler(err)
@@ -351,13 +185,19 @@ func (http *httpProductsAPI) serveDeleteProduct(ctx *fiber.Ctx) (err error) {
 
 	var request requestProductsAPIDeleteProduct
 
-	if _productID := ctx.Query("productID"); _productID != "" {
-		var productID string
-		productID = _productID
+	if _productID := ctx.Params("productID"); _productID != "" {
+		var productID uuid.UUID
+		productID, _ = uuid.Parse(_productID)
 		request.ProductID = productID
 	}
 
-	return customhandlers.DeleteProduct(ctx, http.svc, request.ProductID)
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.DeleteProduct(ctx, http.svc, request.UserID, request.ProductID)
 }
 func (http *httpProductsAPI) listCategories(ctx context.Context, request requestProductsAPIListCategories) (response responseProductsAPIListCategories, err error) {
 
@@ -380,7 +220,7 @@ func (http *httpProductsAPI) serveListCategories(ctx *fiber.Ctx) (err error) {
 			ctx.Status(fiber.StatusBadRequest)
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
-		request.Limit = limit
+		request.Limit = &limit
 	}
 	if _offset := ctx.Query("offset"); _offset != "" {
 		var offset int
@@ -389,7 +229,7 @@ func (http *httpProductsAPI) serveListCategories(ctx *fiber.Ctx) (err error) {
 			ctx.Status(fiber.StatusBadRequest)
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
-		request.Offset = offset
+		request.Offset = &offset
 	}
 
 	return customhandlers.ListCategories(ctx, http.svc, request.Limit, request.Offset)
@@ -415,7 +255,7 @@ func (http *httpProductsAPI) serveListBrands(ctx *fiber.Ctx) (err error) {
 			ctx.Status(fiber.StatusBadRequest)
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
-		request.Limit = limit
+		request.Limit = &limit
 	}
 	if _offset := ctx.Query("offset"); _offset != "" {
 		var offset int
@@ -424,7 +264,7 @@ func (http *httpProductsAPI) serveListBrands(ctx *fiber.Ctx) (err error) {
 			ctx.Status(fiber.StatusBadRequest)
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
-		request.Offset = offset
+		request.Offset = &offset
 	}
 
 	return customhandlers.ListBrands(ctx, http.svc, request.Limit, request.Offset)

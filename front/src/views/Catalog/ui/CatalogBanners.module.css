@@ -1,0 +1,14 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-block-end: 12px;
+}
+
+.chipClose {
+  min-inline-size: 24px;
+}
+
+.banner {
+  margin-block-end: 16px;
+}

@@ -1,2 +1,2 @@
-// Package cmd contains entrypoints for the users service.
-package cmd
+// Package main starts the users service.
+package main

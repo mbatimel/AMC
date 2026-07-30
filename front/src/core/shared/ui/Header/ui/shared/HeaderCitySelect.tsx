@@ -32,17 +32,14 @@ export const HeaderCitySelect = ({
 }: HeaderCitySelectProps): JSX.Element => {
   return (
     <Dropdown>
-      <DropdownTrigger>
-        <button
-          aria-label="Выбрать город"
-          className={clsx(styles.trigger)}
-          disabled={isPending || cities.length === 0}
-          type="button"
-        >
-          <IconLocation className={clsx(styles.icon)} height={14} width={14} />
-          <span>{selectedCityName}</span>
-          <IconChevronDown className={clsx(styles.icon)} height={12} width={12} />
-        </button>
+      <DropdownTrigger
+        aria-label="Выбрать город"
+        className={clsx(styles.trigger)}
+        isDisabled={isPending || cities.length === 0}
+      >
+        <IconLocation className={clsx(styles.icon)} height={14} width={14} />
+        <span>{selectedCityName}</span>
+        <IconChevronDown className={clsx(styles.icon)} height={12} width={12} />
       </DropdownTrigger>
 
       <DropdownPopover className={clsx(styles.popover)}>

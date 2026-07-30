@@ -4,17 +4,18 @@ package externalapi
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/mbatimel/AMC/products/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/products/pkg/models"
 )
 
-type ProductsAPICreateProduct func(ctx context.Context, sku string, name string, description string, categoryID string, brandID string, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, isPublished bool) (response models.CreateProductResponse, err error)
-type ProductsAPIGetProduct func(ctx context.Context, productID string) (response models.GetProductResponse, err error)
-type ProductsAPIListProducts func(ctx context.Context, q string, categoryID string, brandID string, material string, size string, gost string, inStock bool, limit int, offset int, sort string) (response models.ListProductsResponse, err error)
-type ProductsAPIUpdateProduct func(ctx context.Context, productID string, sku string, name string, description string, categoryID string, brandID string, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, isPublished bool) (response models.UpdateProductResponse, err error)
-type ProductsAPIDeleteProduct func(ctx context.Context, productID string) (response models.DeleteProductResponse, err error)
-type ProductsAPIListCategories func(ctx context.Context, limit int, offset int) (response models.ListCategoriesResponse, err error)
-type ProductsAPIListBrands func(ctx context.Context, limit int, offset int) (response models.ListBrandsResponse, err error)
+type ProductsAPICreateProduct func(ctx context.Context, userID uuid.UUID, sku string, name string, description string, categoryID uuid.UUID, brandID uuid.UUID, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, images []models.ProductImage, isPublished bool) (response models.CreateProductResponse, err error)
+type ProductsAPIGetProduct func(ctx context.Context, productID uuid.UUID) (response models.GetProductResponse, err error)
+type ProductsAPIListProducts func(ctx context.Context, q *string, categoryID *string, brandID *string, material *string, size *string, gost *string, inStock *bool, limit *int, offset *int, sort *string) (response models.ListProductsResponse, err error)
+type ProductsAPIUpdateProduct func(ctx context.Context, userID uuid.UUID, productID uuid.UUID, sku *string, name *string, description *string, categoryID *uuid.UUID, brandID *uuid.UUID, gost *string, material *string, size *string, packageQty *int, stockQty *int, basePrice *float64, clientPrice *float64, discountPercent *float64, images *[]models.ProductImage, isPublished *bool) (response models.UpdateProductResponse, err error)
+type ProductsAPIDeleteProduct func(ctx context.Context, userID uuid.UUID, productID uuid.UUID) (response models.DeleteProductResponse, err error)
+type ProductsAPIListCategories func(ctx context.Context, limit *int, offset *int) (response models.ListCategoriesResponse, err error)
+type ProductsAPIListBrands func(ctx context.Context, limit *int, offset *int) (response models.ListBrandsResponse, err error)
 
 type MiddlewareProductsAPI func(next externalapi.ProductsAPI) externalapi.ProductsAPI
 

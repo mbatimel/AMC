@@ -1,0 +1,107 @@
+.root {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-block-end: 20px;
+}
+
+.title {
+  margin: 0;
+  color: var(--palette-black);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.count {
+  margin-inline-end: 4px;
+  color: #98a0b3;
+  font-size: 14px;
+}
+
+.viewToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 10px;
+  background: #eef0f4;
+  padding: 3px;
+}
+
+.viewButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #8b93a7;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  min-block-size: 34px;
+  padding-block: 7px;
+  padding-inline: 12px;
+  white-space: nowrap;
+}
+
+.viewButton:hover {
+  color: var(--palette-black);
+}
+
+.viewButtonActive {
+  border-color: #e1e5ee;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 8%);
+  color: var(--palette-black);
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #e1e5ee;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--palette-black);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  min-block-size: 40px;
+  padding-inline: 12px;
+  white-space: nowrap;
+}
+
+.actionButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.actionButton:hover:not(:disabled) {
+  background: #f7f8fb;
+}
+
+@media (width < 900px) {
+  .title {
+    font-size: 26px;
+  }
+
+  .controls {
+    inline-size: 100%;
+  }
+}

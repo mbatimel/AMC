@@ -6,7 +6,7 @@ import { USER_ID_COOKIE } from '@/core/entities/session/lib/constants';
 import { AppPath } from '@/core/shared/router/paths';
 
 export const config = {
-  matcher: ['/cabinet', '/cabinet/:path*'],
+  matcher: ['/cabinet', '/cabinet/:path*', '/checkout'],
 };
 
 export const proxy = (request: NextRequest): NextResponse => {

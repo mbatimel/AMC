@@ -23,16 +23,16 @@ type GetProductRequest struct {
 }
 
 type ListProductsRequest struct {
-	Q          string `json:"q,omitempty"`
-	CategoryID string `json:"category_id,omitempty"`
-	BrandID    string `json:"brand_id,omitempty"`
-	Material   string `json:"material,omitempty"`
-	Size       string `json:"size,omitempty"`
-	GOST       string `json:"gost,omitempty"`
-	InStock    *bool  `json:"in_stock,omitempty"`
-	Limit      int    `json:"limit,omitempty"`
-	Offset     int    `json:"offset,omitempty"`
-	Sort       string `json:"sort,omitempty"`
+	Q          *string `json:"q,omitempty"`
+	CategoryID *string `json:"category_id,omitempty"`
+	BrandID    *string `json:"brand_id,omitempty"`
+	Material   *string `json:"material,omitempty"`
+	Size       *string `json:"size,omitempty"`
+	GOST       *string `json:"gost,omitempty"`
+	InStock    *bool   `json:"in_stock,omitempty"`
+	Limit      *int    `json:"limit,omitempty"`
+	Offset     *int    `json:"offset,omitempty"`
+	Sort       *string `json:"sort,omitempty"`
 }
 
 type UpdateProductRequest struct {
@@ -59,11 +59,11 @@ type DeleteProductRequest struct {
 }
 
 type ListCategoriesRequest struct {
-	Limit  int `json:"limit,omitempty"`
-	Offset int `json:"offset,omitempty"`
+	Limit  *int `json:"limit,omitempty"`
+	Offset *int `json:"offset,omitempty"`
 }
 
 type ListBrandsRequest struct {
-	Limit  int `json:"limit,omitempty"`
-	Offset int `json:"offset,omitempty"`
+	Limit  *int `json:"limit,omitempty"`
+	Offset *int `json:"offset,omitempty"`
 }

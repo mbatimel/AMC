@@ -49,6 +49,7 @@ description: 'AMC Frontend стайлгайд — соглашения по Type
 ### CSS
 
 - CSS-переменные из `theme.css` (`--palette-*`, `--border`, `--link`, `--focus-outline` и т.д.)
+- **UI-компоненты** — обязательно опирайся на **HeroUI** (`@heroui/react`): Button, Input, Select, Modal, Tabs, Checkbox и т.д. Свой `<button>` / `<input>` / кастомный dropdown — только если в библиотеке нет подходящего примитива или поведение принципиально не покрывается
 - **Tailwind utility-классы в своём коде не используем** — только CSS Modules + HeroUI
 - Логические свойства (`margin-inline-start`) вместо физических (`margin-left`)
 - Адаптивность через брейкпоинты-миксины: `mobileOnly` (≤680px), `tabletUp` (≥681px), `desktopUp` (≥1075px)
