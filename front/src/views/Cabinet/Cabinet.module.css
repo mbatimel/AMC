@@ -158,6 +158,17 @@
   box-shadow: 0 1px 2px rgb(16 24 40 / 4%);
 }
 
+.ordersPanel {
+  padding: 4px 4px 12px;
+  overflow: hidden;
+}
+
+.ordersScroll {
+  border: 1px solid #e8ecf2;
+  border-radius: 14px;
+  background: #fff;
+}
+
 .profilePanel {
   padding: 22px 24px 28px;
 }
@@ -271,89 +282,194 @@
 }
 
 .ordersTable {
-  margin-block-end: 8px;
+  inline-size: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
-.ordersTable :global(th) {
+.ordersTable th,
+.ordersTable td {
+  border-block-end: 1px solid #eef1f6;
+  padding-block: 14px;
+  padding-inline: 10px;
+  text-align: start;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.ordersTable th {
   color: #8b93a7;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-}
-
-.ordersTable :global(td) {
-  font-size: 14px;
-  vertical-align: middle;
-}
-
-.ordersRowActive {
-  background: #f8faff;
-}
-
-.openButton {
-  border-color: #d7dbe5;
-  background: #fff;
-  color: var(--palette-black);
-  font-weight: 600;
-}
-
-.orderNumber {
-  font-weight: 700;
-}
-
-.orderMeta {
-  color: #7a8499;
-  font-size: 13px;
-}
-
-.orderTotal {
-  font-weight: 700;
   white-space: nowrap;
 }
 
-.orderDetailsPanel {
-  margin-block-start: 16px;
-  padding: 16px;
-  border: 1px solid #eef1f6;
-  border-radius: 10px;
-  background: #f8f9fc;
-}
-
-.orderDetails {
-  padding-block-start: 4px;
-}
-
-.detailsGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 16px;
-  margin-block: 12px 14px;
+.ordersTable td {
+  color: #111827;
   font-size: 13px;
+  line-height: 1.35;
 }
 
-.detailsGrid dt {
-  margin: 0;
-  color: #7a8499;
+.ordersTable th:first-child,
+.ordersTable td:first-child {
+  padding-inline-start: 16px;
+  inline-size: 16%;
 }
 
-.detailsGrid dd {
-  margin: 0;
+.ordersTable th:nth-child(2),
+.ordersTable td:nth-child(2) {
+  inline-size: 10%;
+}
+
+.ordersTable th:nth-child(3),
+.ordersTable td:nth-child(3) {
+  inline-size: 10%;
+  padding-inline-end: 16px;
+}
+
+.ordersTable th:nth-child(4),
+.ordersTable td:nth-child(4) {
+  inline-size: 11%;
+  padding-inline-start: 16px;
+}
+
+.ordersTable th:nth-child(5),
+.ordersTable td:nth-child(5) {
+  inline-size: 12%;
+}
+
+.ordersTable th:nth-child(6),
+.ordersTable td:nth-child(6) {
+  inline-size: 12%;
+}
+
+.ordersTable th:nth-child(7),
+.ordersTable td:nth-child(7) {
+  inline-size: 11%;
+}
+
+.ordersTable th:nth-child(8),
+.ordersTable td:nth-child(8) {
+  inline-size: 7%;
+}
+
+.ordersTable th:last-child,
+.ordersTable td:last-child {
+  inline-size: 13%;
+  padding-inline-end: 16px;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.ordersTable tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.openButton {
+  min-block-size: 32px !important;
+  border: 1px solid #d7dbe5 !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  color: var(--palette-black) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding-inline: 12px !important;
+}
+
+.openButton:hover {
+  border-color: #c2c8d6 !important;
+  background: #f7f8fb !important;
+}
+
+.orderNumber {
+  display: block;
+  color: #111827;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.orderMeta {
+  color: #5b6478;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.orderTotal {
+  color: #111827;
+  font-weight: 700;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 24px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
-.itemsTable {
-  margin-block-end: 14px;
+.statusNew {
+  background: #e8f1ff;
+  color: #2f6fed;
 }
 
-.docs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.statusShipped {
+  background: #e7f6ec;
+  color: #1b7a3d;
+}
+
+.statusProcessing {
+  background: #fff1e0;
+  color: #c26400;
+}
+
+.statusCompleted {
+  background: #eef1f6;
+  color: #5b6478;
+}
+
+.statusCancelled {
+  background: #fdeceb;
+  color: #c5221f;
+}
+
+.statusDefault {
+  background: #eef1f6;
+  color: #5b6478;
+}
+
+.paymentPaid {
+  background: #e7f6ec;
+  color: #1b7a3d;
+}
+
+.paymentUnpaid {
+  background: #fdeceb;
+  color: #c5221f;
+}
+
+.paymentPending {
+  background: #fff1e0;
+  color: #c26400;
+}
+
+.paymentDefault {
+  background: #eef1f6;
+  color: #5b6478;
 }
 
 .loadMore {
-  margin-block-start: 16px;
+  margin-block-start: 12px;
+  padding-inline: 8px;
 }
 
 .formGrid {
@@ -522,7 +638,6 @@
   }
 
   .formGrid,
-  .detailsGrid,
   .requisites,
   .conditionsGrid {
     grid-template-columns: 1fr;

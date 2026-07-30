@@ -4,7 +4,7 @@ export const formatPrice = (value: number): string => {
     minimumFractionDigits: 0,
   }).format(Math.round(value));
 
-  return `${formatted} ₽`;
+  return `${formatted}\u00A0₽`;
 };
 
 export const normalizeQtyToPackage = (qty: number, packageQty: number): number => {

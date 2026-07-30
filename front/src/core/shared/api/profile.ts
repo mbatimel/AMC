@@ -144,7 +144,7 @@ const parseProfile = (data: unknown): Profile => {
 };
 
 export const getProfileRequest = async (userId: string): Promise<Profile> => {
-  const response = await fetch('/api/v1/profile', {
+  const response = await fetch('/api/v1/users/profile', {
     headers: withUserHeaders(userId),
   });
 
@@ -157,7 +157,7 @@ export const updateProfileRequest = async (
   userId: string,
   payload: UpdateProfilePayload,
 ): Promise<Profile> => {
-  const response = await fetch('/api/v1/profile', {
+  const response = await fetch('/api/v1/users/profile', {
     body: JSON.stringify(payload),
     headers: withUserHeaders(userId, true),
     method: 'PATCH',
@@ -169,7 +169,7 @@ export const updateProfileRequest = async (
 };
 
 export const listUserClientsRequest = async (userId: string): Promise<ProfileClientListItem[]> => {
-  const response = await fetch('/api/v1/profile/clients', {
+  const response = await fetch('/api/v1/users/profile/clients', {
     headers: withUserHeaders(userId),
   });
 
@@ -208,7 +208,7 @@ export const getClientDetailsRequest = async (
   userId: string,
   clientID: string,
 ): Promise<ProfileClient> => {
-  const response = await fetch(`/api/v1/profile/clients/${clientID}`, {
+  const response = await fetch(`/api/v1/users/profile/clients/${clientID}`, {
     headers: withUserHeaders(userId),
   });
 
@@ -239,7 +239,7 @@ export const getClientConditionsRequest = async (
   userId: string,
   clientID: string,
 ): Promise<ClientConditions> => {
-  const response = await fetch(`/api/v1/profile/clients/${clientID}/conditions`, {
+  const response = await fetch(`/api/v1/users/profile/clients/${clientID}/conditions`, {
     headers: withUserHeaders(userId),
   });
 
@@ -295,7 +295,7 @@ export const activateClientRequest = async (
   userId: string,
   clientID: string,
 ): Promise<ProfileClientListItem> => {
-  const response = await fetch(`/api/v1/profile/clients/${clientID}/activate`, {
+  const response = await fetch(`/api/v1/users/profile/clients/${clientID}/activate`, {
     headers: withUserHeaders(userId),
     method: 'POST',
   });
