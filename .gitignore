@@ -1,2 +1,5 @@
 deploy/nginx/htpasswd
 .superpowers/
+.claude/
+.husky/
+.vscode/

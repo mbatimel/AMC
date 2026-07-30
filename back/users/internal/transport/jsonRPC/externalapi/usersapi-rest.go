@@ -73,6 +73,20 @@ func (http *httpUsersAPI) serveListUsers(ctx *fiber.Ctx) (err error) {
 
 	var request requestUsersAPIListUsers
 
+	if _offset := ctx.Query("offset"); _offset != "" {
+		var offset int
+		offset, err = strconv.Atoi(_offset)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Offset = offset
+	}
+	if _sort := ctx.Query("sort"); _sort != "" {
+		var sort string
+		sort = _sort
+		request.Sort = sort
+	}
 	if _q := ctx.Query("q"); _q != "" {
 		var q string
 		q = _q
@@ -110,20 +124,6 @@ func (http *httpUsersAPI) serveListUsers(ctx *fiber.Ctx) (err error) {
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
 		request.Limit = limit
-	}
-	if _offset := ctx.Query("offset"); _offset != "" {
-		var offset int
-		offset, err = strconv.Atoi(_offset)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Offset = offset
-	}
-	if _sort := ctx.Query("sort"); _sort != "" {
-		var sort string
-		sort = _sort
-		request.Sort = sort
 	}
 
 	return customhandlers.ListUsers(ctx, http.svc, request.Q, request.Role, request.Status, request.ClientID, request.IsActive, request.Limit, request.Offset, request.Sort)

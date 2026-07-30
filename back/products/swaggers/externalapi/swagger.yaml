@@ -210,14 +210,14 @@ paths:
             description: Получение списка категорий каталога
             parameters:
                 - in: query
-                  name: limit
+                  name: offset
                   schema:
                     oneOf:
                         - type: number
                           format: int
                         - nullable: true
                 - in: query
-                  name: offset
+                  name: limit
                   schema:
                     oneOf:
                         - type: number
@@ -407,18 +407,6 @@ paths:
             description: Получение списка товаров с фильтрами, поиском и пагинацией
             parameters:
                 - in: query
-                  name: q
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: material
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
                   name: size
                   schema:
                     oneOf:
@@ -467,6 +455,18 @@ paths:
                     oneOf:
                         - type: number
                           format: int
+                        - nullable: true
+                - in: query
+                  name: q
+                  schema:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                - in: query
+                  name: material
+                  schema:
+                    oneOf:
+                        - type: string
                         - nullable: true
             responses:
                 "200":

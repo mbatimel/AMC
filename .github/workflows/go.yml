@@ -18,6 +18,7 @@ jobs:
       matrix:
         module:
           - back/access
+          - back/admin
           - back/auth
           - back/migrations
           - back/orders
