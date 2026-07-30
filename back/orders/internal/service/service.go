@@ -89,9 +89,23 @@ func (s *service) resolveCounterpartyID(ctx context.Context, userID uuid.UUID, c
 	return id, nil
 }
 
-func (s *service) buildCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (models.Cart, error) {
+func emptyCart(userID uuid.UUID, counterpartyID uuid.UUID) models.Cart {
+	return models.Cart{
+		UserID:   userID.String(),
+		ClientID: counterpartyID.String(),
+		Items:    make([]models.CartItem, 0),
+	}
+}
+
+func (s *service) buildCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID, allowMissingCounterparty bool) (models.Cart, error) {
 	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
 	if err != nil {
+		if allowMissingCounterparty && errors.Is(err, postgres.ErrCounterpartyNotFound) {
+			return emptyCart(userID, counterpartyID), nil
+		}
+		if errors.Is(err, postgres.ErrCounterpartyNotFound) {
+			return models.Cart{}, customErrors.NotFoundError().AddCause("field", "clientID")
+		}
 		return models.Cart{}, customErrors.InternalServerError().SetOuterError(err)
 	}
 
@@ -171,7 +185,7 @@ func (s *service) GetCart(ctx context.Context, userID uuid.UUID, clientID string
 		return response, err
 	}
 
-	cart, err := s.buildCart(ctx, userID, counterpartyID)
+	cart, err := s.buildCart(ctx, userID, counterpartyID, true)
 	if err != nil {
 		return response, err
 	}
@@ -199,6 +213,9 @@ func (s *service) AddCartItem(ctx context.Context, userID uuid.UUID, clientID st
 
 	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
 	if err != nil {
+		if errors.Is(err, postgres.ErrCounterpartyNotFound) {
+			return response, customErrors.NotFoundError().AddCause("field", "clientID")
+		}
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
@@ -219,7 +236,7 @@ func (s *service) AddCartItem(ctx context.Context, userID uuid.UUID, clientID st
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
-	cart, err := s.buildCart(ctx, userID, counterpartyID)
+	cart, err := s.buildCart(ctx, userID, counterpartyID, false)
 	if err != nil {
 		return response, err
 	}
@@ -247,6 +264,9 @@ func (s *service) UpdateCartItem(ctx context.Context, userID uuid.UUID, clientID
 
 	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
 	if err != nil {
+		if errors.Is(err, postgres.ErrCounterpartyNotFound) {
+			return response, customErrors.NotFoundError().AddCause("field", "clientID")
+		}
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
@@ -257,7 +277,7 @@ func (s *service) UpdateCartItem(ctx context.Context, userID uuid.UUID, clientID
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
-	cart, err := s.buildCart(ctx, userID, counterpartyID)
+	cart, err := s.buildCart(ctx, userID, counterpartyID, false)
 	if err != nil {
 		return response, err
 	}
@@ -282,6 +302,9 @@ func (s *service) DeleteCartItem(ctx context.Context, userID uuid.UUID, clientID
 
 	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
 	if err != nil {
+		if errors.Is(err, postgres.ErrCounterpartyNotFound) {
+			return response, customErrors.NotFoundError().AddCause("field", "clientID")
+		}
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
@@ -292,7 +315,7 @@ func (s *service) DeleteCartItem(ctx context.Context, userID uuid.UUID, clientID
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
-	cart, err := s.buildCart(ctx, userID, counterpartyID)
+	cart, err := s.buildCart(ctx, userID, counterpartyID, false)
 	if err != nil {
 		return response, err
 	}
@@ -312,6 +335,9 @@ func (s *service) ClearCart(ctx context.Context, userID uuid.UUID, clientID stri
 
 	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
 	if err != nil {
+		if errors.Is(err, postgres.ErrCounterpartyNotFound) {
+			return response, customErrors.NotFoundError().AddCause("field", "clientID")
+		}
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
@@ -319,7 +345,7 @@ func (s *service) ClearCart(ctx context.Context, userID uuid.UUID, clientID stri
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
-	cart, err := s.buildCart(ctx, userID, counterpartyID)
+	cart, err := s.buildCart(ctx, userID, counterpartyID, false)
 	if err != nil {
 		return response, err
 	}
@@ -348,6 +374,9 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 
 	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
 	if err != nil {
+		if errors.Is(err, postgres.ErrCounterpartyNotFound) {
+			return response, customErrors.NotFoundError().AddCause("field", "clientID")
+		}
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 

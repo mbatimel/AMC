@@ -16,13 +16,6 @@ type loggerAuthAPI struct {
 	next externalAPI.AuthAPI
 }
 
-func redactedSecret(value string) string {
-	if value == "" {
-		return ""
-	}
-	return "[REDACTED]"
-}
-
 func loggerMiddlewareAuthAPI() MiddlewareAuthAPI {
 	return func(next externalAPI.AuthAPI) externalAPI.AuthAPI {
 		return &loggerAuthAPI{next: next}
@@ -148,8 +141,8 @@ func (m loggerAuthAPI) ChangePassword(ctx context.Context, userID uuid.UUID, old
 			fields := map[string]interface{}{
 				"method": "authAPI.changePassword",
 				"request": viewer.Sprintf("%+v", requestAuthAPIChangePassword{
-					NewPassword: redactedSecret(newPassword),
-					OldPassword: redactedSecret(oldPassword),
+					NewPassword: newPassword,
+					OldPassword: oldPassword,
 					UserID:      userID,
 				}),
 				"response": viewer.Sprintf("%+v", responseAuthAPIChangePassword{}),
