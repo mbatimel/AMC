@@ -11,7 +11,6 @@ import { useCity } from '@/core/entities/city';
 import { useSession } from '@/core/entities/session';
 import { AppPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
-import { ToastViewport } from '@/core/shared/ui/Toast';
 
 import styles from './Checkout.module.css';
 import {
@@ -111,7 +110,6 @@ export const CheckoutPage = (): JSX.Element => {
         </div>
 
         <CheckoutSuccessModal isOpen={isSuccessOpen} onClose={closeSuccess} order={successOrder} />
-        <ToastViewport />
       </div>
     </Page>
   );

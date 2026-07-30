@@ -312,7 +312,7 @@ export const getProductRequest = async (productId: string): Promise<Product> => 
 };
 
 export const listCategoriesRequest = async (): Promise<Category[]> => {
-  const response = await fetch('/api/v1/categories?limit=200&offset=0');
+  const response = await fetch('/api/v1/categories?limit=100&offset=0');
 
   if (!response.ok) {
     throw new ProductsApiError(
@@ -345,7 +345,7 @@ export const listCategoriesRequest = async (): Promise<Category[]> => {
 };
 
 export const listBrandsRequest = async (): Promise<Brand[]> => {
-  const response = await fetch('/api/v1/brands?limit=200&offset=0');
+  const response = await fetch('/api/v1/brands?limit=100&offset=0');
 
   if (!response.ok) {
     throw new ProductsApiError(

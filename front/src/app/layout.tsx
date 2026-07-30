@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { ReactScan } from '@/app/ReactScan';
 import '@/core/shared/styles/index.css';
+import { ToastViewport } from '@/core/shared/ui/Toast';
 
 export const metadata: Metadata = {
   title: 'AMC',
@@ -15,7 +16,10 @@ const RootLayout = ({ children }: RootLayoutProps): JSX.Element => {
   return (
     <html lang="ru">
       <ReactScan />
-      <body>{children}</body>
+      <body>
+        {children}
+        <ToastViewport />
+      </body>
     </html>
   );
 };

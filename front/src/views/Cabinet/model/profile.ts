@@ -129,15 +129,11 @@ export const $profileError = createStore<null | string>(null)
   .on(fetchConditionsFx.failData, (_, error) =>
     toDisplayErrorMessage(error, 'Не удалось загрузить условия'),
   )
-  .on(updateProfileFx.failData, (_, error) =>
-    toDisplayErrorMessage(error, 'Не удалось обновить профиль'),
-  )
-  .on(activateClientFx.failData, (_, error) =>
-    toDisplayErrorMessage(error, 'Не удалось переключить кабинет'),
-  )
-  .on(changePasswordFx.failData, (_, error) =>
-    toDisplayErrorMessage(error, 'Не удалось сменить пароль'),
-  )
+  .reset(sessionEnded);
+
+/** Инкремент после успешной смены пароля — форма сбрасывает поля. */
+export const $passwordChangeVersion = createStore(0)
+  .on(changePasswordFx.done, (version) => version + 1)
   .reset(sessionEnded);
 
 const $wantProfile = createStore(false)
@@ -258,14 +254,41 @@ sample({
 });
 
 sample({
+  clock: updateProfileFx.failData,
+  fn: (error) => ({
+    message: toDisplayErrorMessage(error, 'Не удалось обновить профиль'),
+    tone: 'error' as const,
+  }),
+  target: toastShown,
+});
+
+sample({
   clock: activateClientFx.done,
   fn: () => ({ message: 'Активный кабинет переключён', tone: 'success' as const }),
   target: toastShown,
 });
 
 sample({
+  clock: activateClientFx.failData,
+  fn: (error) => ({
+    message: toDisplayErrorMessage(error, 'Не удалось переключить кабинет'),
+    tone: 'error' as const,
+  }),
+  target: toastShown,
+});
+
+sample({
   clock: changePasswordFx.done,
   fn: () => ({ message: 'Пароль изменён', tone: 'success' as const }),
+  target: toastShown,
+});
+
+sample({
+  clock: changePasswordFx.failData,
+  fn: (error) => ({
+    message: toDisplayErrorMessage(error, 'Не удалось сменить пароль'),
+    tone: 'error' as const,
+  }),
   target: toastShown,
 });
 

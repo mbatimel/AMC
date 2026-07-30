@@ -17,6 +17,13 @@ import {
 import clsx from 'clsx';
 import { useState } from 'react';
 
+import {
+  formatPhoneInput,
+  normalizePhone,
+  validateEmail,
+  validatePhone,
+} from '@/core/shared/lib/validateContact';
+
 import type { CheckoutFormValues, DeliveryType } from '../lib/types';
 
 import styles from '../Checkout.module.css';
@@ -35,6 +42,8 @@ export const CheckoutForm = ({ error, isPending, onSubmit }: CheckoutFormProps):
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [comment, setComment] = useState('');
+  const [phoneError, setPhoneError] = useState<null | string>(null);
+  const [emailError, setEmailError] = useState<null | string>(null);
 
   const isPickup = deliveryType === 'pickup';
 
@@ -43,13 +52,24 @@ export const CheckoutForm = ({ error, isPending, onSubmit }: CheckoutFormProps):
       <Form
         onSubmit={(event) => {
           event.preventDefault();
+
+          const nextPhoneError = validatePhone(phone);
+          const nextEmailError = validateEmail(email, { required: false });
+
+          setPhoneError(nextPhoneError);
+          setEmailError(nextEmailError);
+
+          if (nextPhoneError || nextEmailError) {
+            return;
+          }
+
           onSubmit({
             comment,
             contactName,
             deliveryAddress: isPickup ? PICKUP_WAREHOUSE_ADDRESS : deliveryAddress,
             deliveryType,
-            email,
-            phone,
+            email: email.trim(),
+            phone: normalizePhone(phone),
           });
         }}
       >
@@ -116,13 +136,32 @@ export const CheckoutForm = ({ error, isPending, onSubmit }: CheckoutFormProps):
               <Label>Контактное лицо</Label>
               <Input placeholder="ФИО" />
             </TextField>
-            <TextField isRequired name="phone" onChange={setPhone} value={phone}>
+            <TextField
+              isInvalid={Boolean(phoneError)}
+              isRequired
+              name="phone"
+              onChange={(value) => {
+                setPhone((previous) => formatPhoneInput(value, previous));
+                setPhoneError(null);
+              }}
+              value={phone}
+            >
               <Label>Телефон</Label>
-              <Input placeholder="+7 …" type="tel" />
+              <Input placeholder="+7 999 123 45 67" type="tel" />
+              {phoneError ? <FieldError>{phoneError}</FieldError> : null}
             </TextField>
-            <TextField name="email" onChange={setEmail} value={email}>
+            <TextField
+              isInvalid={Boolean(emailError)}
+              name="email"
+              onChange={(value) => {
+                setEmail(value);
+                setEmailError(null);
+              }}
+              value={email}
+            >
               <Label>Email</Label>
               <Input placeholder="name@company.ru" type="email" />
+              {emailError ? <FieldError>{emailError}</FieldError> : null}
             </TextField>
           </div>
         </section>

@@ -27,6 +27,13 @@ import {
 import { IconBuilding } from '@/core/shared/icons/IconBuilding';
 import { IconUser } from '@/core/shared/icons/IconUser';
 import { IconUserPlus } from '@/core/shared/icons/IconUserPlus';
+import { readFormString } from '@/core/shared/lib/readFormString';
+import {
+  formatPhoneInput,
+  normalizePhone,
+  validateEmail,
+  validatePhone,
+} from '@/core/shared/lib/validateContact';
 import { AppPath } from '@/core/shared/router/paths';
 import { AuthShell } from '@/core/shared/ui/AuthShell';
 import { AuthCardHeader } from '@/core/shared/ui/AuthShell/AuthCardHeader';
@@ -37,12 +44,39 @@ import styles from './Register.module.css';
 export const Register = (): JSX.Element => {
   const router = useRouter();
   const [registerType, setRegisterType] = useState<RegisterType>(RegisterType.Organization);
+  const [emailError, setEmailError] = useState<null | string>(null);
+  const [phoneError, setPhoneError] = useState<null | string>(null);
+  const [phoneAdditionalError, setPhoneAdditionalError] = useState<null | string>(null);
   const [authError, isPending, signup] = useUnit([$authError, $isAuthPending, signupFx]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
+    const email = readFormString(formData, 'email').trim();
+    const phone = readFormString(formData, 'phone').trim();
+    const phoneAdditional = readFormString(formData, 'phoneAdditional').trim();
+    const phoneRequired = registerType === RegisterType.Individual;
+
+    const nextEmailError = validateEmail(email);
+    const nextPhoneError = validatePhone(phone, { required: phoneRequired });
+    const nextPhoneAdditionalError = validatePhone(phoneAdditional, { required: false });
+
+    setEmailError(nextEmailError);
+    setPhoneError(nextPhoneError);
+    setPhoneAdditionalError(nextPhoneAdditionalError);
+
+    if (nextEmailError || nextPhoneError || nextPhoneAdditionalError) {
+      return;
+    }
+
+    if (phone) {
+      formData.set('phone', normalizePhone(phone));
+    }
+
+    if (phoneAdditional) {
+      formData.set('phoneAdditional', normalizePhone(phoneAdditional));
+    }
 
     void signup(buildRegisterPayload(formData, registerType))
       .then(() => {
@@ -65,6 +99,9 @@ export const Register = (): JSX.Element => {
         className={clsx(formStyles.tabs, styles.tabs)}
         onSelectionChange={(key) => {
           setRegisterType(String(key) as RegisterType);
+          setEmailError(null);
+          setPhoneError(null);
+          setPhoneAdditionalError(null);
         }}
         selectedKey={registerType}
       >
@@ -81,7 +118,15 @@ export const Register = (): JSX.Element => {
       </Tabs>
 
       <Form className={clsx(formStyles.form)} onSubmit={handleSubmit}>
-        {registerType === RegisterType.Organization ? <OrganizationFields /> : <IndividualFields />}
+        {registerType === RegisterType.Organization ? (
+          <OrganizationFields
+            emailError={emailError}
+            phoneAdditionalError={phoneAdditionalError}
+            phoneError={phoneError}
+          />
+        ) : (
+          <IndividualFields emailError={emailError} phoneError={phoneError} />
+        )}
 
         <TextField className={clsx(formStyles.field)} isRequired name="password" type="password">
           <Label className={clsx(formStyles.label)}>Пароль</Label>
@@ -113,7 +158,18 @@ export const Register = (): JSX.Element => {
   );
 };
 
-const OrganizationFields = (): JSX.Element => {
+const OrganizationFields = ({
+  emailError,
+  phoneAdditionalError,
+  phoneError,
+}: {
+  emailError: null | string;
+  phoneAdditionalError: null | string;
+  phoneError: null | string;
+}): JSX.Element => {
+  const [phone, setPhone] = useState('');
+  const [phoneAdditional, setPhoneAdditional] = useState('');
+
   return (
     <>
       <section className={clsx(formStyles.section)}>
@@ -202,18 +258,52 @@ const OrganizationFields = (): JSX.Element => {
       <section className={clsx(formStyles.section)}>
         <h2 className={clsx(formStyles.sectionTitle)}>Контакты</h2>
         <div className={clsx(formStyles.grid)}>
-          <TextField className={clsx(formStyles.field)} name="phone">
+          <TextField
+            className={clsx(formStyles.field)}
+            isInvalid={Boolean(phoneError)}
+            name="phone"
+            onChange={(value) => {
+              setPhone((previous) => formatPhoneInput(value, previous));
+            }}
+            value={phone}
+          >
             <Label className={clsx(formStyles.label)}>Контактный телефон</Label>
-            <Input className={clsx(formStyles.input)} fullWidth placeholder="+7" />
+            <Input
+              className={clsx(formStyles.input)}
+              fullWidth
+              placeholder="+7 999 123 45 67"
+              type="tel"
+            />
+            {phoneError ? <FieldError>{phoneError}</FieldError> : null}
           </TextField>
-          <TextField className={clsx(formStyles.field)} name="phoneAdditional">
+          <TextField
+            className={clsx(formStyles.field)}
+            isInvalid={Boolean(phoneAdditionalError)}
+            name="phoneAdditional"
+            onChange={(value) => {
+              setPhoneAdditional((previous) => formatPhoneInput(value, previous));
+            }}
+            value={phoneAdditional}
+          >
             <Label className={clsx(formStyles.label)}>Дополнительный телефон</Label>
-            <Input className={clsx(formStyles.input)} fullWidth placeholder="+7" />
+            <Input
+              className={clsx(formStyles.input)}
+              fullWidth
+              placeholder="+7 999 123 45 67"
+              type="tel"
+            />
+            {phoneAdditionalError ? <FieldError>{phoneAdditionalError}</FieldError> : null}
           </TextField>
-          <TextField className={clsx(formStyles.field)} isRequired name="email" type="email">
+          <TextField
+            className={clsx(formStyles.field)}
+            isInvalid={Boolean(emailError)}
+            isRequired
+            name="email"
+            type="email"
+          >
             <Label className={clsx(formStyles.label)}>E-mail</Label>
             <Input className={clsx(formStyles.input)} fullWidth placeholder="info@company.ru" />
-            <FieldError />
+            {emailError ? <FieldError>{emailError}</FieldError> : <FieldError />}
           </TextField>
           <TextField className={clsx(formStyles.field)} name="website">
             <Label className={clsx(formStyles.label)}>Сайт</Label>
@@ -247,7 +337,15 @@ const OrganizationFields = (): JSX.Element => {
   );
 };
 
-const IndividualFields = (): JSX.Element => {
+const IndividualFields = ({
+  emailError,
+  phoneError,
+}: {
+  emailError: null | string;
+  phoneError: null | string;
+}): JSX.Element => {
+  const [phone, setPhone] = useState('');
+
   return (
     <>
       <section className={clsx(formStyles.section)}>
@@ -281,15 +379,35 @@ const IndividualFields = (): JSX.Element => {
       <section className={clsx(formStyles.section)}>
         <h2 className={clsx(formStyles.sectionTitle)}>Контакты и доставка</h2>
         <div className={clsx(formStyles.grid)}>
-          <TextField className={clsx(formStyles.field)} isRequired name="phone">
+          <TextField
+            className={clsx(formStyles.field)}
+            isInvalid={Boolean(phoneError)}
+            isRequired
+            name="phone"
+            onChange={(value) => {
+              setPhone((previous) => formatPhoneInput(value, previous));
+            }}
+            value={phone}
+          >
             <Label className={clsx(formStyles.label)}>Телефон</Label>
-            <Input className={clsx(formStyles.input)} fullWidth placeholder="+7" />
-            <FieldError />
+            <Input
+              className={clsx(formStyles.input)}
+              fullWidth
+              placeholder="+7 999 123 45 67"
+              type="tel"
+            />
+            {phoneError ? <FieldError>{phoneError}</FieldError> : <FieldError />}
           </TextField>
-          <TextField className={clsx(formStyles.field)} isRequired name="email" type="email">
+          <TextField
+            className={clsx(formStyles.field)}
+            isInvalid={Boolean(emailError)}
+            isRequired
+            name="email"
+            type="email"
+          >
             <Label className={clsx(formStyles.label)}>E-mail</Label>
             <Input className={clsx(formStyles.input)} fullWidth placeholder="ivan@mail.ru" />
-            <FieldError />
+            {emailError ? <FieldError>{emailError}</FieldError> : <FieldError />}
           </TextField>
           <TextField
             className={clsx(formStyles.field, formStyles.gridFull)}

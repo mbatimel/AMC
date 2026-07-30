@@ -1,3 +1,5 @@
+import { parseApiErrorMessage } from './parseApiError';
+
 export type AuthCredentials = {
   email: string;
   password: string;
@@ -184,6 +186,8 @@ export const changePasswordRequest = async (params: {
   oldPassword: string;
   userId: string;
 }): Promise<void> => {
+  // Swagger: POST /api/v1/auth/change-password
+  // header X-User-Id (uuid, required); query oldPassword, newPassword
   const search = new URLSearchParams({
     newPassword: params.newPassword,
     oldPassword: params.oldPassword,
@@ -194,23 +198,13 @@ export const changePasswordRequest = async (params: {
   });
 
   if (!response.ok) {
-    let message = 'Не удалось сменить пароль';
-
-    try {
-      const data: unknown = await response.json();
-
-      if (typeof data === 'object' && data !== null) {
-        const record = data as Record<string, unknown>;
-        const errorText = record.errorText ?? record.ErrorText;
-
-        if (typeof errorText === 'string' && errorText.length > 0) {
-          message = errorText;
-        }
-      }
-    } catch {
-      // ignore
+    if (response.status === 401) {
+      throw new AuthApiError(response.status, 'Неверный текущий пароль');
     }
 
-    throw new AuthApiError(response.status, message);
+    throw new AuthApiError(
+      response.status,
+      await parseApiErrorMessage(response, 'Не удалось сменить пароль'),
+    );
   }
 };

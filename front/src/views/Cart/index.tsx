@@ -16,7 +16,6 @@ import { formatPositionsCount } from '@/core/shared/lib/pluralize';
 import { AppPath, getProductPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
 import { QuantityStepper } from '@/core/shared/ui/QuantityStepper';
-import { ToastViewport } from '@/core/shared/ui/Toast';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
 import styles from './Cart.module.css';
@@ -297,7 +296,6 @@ export const CartPage = (): JSX.Element => {
             </div>
           )}
         </div>
-        <ToastViewport />
       </div>
     </Page>
   );

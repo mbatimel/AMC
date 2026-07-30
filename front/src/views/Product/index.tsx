@@ -14,7 +14,6 @@ import { AppPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
 import { ProductImageFallback } from '@/core/shared/ui/ProductImageFallback';
 import { QuantityStepper } from '@/core/shared/ui/QuantityStepper';
-import { ToastViewport } from '@/core/shared/ui/Toast';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
 import { $isProductPending, $product, $productError, productOpened } from './model';
@@ -287,7 +286,6 @@ export const ProductPage = (): JSX.Element => {
             </>
           ) : null}
         </div>
-        <ToastViewport />
       </div>
     </Page>
   );

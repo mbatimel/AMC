@@ -332,7 +332,29 @@
 .formGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
+}
+
+.formField {
+  inline-size: 100%;
+}
+
+.formLabel {
+  margin-block-end: 6px;
+  color: var(--palette-dark);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.formInput {
+  box-sizing: border-box;
+  min-block-size: 38px;
+  padding-block: 12px;
+  padding-inline: 14px;
+  border-radius: 6px;
+  font-size: 14px;
 }
 
 .formActions {
@@ -340,6 +362,60 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-block-start: 16px;
+}
+
+.formField :global([data-slot='field-error']),
+.formField :global([data-slot='textfield-error']) {
+  margin-block-start: 6px;
+  color: var(--alert, #d32f2f);
+  font-size: 13px;
+}
+
+.fieldError {
+  margin: 6px 0 0;
+  color: var(--alert, #d32f2f);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.formSubmit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-block: 14px;
+  padding-inline: 24px;
+  border: none;
+  border-radius: 6px;
+  background: var(--header-brand);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  block-size: auto;
+}
+
+.formSubmit:hover {
+  background: var(--header-brand-hover);
+}
+
+.formSubmitSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-block: 14px;
+  padding-inline: 24px;
+  border: 1px solid #d7dbe5;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--palette-black);
+  font-size: 14px;
+  font-weight: 600;
+  block-size: auto;
+}
+
+.formSubmitSecondary:hover {
+  background: #f3f5f9;
 }
 
 .clientsList {

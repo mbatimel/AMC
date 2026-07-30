@@ -7,7 +7,6 @@ import { Suspense } from 'react';
 
 import { AppPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
-import { ToastViewport } from '@/core/shared/ui/Toast';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
 import styles from './Catalog.module.css';
@@ -156,7 +155,6 @@ const CatalogContent = (): JSX.Element => {
           </div>
         </div>
       </div>
-      <ToastViewport />
     </div>
   );
 };
