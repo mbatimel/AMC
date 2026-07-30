@@ -34,8 +34,12 @@ type Storage interface {
 
 	CreateOrder(ctx context.Context, params postgres.CreateOrderParams) (postgres.CreatedOrder, error)
 	ListOrders(ctx context.Context, params postgres.ListOrdersParams) ([]postgres.OrderRow, int, error)
+	GetOrderByID(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.UUID) (postgres.OrderDetailRow, error)
 	GetOrderItems(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderItemRow, error)
 	GetOrderDocumentsByOrderID(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderDocumentRow, error)
+	GetOrderHistory(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderHistoryRow, error)
+	CancelOrder(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.UUID, changedBy uuid.UUID, comment string) (postgres.OrderDetailRow, error)
+	UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy uuid.UUID) (postgres.OrderDetailRow, error)
 }
 
 // AccessClient is implemented by internal/access.Client.
@@ -61,6 +65,17 @@ func NewOrdersApiService(logger zerolog.Logger, storage Storage, accessClient Ac
 
 func (s *service) checkBuyerAccess(ctx context.Context, userID uuid.UUID) error {
 	allowed, err := s.accessClient.CheckAccess(ctx, userID, RoleCodeBuyer)
+	if err != nil {
+		return customErrors.InternalServerError().SetOuterError(err)
+	}
+	if !allowed {
+		return customErrors.ForbiddenError()
+	}
+	return nil
+}
+
+func (s *service) checkAdminAccess(ctx context.Context, userID uuid.UUID) error {
+	allowed, err := s.accessClient.CheckAccess(ctx, userID, RoleCodeAdmin)
 	if err != nil {
 		return customErrors.InternalServerError().SetOuterError(err)
 	}
@@ -482,8 +497,90 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 	return models.CreateOrderResponse{Order: order}, nil
 }
 
+func (s *service) buildOrderModel(ctx context.Context, row postgres.OrderDetailRow) (models.Order, error) {
+	itemRows, err := s.storage.GetOrderItems(ctx, row.ID)
+	if err != nil {
+		return models.Order{}, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	docRows, err := s.storage.GetOrderDocumentsByOrderID(ctx, row.ID)
+	if err != nil {
+		return models.Order{}, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	items := make([]models.OrderItem, 0, len(itemRows))
+	for _, item := range itemRows {
+		items = append(items, models.OrderItem{
+			ID:          item.ID.String(),
+			OrderID:     row.ID.String(),
+			ProductID:   item.ProductID.String(),
+			SKU:         item.SKU,
+			ProductName: item.Name,
+			Qty:         item.Quantity,
+			Price:       item.UnitPrice,
+			Total:       item.LineTotal,
+		})
+	}
+
+	docs := make([]models.OrderDocument, 0, len(docRows))
+	for _, doc := range docRows {
+		docs = append(docs, models.OrderDocument{
+			ID:        doc.ID.String(),
+			OrderID:   row.ID.String(),
+			Type:      doc.Type,
+			Name:      doc.Number,
+			URL:       doc.URL,
+			CreatedAt: doc.CreatedAt,
+		})
+	}
+
+	return models.Order{
+		ID:              row.ID.String(),
+		Number:          row.Number,
+		UserID:          row.UserID.String(),
+		ClientID:        row.CounterpartyID.String(),
+		Items:           items,
+		Subtotal:        row.Subtotal,
+		DiscountTotal:   row.DiscountTotal,
+		Total:           row.Total,
+		VAT:             row.VATTotal,
+		DeliveryType:    row.DeliveryMethod,
+		DeliveryAddress: row.DeliveryAddress,
+		ContactName:     row.ContactName,
+		Phone:           row.Phone,
+		Email:           row.Email,
+		Comment:         row.Comment,
+		Status:          row.Status,
+		PaymentStatus:   row.PaymentStatus,
+		Documents:       docs,
+		CreatedAt:       row.CreatedAt,
+	}, nil
+}
+
 func (s *service) GetOrder(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, clientID string) (response models.GetOrderResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, clientID)
+	if err != nil {
+		return response, err
+	}
+
+	row, err := s.storage.GetOrderByID(ctx, orderID, counterpartyID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrOrderNotFound) {
+			return response, customErrors.NotFoundError()
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	order, err := s.buildOrderModel(ctx, row)
+	if err != nil {
+		return response, err
+	}
+
+	return models.GetOrderResponse{Order: order}, nil
 }
 
 func (s *service) ListOrders(ctx context.Context, userID uuid.UUID, clientID string, status string, paymentStatus string, limit int, offset int, sort string) (response models.ListOrdersResponse, err error) {
@@ -574,21 +671,193 @@ func (s *service) ListOrders(ctx context.Context, userID uuid.UUID, clientID str
 }
 
 func (s *service) CancelOrder(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, comment string) (response models.CancelOrderResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, "")
+	if err != nil {
+		return response, err
+	}
+
+	row, err := s.storage.CancelOrder(ctx, orderID, counterpartyID, userID, comment)
+	if err != nil {
+		if errors.Is(err, postgres.ErrOrderNotFound) {
+			return response, customErrors.NotFoundError()
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	order, err := s.buildOrderModel(ctx, row)
+	if err != nil {
+		return response, err
+	}
+
+	return models.CancelOrderResponse{Order: order}, nil
 }
 
 func (s *service) RepeatOrder(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, clientID string) (response models.RepeatOrderResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, clientID)
+	if err != nil {
+		return response, err
+	}
+
+	row, err := s.storage.GetOrderByID(ctx, orderID, counterpartyID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrOrderNotFound) {
+			return response, customErrors.NotFoundError()
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	itemRows, err := s.storage.GetOrderItems(ctx, row.ID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrCounterpartyNotFound) {
+			return response, customErrors.NotFoundError().AddCause("field", "clientID")
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	priceGroupID, err := s.storage.GetCounterpartyPriceGroupID(ctx, counterpartyID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	for _, item := range itemRows {
+		price, priceErr := s.storage.ResolveProductPrice(ctx, item.ProductID, priceGroupID)
+		if priceErr != nil {
+			if errors.Is(priceErr, postgres.ErrProductPriceNotFound) {
+				continue
+			}
+			return response, customErrors.InternalServerError().SetOuterError(priceErr)
+		}
+		if err = s.storage.UpsertCartItem(ctx, cartID, item.ProductID, item.Quantity, price); err != nil {
+			return response, customErrors.InternalServerError().SetOuterError(err)
+		}
+	}
+
+	cart, err := s.buildCart(ctx, userID, counterpartyID, false)
+	if err != nil {
+		return response, err
+	}
+
+	order, err := s.buildOrderModel(ctx, row)
+	if err != nil {
+		return response, err
+	}
+
+	return models.RepeatOrderResponse{Order: order, Cart: cart}, nil
 }
 
 func (s *service) GetOrderDocuments(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderDocumentsResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, "")
+	if err != nil {
+		return response, err
+	}
+
+	row, err := s.storage.GetOrderByID(ctx, orderID, counterpartyID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrOrderNotFound) {
+			return response, customErrors.NotFoundError()
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	docRows, err := s.storage.GetOrderDocumentsByOrderID(ctx, row.ID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	docs := make([]models.OrderDocument, 0, len(docRows))
+	for _, doc := range docRows {
+		docs = append(docs, models.OrderDocument{
+			ID:        doc.ID.String(),
+			OrderID:   row.ID.String(),
+			Type:      doc.Type,
+			Name:      doc.Number,
+			URL:       doc.URL,
+			CreatedAt: doc.CreatedAt,
+		})
+	}
+
+	return models.GetOrderDocumentsResponse{Items: docs}, nil
 }
 
 func (s *service) GetOrderHistory(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderHistoryResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, "")
+	if err != nil {
+		return response, err
+	}
+
+	row, err := s.storage.GetOrderByID(ctx, orderID, counterpartyID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrOrderNotFound) {
+			return response, customErrors.NotFoundError()
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	historyRows, err := s.storage.GetOrderHistory(ctx, row.ID)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	items := make([]models.OrderHistoryItem, 0, len(historyRows))
+	for _, h := range historyRows {
+		changedBy := ""
+		if h.ChangedBy.Valid {
+			changedBy = h.ChangedBy.UUID.String()
+		}
+		items = append(items, models.OrderHistoryItem{
+			ID:            h.ID.String(),
+			OrderID:       h.OrderID.String(),
+			Status:        h.Status,
+			PaymentStatus: h.PaymentStatus,
+			Comment:       h.Comment,
+			ChangedBy:     changedBy,
+			CreatedAt:     h.CreatedAt,
+		})
+	}
+
+	return models.GetOrderHistoryResponse{Items: items}, nil
 }
 
 func (s *service) UpdateOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
-	return response, customErrors.NotImplementedError()
+	if err = s.checkAdminAccess(ctx, userID); err != nil {
+		return response, err
+	}
+
+	// changedBy is intentionally ignored: the actor recorded in history must be
+	// the authenticated caller, not a client-supplied value (avoids attribution spoofing).
+	row, err := s.storage.UpdateOrderStatus(ctx, orderID, status, paymentStatus, comment, userID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrOrderNotFound) {
+			return response, customErrors.NotFoundError()
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	order, err := s.buildOrderModel(ctx, row)
+	if err != nil {
+		return response, err
+	}
+
+	return models.UpdateOrderStatusResponse{Order: order}, nil
 }

@@ -2,10 +2,12 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 )
 
 type OrderItemInput struct {
@@ -184,6 +186,182 @@ func (s *Storage) ListOrders(ctx context.Context, params ListOrdersParams) ([]Or
 	}
 
 	return items, total, nil
+}
+
+type OrderDetailRow struct {
+	ID              uuid.UUID
+	Number          string
+	UserID          uuid.UUID
+	CounterpartyID  uuid.UUID
+	Status          string
+	PaymentStatus   string
+	DeliveryMethod  string
+	DeliveryAddress string
+	ContactName     string
+	Phone           string
+	Email           string
+	Comment         string
+	Subtotal        float64
+	DiscountTotal   float64
+	VATTotal        float64
+	Total           float64
+	CreatedAt       time.Time
+}
+
+var ErrOrderNotFound = errors.New("order not found")
+
+func (s *Storage) GetOrderByID(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.UUID) (OrderDetailRow, error) {
+	var order OrderDetailRow
+	err := s.pool.QueryRow(ctx, `
+		SELECT o.id, o.number, o.user_id, o.counterparty_id, o.status, o.payment_status, o.delivery_method,
+		       COALESCE(ca.address, ''), COALESCE(cc.full_name, ''), COALESCE(cc.phone, ''), COALESCE(cc.email, ''),
+		       COALESCE(o.comment, ''), o.subtotal, o.discount_total, o.vat_total, o.total, o.created_at
+		FROM orders o
+		LEFT JOIN counterparty_addresses ca ON ca.id = o.delivery_address_id
+		LEFT JOIN counterparty_contacts cc ON cc.id = o.contact_id
+		WHERE o.id = $1 AND o.counterparty_id = $2
+	`, orderID, counterpartyID).Scan(
+		&order.ID,
+		&order.Number,
+		&order.UserID,
+		&order.CounterpartyID,
+		&order.Status,
+		&order.PaymentStatus,
+		&order.DeliveryMethod,
+		&order.DeliveryAddress,
+		&order.ContactName,
+		&order.Phone,
+		&order.Email,
+		&order.Comment,
+		&order.Subtotal,
+		&order.DiscountTotal,
+		&order.VATTotal,
+		&order.Total,
+		&order.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return order, ErrOrderNotFound
+		}
+		return order, fmt.Errorf("get order: %w", err)
+	}
+	return order, nil
+}
+
+func (s *Storage) CancelOrder(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.UUID, changedBy uuid.UUID, comment string) (OrderDetailRow, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return OrderDetailRow{}, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var oldStatus, oldPaymentStatus string
+	err = tx.QueryRow(ctx, `
+		SELECT status, payment_status FROM orders WHERE id = $1 AND counterparty_id = $2 FOR UPDATE
+	`, orderID, counterpartyID).Scan(&oldStatus, &oldPaymentStatus)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return OrderDetailRow{}, ErrOrderNotFound
+		}
+		return OrderDetailRow{}, fmt.Errorf("get order status: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx, `UPDATE orders SET status = 'cancelled' WHERE id = $1`, orderID); err != nil {
+		return OrderDetailRow{}, fmt.Errorf("cancel order: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx, `
+		INSERT INTO order_status_history (order_id, old_status, new_status, payment_status, changed_by, comment)
+		VALUES ($1, $2, 'cancelled', $3, $4, $5)
+	`, orderID, oldStatus, oldPaymentStatus, changedBy, comment); err != nil {
+		return OrderDetailRow{}, fmt.Errorf("insert order status history: %w", err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return OrderDetailRow{}, fmt.Errorf("commit tx: %w", err)
+	}
+
+	return s.GetOrderByID(ctx, orderID, counterpartyID)
+}
+
+func (s *Storage) UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy uuid.UUID) (OrderDetailRow, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return OrderDetailRow{}, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var counterpartyID uuid.UUID
+	var oldStatus, oldPaymentStatus string
+	err = tx.QueryRow(ctx, `
+		SELECT counterparty_id, status, payment_status FROM orders WHERE id = $1 FOR UPDATE
+	`, orderID).Scan(&counterpartyID, &oldStatus, &oldPaymentStatus)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return OrderDetailRow{}, ErrOrderNotFound
+		}
+		return OrderDetailRow{}, fmt.Errorf("get order status: %w", err)
+	}
+
+	newStatus := status
+	if newStatus == "" {
+		newStatus = oldStatus
+	}
+	newPaymentStatus := paymentStatus
+	if newPaymentStatus == "" {
+		newPaymentStatus = oldPaymentStatus
+	}
+
+	if _, err = tx.Exec(ctx, `UPDATE orders SET status = $1, payment_status = $2 WHERE id = $3`, newStatus, newPaymentStatus, orderID); err != nil {
+		return OrderDetailRow{}, fmt.Errorf("update order status: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx, `
+		INSERT INTO order_status_history (order_id, old_status, new_status, payment_status, changed_by, comment)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, orderID, oldStatus, newStatus, newPaymentStatus, changedBy, comment); err != nil {
+		return OrderDetailRow{}, fmt.Errorf("insert order status history: %w", err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return OrderDetailRow{}, fmt.Errorf("commit tx: %w", err)
+	}
+
+	return s.GetOrderByID(ctx, orderID, counterpartyID)
+}
+
+type OrderHistoryRow struct {
+	ID            uuid.UUID
+	OrderID       uuid.UUID
+	Status        string
+	PaymentStatus string
+	Comment       string
+	ChangedBy     uuid.NullUUID
+	CreatedAt     time.Time
+}
+
+func (s *Storage) GetOrderHistory(ctx context.Context, orderID uuid.UUID) ([]OrderHistoryRow, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, order_id, new_status, COALESCE(payment_status, ''), COALESCE(comment, ''), changed_by, created_at
+		FROM order_status_history WHERE order_id = $1 ORDER BY created_at
+	`, orderID)
+	if err != nil {
+		return nil, fmt.Errorf("get order history: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]OrderHistoryRow, 0)
+	for rows.Next() {
+		var item OrderHistoryRow
+		if err = rows.Scan(&item.ID, &item.OrderID, &item.Status, &item.PaymentStatus, &item.Comment, &item.ChangedBy, &item.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan order history: %w", err)
+		}
+		items = append(items, item)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate order history: %w", err)
+	}
+	return items, nil
 }
 
 type OrderItemRow struct {
