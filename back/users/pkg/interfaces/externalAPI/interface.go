@@ -106,7 +106,7 @@ type UsersAPI interface {
 
 	// GetProfile returns the current user's profile.
 	// @tg http-method=GET
-	// @tg http-path=/v1/profile
+	// @tg http-path=/v1/users/profile
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:GetProfile
 	// @tg summary=`Профиль пользователя`
@@ -117,7 +117,7 @@ type UsersAPI interface {
 
 	// UpdateProfile updates the current user's contact fields.
 	// @tg http-method=PATCH
-	// @tg http-path=/v1/profile
+	// @tg http-path=/v1/users/profile
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:UpdateProfile
 	// @tg summary=`Обновление профиля`
@@ -128,7 +128,7 @@ type UsersAPI interface {
 
 	// ListUserClients lists the current user's client cabinets.
 	// @tg http-method=GET
-	// @tg http-path=/v1/profile/clients
+	// @tg http-path=/v1/users/profile/clients
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:ListUserClients
 	// @tg summary=`Кабинеты пользователя`
@@ -139,7 +139,7 @@ type UsersAPI interface {
 
 	// GetClientDetails returns linked client details.
 	// @tg http-method=GET
-	// @tg http-path=/v1/profile/clients/:clientID
+	// @tg http-path=/v1/users/profile/clients/:clientID
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:GetClientDetails
 	// @tg summary=`Реквизиты кабинета`
@@ -151,7 +151,7 @@ type UsersAPI interface {
 
 	// GetClientConditions returns linked client conditions.
 	// @tg http-method=GET
-	// @tg http-path=/v1/profile/clients/:clientID/conditions
+	// @tg http-path=/v1/users/profile/clients/:clientID/conditions
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:GetClientConditions
 	// @tg summary=`Индивидуальные условия`
@@ -163,7 +163,7 @@ type UsersAPI interface {
 
 	// SwitchActiveClient changes the current active client.
 	// @tg http-method=POST
-	// @tg http-path=/v1/profile/clients/:clientID/activate
+	// @tg http-path=/v1/users/profile/clients/:clientID/activate
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:SwitchActiveClient
 	// @tg summary=`Переключение кабинета`
@@ -175,7 +175,7 @@ type UsersAPI interface {
 
 	// ListFavorites returns favorites for the active client.
 	// @tg http-method=GET
-	// @tg http-path=/v1/favorites
+	// @tg http-path=/v1/users/favorites
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:ListFavorites
 	// @tg summary=`Список избранного`
@@ -186,7 +186,7 @@ type UsersAPI interface {
 
 	// AddFavorite adds a product to favorites.
 	// @tg http-method=POST
-	// @tg http-path=/v1/favorites
+	// @tg http-path=/v1/users/favorites
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:AddFavorite
 	// @tg summary=`Добавление в избранное`
@@ -197,7 +197,7 @@ type UsersAPI interface {
 
 	// DeleteFavorites deletes several favorites at once.
 	// @tg http-method=DELETE
-	// @tg http-path=/v1/favorites
+	// @tg http-path=/v1/users/favorites
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:DeleteFavorites
 	// @tg summary=`Массовое удаление из избранного`

@@ -580,1162 +580,6 @@ paths:
                                         type: string
                                         example: content.api.errors.users.internalError
                                         description: Заголовок ошибки
-    /api/v1/profile:
-        get:
-            tags:
-                - UsersAPI
-            summary: Профиль пользователя
-            description: Возвращает профиль текущего пользователя и активный кабинет
-            parameters:
-                - in: header
-                  name: X-User-Id
-                  required: true
-                  schema:
-                    type: string
-                    format: uuid
-            responses:
-                "200":
-                    description: Successful operation
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors: {}
-                                    data:
-                                        example: true
-                                    error:
-                                        type: boolean
-                                        example: false
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                "400":
-                    description: Bad Request
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "401":
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.unauthorized
-                                        description: Заголовок ошибки
-                "403":
-                    description: Forbidden
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.accessDenied
-                                        description: Заголовок ошибки
-                "404":
-                    description: Not Found
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "409":
-                    description: Conflict
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "500":
-                    description: Internal Server Error
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.internalError
-                                        description: Заголовок ошибки
-        patch:
-            tags:
-                - UsersAPI
-            summary: Обновление профиля
-            description: Обновляет только контактные данные текущего пользователя
-            parameters:
-                - in: header
-                  name: X-User-Id
-                  required: true
-                  schema:
-                    type: string
-                    format: uuid
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/requestUsersAPIUpdateProfile'
-            responses:
-                "200":
-                    description: Successful operation
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors: {}
-                                    data:
-                                        example: true
-                                    error:
-                                        type: boolean
-                                        example: false
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                "400":
-                    description: Bad Request
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "401":
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.unauthorized
-                                        description: Заголовок ошибки
-                "403":
-                    description: Forbidden
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.accessDenied
-                                        description: Заголовок ошибки
-                "404":
-                    description: Not Found
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "409":
-                    description: Conflict
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "500":
-                    description: Internal Server Error
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.internalError
-                                        description: Заголовок ошибки
-    /api/v1/profile/clients:
-        get:
-            tags:
-                - UsersAPI
-            summary: Кабинеты пользователя
-            description: Возвращает только клиентские кабинеты, доступные текущему пользователю
-            parameters:
-                - in: header
-                  name: X-User-Id
-                  required: true
-                  schema:
-                    type: string
-                    format: uuid
-            responses:
-                "200":
-                    description: Successful operation
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors: {}
-                                    data:
-                                        example: true
-                                    error:
-                                        type: boolean
-                                        example: false
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                "400":
-                    description: Bad Request
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "401":
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.unauthorized
-                                        description: Заголовок ошибки
-                "403":
-                    description: Forbidden
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.accessDenied
-                                        description: Заголовок ошибки
-                "404":
-                    description: Not Found
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "409":
-                    description: Conflict
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "500":
-                    description: Internal Server Error
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.internalError
-                                        description: Заголовок ошибки
-    /api/v1/profile/clients/{clientID}:
-        get:
-            tags:
-                - UsersAPI
-            summary: Реквизиты кабинета
-            description: Возвращает реквизиты доступного пользователю клиентского кабинета
-            parameters:
-                - in: header
-                  name: X-User-Id
-                  required: true
-                  schema:
-                    type: string
-                    format: uuid
-                - in: path
-                  name: clientID
-                  required: true
-                  schema:
-                    type: string
-                    format: uuid
-            responses:
-                "200":
-                    description: Successful operation
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors: {}
-                                    data:
-                                        example: true
-                                    error:
-                                        type: boolean
-                                        example: false
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                "400":
-                    description: Bad Request
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "401":
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.unauthorized
-                                        description: Заголовок ошибки
-                "403":
-                    description: Forbidden
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.accessDenied
-                                        description: Заголовок ошибки
-                "404":
-                    description: Not Found
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "409":
-                    description: Conflict
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "500":
-                    description: Internal Server Error
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.internalError
-                                        description: Заголовок ошибки
-    /api/v1/profile/clients/{clientID}/activate:
-        post:
-            tags:
-                - UsersAPI
-            summary: Переключение кабинета
-            description: Транзакционно сохраняет доступный клиентский кабинет как активный
-            parameters:
-                - in: header
-                  name: X-User-Id
-                  required: true
-                  schema:
-                    type: string
-                    format: uuid
-                - in: path
-                  name: clientID
-                  required: true
-                  schema:
-                    type: string
-                    format: uuid
-            responses:
-                "200":
-                    description: Successful operation
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors: {}
-                                    data:
-                                        example: true
-                                    error:
-                                        type: boolean
-                                        example: false
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                "400":
-                    description: Bad Request
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "401":
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.unauthorized
-                                        description: Заголовок ошибки
-                "403":
-                    description: Forbidden
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.accessDenied
-                                        description: Заголовок ошибки
-                "404":
-                    description: Not Found
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "409":
-                    description: Conflict
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "500":
-                    description: Internal Server Error
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.internalError
-                                        description: Заголовок ошибки
-    /api/v1/profile/clients/{clientID}/conditions:
-        get:
-            tags:
-                - UsersAPI
-            summary: Индивидуальные условия
-            description: Возвращает ценовую группу, кредитные условия и скидки доступного кабинета
-            parameters:
-                - in: header
-                  name: X-User-Id
-                  required: true
-                  schema:
-                    type: string
-                    format: uuid
-                - in: path
-                  name: clientID
-                  required: true
-                  schema:
-                    type: string
-                    format: uuid
-            responses:
-                "200":
-                    description: Successful operation
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors: {}
-                                    data:
-                                        example: true
-                                    error:
-                                        type: boolean
-                                        example: false
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                "400":
-                    description: Bad Request
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "401":
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.unauthorized
-                                        description: Заголовок ошибки
-                "403":
-                    description: Forbidden
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.accessDenied
-                                        description: Заголовок ошибки
-                "404":
-                    description: Not Found
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "409":
-                    description: Conflict
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.badRequest
-                                        description: Заголовок ошибки
-                "500":
-                    description: Internal Server Error
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.users.internalError
-                                        description: Заголовок ошибки
     /api/v1/users:
         get:
             tags:
@@ -1743,6 +587,15 @@ paths:
             summary: Список пользователей
             description: Возвращает пользователей с фильтрами, безопасной сортировкой и пагинацией
             parameters:
+                - in: query
+                  name: offset
+                  schema:
+                    type: number
+                    format: int
+                - in: query
+                  name: sort
+                  schema:
+                    type: string
                 - in: query
                   name: q
                   schema:
@@ -1770,15 +623,6 @@ paths:
                   schema:
                     type: number
                     format: int
-                - in: query
-                  name: offset
-                  schema:
-                    type: number
-                    format: int
-                - in: query
-                  name: sort
-                  schema:
-                    type: string
             responses:
                 "200":
                     description: Successful operation
@@ -2922,6 +1766,1162 @@ paths:
             parameters:
                 - in: path
                   name: userID
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.internalError
+                                        description: Заголовок ошибки
+    /api/v1/users/profile:
+        get:
+            tags:
+                - UsersAPI
+            summary: Профиль пользователя
+            description: Возвращает профиль текущего пользователя и активный кабинет
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.internalError
+                                        description: Заголовок ошибки
+        patch:
+            tags:
+                - UsersAPI
+            summary: Обновление профиля
+            description: Обновляет только контактные данные текущего пользователя
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestUsersAPIUpdateProfile'
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.internalError
+                                        description: Заголовок ошибки
+    /api/v1/users/profile/clients:
+        get:
+            tags:
+                - UsersAPI
+            summary: Кабинеты пользователя
+            description: Возвращает только клиентские кабинеты, доступные текущему пользователю
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.internalError
+                                        description: Заголовок ошибки
+    /api/v1/users/profile/clients/{clientID}:
+        get:
+            tags:
+                - UsersAPI
+            summary: Реквизиты кабинета
+            description: Возвращает реквизиты доступного пользователю клиентского кабинета
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - in: path
+                  name: clientID
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.internalError
+                                        description: Заголовок ошибки
+    /api/v1/users/profile/clients/{clientID}/activate:
+        post:
+            tags:
+                - UsersAPI
+            summary: Переключение кабинета
+            description: Транзакционно сохраняет доступный клиентский кабинет как активный
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - in: path
+                  name: clientID
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.users.internalError
+                                        description: Заголовок ошибки
+    /api/v1/users/profile/clients/{clientID}/conditions:
+        get:
+            tags:
+                - UsersAPI
+            summary: Индивидуальные условия
+            description: Возвращает ценовую группу, кредитные условия и скидки доступного кабинета
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - in: path
+                  name: clientID
                   required: true
                   schema:
                     type: string
