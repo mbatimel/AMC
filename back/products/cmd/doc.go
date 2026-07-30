@@ -1,2 +1,2 @@
-// Package cmd contains entrypoints for the products service.
-package cmd
+// Package main starts the products service.
+package main

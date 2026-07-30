@@ -5,6 +5,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/mbatimel/AMC/products/internal/transport/jsonRPC/externalapi/viewer"
 	"github.com/mbatimel/AMC/products/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/products/pkg/models"
@@ -22,7 +23,7 @@ func loggerMiddlewareProductsAPI() MiddlewareProductsAPI {
 	}
 }
 
-func (m loggerProductsAPI) CreateProduct(ctx context.Context, sku string, name string, description string, categoryID string, brandID string, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, isPublished bool) (response models.CreateProductResponse, err error) {
+func (m loggerProductsAPI) CreateProduct(ctx context.Context, userID uuid.UUID, sku string, name string, description string, categoryID uuid.UUID, brandID uuid.UUID, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, images []models.ProductImage, isPublished bool) (response models.CreateProductResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "createProduct").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
@@ -36,6 +37,7 @@ func (m loggerProductsAPI) CreateProduct(ctx context.Context, sku string, name s
 					Description:     description,
 					DiscountPercent: discountPercent,
 					Gost:            gost,
+					Images:          images,
 					IsPublished:     isPublished,
 					Material:        material,
 					Name:            name,
@@ -43,6 +45,7 @@ func (m loggerProductsAPI) CreateProduct(ctx context.Context, sku string, name s
 					Size:            size,
 					Sku:             sku,
 					StockQty:        stockQty,
+					UserID:          userID,
 				}),
 				"response": viewer.Sprintf("%+v", responseProductsAPICreateProduct{Response: response}),
 			}
@@ -54,10 +57,10 @@ func (m loggerProductsAPI) CreateProduct(ctx context.Context, sku string, name s
 		}
 		logger.Info().Func(logHandle).Msg("call createProduct")
 	}(time.Now())
-	return m.next.CreateProduct(ctx, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, isPublished)
+	return m.next.CreateProduct(ctx, userID, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, images, isPublished)
 }
 
-func (m loggerProductsAPI) GetProduct(ctx context.Context, productID string) (response models.GetProductResponse, err error) {
+func (m loggerProductsAPI) GetProduct(ctx context.Context, productID uuid.UUID) (response models.GetProductResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "getProduct").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
@@ -77,7 +80,7 @@ func (m loggerProductsAPI) GetProduct(ctx context.Context, productID string) (re
 	return m.next.GetProduct(ctx, productID)
 }
 
-func (m loggerProductsAPI) ListProducts(ctx context.Context, q string, categoryID string, brandID string, material string, size string, gost string, inStock bool, limit int, offset int, sort string) (response models.ListProductsResponse, err error) {
+func (m loggerProductsAPI) ListProducts(ctx context.Context, q *string, categoryID *string, brandID *string, material *string, size *string, gost *string, inStock *bool, limit *int, offset *int, sort *string) (response models.ListProductsResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "listProducts").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
@@ -108,7 +111,7 @@ func (m loggerProductsAPI) ListProducts(ctx context.Context, q string, categoryI
 	return m.next.ListProducts(ctx, q, categoryID, brandID, material, size, gost, inStock, limit, offset, sort)
 }
 
-func (m loggerProductsAPI) UpdateProduct(ctx context.Context, productID string, sku string, name string, description string, categoryID string, brandID string, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, isPublished bool) (response models.UpdateProductResponse, err error) {
+func (m loggerProductsAPI) UpdateProduct(ctx context.Context, userID uuid.UUID, productID uuid.UUID, sku *string, name *string, description *string, categoryID *uuid.UUID, brandID *uuid.UUID, gost *string, material *string, size *string, packageQty *int, stockQty *int, basePrice *float64, clientPrice *float64, discountPercent *float64, images *[]models.ProductImage, isPublished *bool) (response models.UpdateProductResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "updateProduct").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
@@ -122,6 +125,7 @@ func (m loggerProductsAPI) UpdateProduct(ctx context.Context, productID string, 
 					Description:     description,
 					DiscountPercent: discountPercent,
 					Gost:            gost,
+					Images:          images,
 					IsPublished:     isPublished,
 					Material:        material,
 					Name:            name,
@@ -130,6 +134,7 @@ func (m loggerProductsAPI) UpdateProduct(ctx context.Context, productID string, 
 					Size:            size,
 					Sku:             sku,
 					StockQty:        stockQty,
+					UserID:          userID,
 				}),
 				"response": viewer.Sprintf("%+v", responseProductsAPIUpdateProduct{Response: response}),
 			}
@@ -141,16 +146,19 @@ func (m loggerProductsAPI) UpdateProduct(ctx context.Context, productID string, 
 		}
 		logger.Info().Func(logHandle).Msg("call updateProduct")
 	}(time.Now())
-	return m.next.UpdateProduct(ctx, productID, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, isPublished)
+	return m.next.UpdateProduct(ctx, userID, productID, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, images, isPublished)
 }
 
-func (m loggerProductsAPI) DeleteProduct(ctx context.Context, productID string) (response models.DeleteProductResponse, err error) {
+func (m loggerProductsAPI) DeleteProduct(ctx context.Context, userID uuid.UUID, productID uuid.UUID) (response models.DeleteProductResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "deleteProduct").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
 			fields := map[string]interface{}{
-				"method":   "productsAPI.deleteProduct",
-				"request":  viewer.Sprintf("%+v", requestProductsAPIDeleteProduct{ProductID: productID}),
+				"method": "productsAPI.deleteProduct",
+				"request": viewer.Sprintf("%+v", requestProductsAPIDeleteProduct{
+					ProductID: productID,
+					UserID:    userID,
+				}),
 				"response": viewer.Sprintf("%+v", responseProductsAPIDeleteProduct{Response: response}),
 			}
 			ev.Fields(fields).Str("took", time.Since(_begin).String())
@@ -161,10 +169,10 @@ func (m loggerProductsAPI) DeleteProduct(ctx context.Context, productID string) 
 		}
 		logger.Info().Func(logHandle).Msg("call deleteProduct")
 	}(time.Now())
-	return m.next.DeleteProduct(ctx, productID)
+	return m.next.DeleteProduct(ctx, userID, productID)
 }
 
-func (m loggerProductsAPI) ListCategories(ctx context.Context, limit int, offset int) (response models.ListCategoriesResponse, err error) {
+func (m loggerProductsAPI) ListCategories(ctx context.Context, limit *int, offset *int) (response models.ListCategoriesResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "listCategories").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
@@ -187,7 +195,7 @@ func (m loggerProductsAPI) ListCategories(ctx context.Context, limit int, offset
 	return m.next.ListCategories(ctx, limit, offset)
 }
 
-func (m loggerProductsAPI) ListBrands(ctx context.Context, limit int, offset int) (response models.ListBrandsResponse, err error) {
+func (m loggerProductsAPI) ListBrands(ctx context.Context, limit *int, offset *int) (response models.ListBrandsResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "listBrands").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {

@@ -4,6 +4,7 @@ package externalapi
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/mbatimel/AMC/products/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/products/pkg/models"
 )
@@ -57,31 +58,31 @@ func (srv *serverProductsAPI) Wrap(m MiddlewareProductsAPI) {
 	srv.listBrands = srv.svc.ListBrands
 }
 
-func (srv *serverProductsAPI) CreateProduct(ctx context.Context, sku string, name string, description string, categoryID string, brandID string, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, isPublished bool) (response models.CreateProductResponse, err error) {
-	return srv.createProduct(ctx, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, isPublished)
+func (srv *serverProductsAPI) CreateProduct(ctx context.Context, userID uuid.UUID, sku string, name string, description string, categoryID uuid.UUID, brandID uuid.UUID, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, images []models.ProductImage, isPublished bool) (response models.CreateProductResponse, err error) {
+	return srv.createProduct(ctx, userID, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, images, isPublished)
 }
 
-func (srv *serverProductsAPI) GetProduct(ctx context.Context, productID string) (response models.GetProductResponse, err error) {
+func (srv *serverProductsAPI) GetProduct(ctx context.Context, productID uuid.UUID) (response models.GetProductResponse, err error) {
 	return srv.getProduct(ctx, productID)
 }
 
-func (srv *serverProductsAPI) ListProducts(ctx context.Context, q string, categoryID string, brandID string, material string, size string, gost string, inStock bool, limit int, offset int, sort string) (response models.ListProductsResponse, err error) {
+func (srv *serverProductsAPI) ListProducts(ctx context.Context, q *string, categoryID *string, brandID *string, material *string, size *string, gost *string, inStock *bool, limit *int, offset *int, sort *string) (response models.ListProductsResponse, err error) {
 	return srv.listProducts(ctx, q, categoryID, brandID, material, size, gost, inStock, limit, offset, sort)
 }
 
-func (srv *serverProductsAPI) UpdateProduct(ctx context.Context, productID string, sku string, name string, description string, categoryID string, brandID string, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, isPublished bool) (response models.UpdateProductResponse, err error) {
-	return srv.updateProduct(ctx, productID, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, isPublished)
+func (srv *serverProductsAPI) UpdateProduct(ctx context.Context, userID uuid.UUID, productID uuid.UUID, sku *string, name *string, description *string, categoryID *uuid.UUID, brandID *uuid.UUID, gost *string, material *string, size *string, packageQty *int, stockQty *int, basePrice *float64, clientPrice *float64, discountPercent *float64, images *[]models.ProductImage, isPublished *bool) (response models.UpdateProductResponse, err error) {
+	return srv.updateProduct(ctx, userID, productID, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, images, isPublished)
 }
 
-func (srv *serverProductsAPI) DeleteProduct(ctx context.Context, productID string) (response models.DeleteProductResponse, err error) {
-	return srv.deleteProduct(ctx, productID)
+func (srv *serverProductsAPI) DeleteProduct(ctx context.Context, userID uuid.UUID, productID uuid.UUID) (response models.DeleteProductResponse, err error) {
+	return srv.deleteProduct(ctx, userID, productID)
 }
 
-func (srv *serverProductsAPI) ListCategories(ctx context.Context, limit int, offset int) (response models.ListCategoriesResponse, err error) {
+func (srv *serverProductsAPI) ListCategories(ctx context.Context, limit *int, offset *int) (response models.ListCategoriesResponse, err error) {
 	return srv.listCategories(ctx, limit, offset)
 }
 
-func (srv *serverProductsAPI) ListBrands(ctx context.Context, limit int, offset int) (response models.ListBrandsResponse, err error) {
+func (srv *serverProductsAPI) ListBrands(ctx context.Context, limit *int, offset *int) (response models.ListBrandsResponse, err error) {
 	return srv.listBrands(ctx, limit, offset)
 }
 
