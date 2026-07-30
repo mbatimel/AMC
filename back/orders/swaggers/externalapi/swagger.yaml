@@ -19,10 +19,6 @@ paths:
                     type: string
                     format: uuid
                 - in: query
-                  name: paymentStatus
-                  schema:
-                    type: string
-                - in: query
                   name: comment
                   schema:
                     type: string
@@ -37,6 +33,10 @@ paths:
                     format: uuid
                 - in: query
                   name: status
+                  schema:
+                    type: string
+                - in: query
+                  name: paymentStatus
                   schema:
                     type: string
             responses:
@@ -143,15 +143,6 @@ paths:
                     type: string
                     format: uuid
                 - in: query
-                  name: offset
-                  schema:
-                    type: number
-                    format: int
-                - in: query
-                  name: sort
-                  schema:
-                    type: string
-                - in: query
                   name: clientID
                   schema:
                     type: string
@@ -168,6 +159,15 @@ paths:
                   schema:
                     type: number
                     format: int
+                - in: query
+                  name: offset
+                  schema:
+                    type: number
+                    format: int
+                - in: query
+                  name: sort
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: Successful operation
@@ -271,6 +271,18 @@ paths:
                     type: string
                     format: uuid
                 - in: query
+                  name: phone
+                  schema:
+                    type: string
+                - in: query
+                  name: email
+                  schema:
+                    type: string
+                - in: query
+                  name: comment
+                  schema:
+                    type: string
+                - in: query
                   name: clientID
                   schema:
                     type: string
@@ -284,18 +296,6 @@ paths:
                     type: string
                 - in: query
                   name: contactName
-                  schema:
-                    type: string
-                - in: query
-                  name: phone
-                  schema:
-                    type: string
-                - in: query
-                  name: email
-                  schema:
-                    type: string
-                - in: query
-                  name: comment
                   schema:
                     type: string
             responses:
@@ -514,14 +514,14 @@ paths:
                     type: string
                     format: uuid
                 - in: query
+                  name: comment
+                  schema:
+                    type: string
+                - in: query
                   name: orderID
                   schema:
                     type: string
                     format: uuid
-                - in: query
-                  name: comment
-                  schema:
-                    type: string
             responses:
                 "200":
                     description: Successful operation
@@ -1269,7 +1269,6 @@ paths:
                                         type: string
                                         example: content.api.errors.auth.internalError
                                         description: Заголовок ошибки
-    /api/v1/orders/cart/items/{cartItemID}:
         patch:
             tags:
                 - OrdersAPI
@@ -1283,10 +1282,6 @@ paths:
                     type: string
                     format: uuid
                 - in: query
-                  name: clientID
-                  schema:
-                    type: string
-                - in: query
                   name: cartItemID
                   schema:
                     type: string
@@ -1295,6 +1290,10 @@ paths:
                   schema:
                     type: number
                     format: int
+                - in: query
+                  name: clientID
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: Successful operation

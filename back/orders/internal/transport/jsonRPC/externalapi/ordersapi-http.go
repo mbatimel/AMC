@@ -45,8 +45,8 @@ func (http *httpOrdersAPI) WithErrorHandler(handler ErrorHandler) *httpOrdersAPI
 func (http *httpOrdersAPI) SetRoutes(route *fiber.App) {
 	route.Get("/api/v1/orders/cart", http.serveGetCart)
 	route.Post("/api/v1/orders/cart/items", http.serveAddCartItem)
-	route.Patch("/api/v1/orders/cart/items/{cartItemID}", http.serveUpdateCartItem)
-	route.Delete("/api/v1/orders/cart/items/{cartItemID}", http.serveDeleteCartItem)
+	route.Patch("/api/v1/orders/cart/items", http.serveUpdateCartItem)
+	route.Delete("/api/v1/orders/cart/items", http.serveDeleteCartItem)
 	route.Delete("/api/v1/orders/cart", http.serveClearCart)
 	route.Post("/api/v1/orders", http.serveCreateOrder)
 	route.Get("/api/v1/orders/{orderID}", http.serveGetOrder)

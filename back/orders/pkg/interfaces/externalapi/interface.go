@@ -48,7 +48,7 @@ type OrdersAPI interface {
 
 	// UpdateCartItem updates cart item quantity.
 	// @tg http-method=PATCH
-	// @tg http-path=/v1/orders/cart/items/{cartItemID}
+	// @tg http-path=/v1/orders/cart/items
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=clientID|clientID
 	// @tg http-args=cartItemID|cartItemID
@@ -61,7 +61,7 @@ type OrdersAPI interface {
 
 	// DeleteCartItem removes a cart item.
 	// @tg http-method=DELETE
-	// @tg http-path=/v1/orders/cart/items/{cartItemID}
+	// @tg http-path=/v1/orders/cart/items
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=clientID|clientID
 	// @tg http-args=cartItemID|cartItemID
