@@ -24,7 +24,7 @@ import (
 type OrdersAPI interface {
 	// GetCart ...
 	// @tg http-method=GET
-	// @tg http-path=/v1/cart
+	// @tg http-path=/v1/orders/cart
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=clientID|clientID
 	// @tg http-response=github.com/mbatimel/AMC/orders/internal/transport/custom-handlers:GetCart
@@ -35,7 +35,7 @@ type OrdersAPI interface {
 
 	// AddCartItem adds a product to the cart.
 	// @tg http-method=POST
-	// @tg http-path=/v1/cart/items
+	// @tg http-path=/v1/orders/cart/items
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=clientID|clientID
 	// @tg http-args=productID|productID
@@ -48,7 +48,7 @@ type OrdersAPI interface {
 
 	// UpdateCartItem updates cart item quantity.
 	// @tg http-method=PATCH
-	// @tg http-path=/v1/cart/items/{cartItemID}
+	// @tg http-path=/v1/orders/cart/items/{cartItemID}
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=clientID|clientID
 	// @tg http-args=cartItemID|cartItemID
@@ -61,7 +61,7 @@ type OrdersAPI interface {
 
 	// DeleteCartItem removes a cart item.
 	// @tg http-method=DELETE
-	// @tg http-path=/v1/cart/items/{cartItemID}
+	// @tg http-path=/v1/orders/cart/items/{cartItemID}
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=clientID|clientID
 	// @tg http-args=cartItemID|cartItemID
@@ -73,7 +73,7 @@ type OrdersAPI interface {
 
 	// ClearCart removes all cart items.
 	// @tg http-method=DELETE
-	// @tg http-path=/v1/cart
+	// @tg http-path=/v1/orders/cart
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=clientID|clientID
 	// @tg http-response=github.com/mbatimel/AMC/orders/internal/transport/custom-handlers:ClearCart

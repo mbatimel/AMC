@@ -18,7 +18,7 @@ import (
 
 const (
 	defaultLimit          = 20
-	maxLimit              = 100
+	maxLimit              = 10000
 	maxSKUSize            = 255
 	maxNameSize           = 255
 	maxCharacteristicSize = 255

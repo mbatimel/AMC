@@ -94,11 +94,6 @@ func (http *httpOrdersAPI) serveUpdateCartItem(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIUpdateCartItem
 
-	if _cartItemID := ctx.Query("cartItemID"); _cartItemID != "" {
-		var cartItemID string
-		cartItemID = _cartItemID
-		request.CartItemID = cartItemID
-	}
 	if _qty := ctx.Query("qty"); _qty != "" {
 		var qty int
 		qty, err = strconv.Atoi(_qty)
@@ -112,6 +107,11 @@ func (http *httpOrdersAPI) serveUpdateCartItem(ctx *fiber.Ctx) (err error) {
 		var clientID string
 		clientID = _clientID
 		request.ClientID = clientID
+	}
+	if _cartItemID := ctx.Query("cartItemID"); _cartItemID != "" {
+		var cartItemID string
+		cartItemID = _cartItemID
+		request.CartItemID = cartItemID
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -197,6 +197,16 @@ func (http *httpOrdersAPI) serveCreateOrder(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPICreateOrder
 
+	if _deliveryAddress := ctx.Query("deliveryAddress"); _deliveryAddress != "" {
+		var deliveryAddress string
+		deliveryAddress = _deliveryAddress
+		request.DeliveryAddress = deliveryAddress
+	}
+	if _contactName := ctx.Query("contactName"); _contactName != "" {
+		var contactName string
+		contactName = _contactName
+		request.ContactName = contactName
+	}
 	if _phone := ctx.Query("phone"); _phone != "" {
 		var phone string
 		phone = _phone
@@ -221,16 +231,6 @@ func (http *httpOrdersAPI) serveCreateOrder(ctx *fiber.Ctx) (err error) {
 		var deliveryType string
 		deliveryType = _deliveryType
 		request.DeliveryType = deliveryType
-	}
-	if _deliveryAddress := ctx.Query("deliveryAddress"); _deliveryAddress != "" {
-		var deliveryAddress string
-		deliveryAddress = _deliveryAddress
-		request.DeliveryAddress = deliveryAddress
-	}
-	if _contactName := ctx.Query("contactName"); _contactName != "" {
-		var contactName string
-		contactName = _contactName
-		request.ContactName = contactName
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -288,16 +288,6 @@ func (http *httpOrdersAPI) serveListOrders(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIListOrders
 
-	if _clientID := ctx.Query("clientID"); _clientID != "" {
-		var clientID string
-		clientID = _clientID
-		request.ClientID = clientID
-	}
-	if _status := ctx.Query("status"); _status != "" {
-		var status string
-		status = _status
-		request.Status = status
-	}
 	if _paymentStatus := ctx.Query("paymentStatus"); _paymentStatus != "" {
 		var paymentStatus string
 		paymentStatus = _paymentStatus
@@ -325,6 +315,16 @@ func (http *httpOrdersAPI) serveListOrders(ctx *fiber.Ctx) (err error) {
 		var sort string
 		sort = _sort
 		request.Sort = sort
+	}
+	if _clientID := ctx.Query("clientID"); _clientID != "" {
+		var clientID string
+		clientID = _clientID
+		request.ClientID = clientID
+	}
+	if _status := ctx.Query("status"); _status != "" {
+		var status string
+		status = _status
+		request.Status = status
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -471,11 +471,6 @@ func (http *httpOrdersAPI) serveUpdateOrderStatus(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIUpdateOrderStatus
 
-	if _paymentStatus := ctx.Query("paymentStatus"); _paymentStatus != "" {
-		var paymentStatus string
-		paymentStatus = _paymentStatus
-		request.PaymentStatus = paymentStatus
-	}
 	if _comment := ctx.Query("comment"); _comment != "" {
 		var comment string
 		comment = _comment
@@ -495,6 +490,11 @@ func (http *httpOrdersAPI) serveUpdateOrderStatus(ctx *fiber.Ctx) (err error) {
 		var status string
 		status = _status
 		request.Status = status
+	}
+	if _paymentStatus := ctx.Query("paymentStatus"); _paymentStatus != "" {
+		var paymentStatus string
+		paymentStatus = _paymentStatus
+		request.PaymentStatus = paymentStatus
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -516,7 +516,6 @@ func (http *httpOrdersAPI) getCities(ctx context.Context, request requestOrdersA
 	return
 }
 func (http *httpOrdersAPI) serveGetCities(ctx *fiber.Ctx) (err error) {
-
 
 	return customhandlers.GetCities(ctx, http.svc)
 }
