@@ -7,6 +7,7 @@ import (
 	"time"
 
 	v2 "github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/mbatimel/AMC/products/pkg/interfaces/externalapi"
 	"github.com/mbatimel/AMC/products/pkg/models"
 )
@@ -19,7 +20,7 @@ func metricsMiddlewareProductsAPI(next externalapi.ProductsAPI) externalapi.Prod
 	return &metricsProductsAPI{next: next}
 }
 
-func (m metricsProductsAPI) CreateProduct(ctx context.Context, sku string, name string, description string, categoryID string, brandID string, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, isPublished bool) (response models.CreateProductResponse, err error) {
+func (m metricsProductsAPI) CreateProduct(ctx context.Context, userID uuid.UUID, sku string, name string, description string, categoryID uuid.UUID, brandID uuid.UUID, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, images []models.ProductImage, isPublished bool) (response models.CreateProductResponse, err error) {
 
 	defer func(_begin time.Time) {
 		var (
@@ -39,10 +40,10 @@ func (m metricsProductsAPI) CreateProduct(ctx context.Context, sku string, name 
 		RequestLatency.WithLabelValues("productsAPI", "createProduct", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
 	}(time.Now())
 
-	return m.next.CreateProduct(ctx, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, isPublished)
+	return m.next.CreateProduct(ctx, userID, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, images, isPublished)
 }
 
-func (m metricsProductsAPI) GetProduct(ctx context.Context, productID string) (response models.GetProductResponse, err error) {
+func (m metricsProductsAPI) GetProduct(ctx context.Context, productID uuid.UUID) (response models.GetProductResponse, err error) {
 
 	defer func(_begin time.Time) {
 		var (
@@ -65,7 +66,7 @@ func (m metricsProductsAPI) GetProduct(ctx context.Context, productID string) (r
 	return m.next.GetProduct(ctx, productID)
 }
 
-func (m metricsProductsAPI) ListProducts(ctx context.Context, q string, categoryID string, brandID string, material string, size string, gost string, inStock bool, limit int, offset int, sort string) (response models.ListProductsResponse, err error) {
+func (m metricsProductsAPI) ListProducts(ctx context.Context, q *string, categoryID *string, brandID *string, material *string, size *string, gost *string, inStock *bool, limit *int, offset *int, sort *string) (response models.ListProductsResponse, err error) {
 
 	defer func(_begin time.Time) {
 		var (
@@ -88,7 +89,7 @@ func (m metricsProductsAPI) ListProducts(ctx context.Context, q string, category
 	return m.next.ListProducts(ctx, q, categoryID, brandID, material, size, gost, inStock, limit, offset, sort)
 }
 
-func (m metricsProductsAPI) UpdateProduct(ctx context.Context, productID string, sku string, name string, description string, categoryID string, brandID string, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, isPublished bool) (response models.UpdateProductResponse, err error) {
+func (m metricsProductsAPI) UpdateProduct(ctx context.Context, userID uuid.UUID, productID uuid.UUID, sku *string, name *string, description *string, categoryID *uuid.UUID, brandID *uuid.UUID, gost *string, material *string, size *string, packageQty *int, stockQty *int, basePrice *float64, clientPrice *float64, discountPercent *float64, images *[]models.ProductImage, isPublished *bool) (response models.UpdateProductResponse, err error) {
 
 	defer func(_begin time.Time) {
 		var (
@@ -108,10 +109,10 @@ func (m metricsProductsAPI) UpdateProduct(ctx context.Context, productID string,
 		RequestLatency.WithLabelValues("productsAPI", "updateProduct", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
 	}(time.Now())
 
-	return m.next.UpdateProduct(ctx, productID, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, isPublished)
+	return m.next.UpdateProduct(ctx, userID, productID, sku, name, description, categoryID, brandID, gost, material, size, packageQty, stockQty, basePrice, clientPrice, discountPercent, images, isPublished)
 }
 
-func (m metricsProductsAPI) DeleteProduct(ctx context.Context, productID string) (response models.DeleteProductResponse, err error) {
+func (m metricsProductsAPI) DeleteProduct(ctx context.Context, userID uuid.UUID, productID uuid.UUID) (response models.DeleteProductResponse, err error) {
 
 	defer func(_begin time.Time) {
 		var (
@@ -131,10 +132,10 @@ func (m metricsProductsAPI) DeleteProduct(ctx context.Context, productID string)
 		RequestLatency.WithLabelValues("productsAPI", "deleteProduct", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
 	}(time.Now())
 
-	return m.next.DeleteProduct(ctx, productID)
+	return m.next.DeleteProduct(ctx, userID, productID)
 }
 
-func (m metricsProductsAPI) ListCategories(ctx context.Context, limit int, offset int) (response models.ListCategoriesResponse, err error) {
+func (m metricsProductsAPI) ListCategories(ctx context.Context, limit *int, offset *int) (response models.ListCategoriesResponse, err error) {
 
 	defer func(_begin time.Time) {
 		var (
@@ -157,7 +158,7 @@ func (m metricsProductsAPI) ListCategories(ctx context.Context, limit int, offse
 	return m.next.ListCategories(ctx, limit, offset)
 }
 
-func (m metricsProductsAPI) ListBrands(ctx context.Context, limit int, offset int) (response models.ListBrandsResponse, err error) {
+func (m metricsProductsAPI) ListBrands(ctx context.Context, limit *int, offset *int) (response models.ListBrandsResponse, err error) {
 
 	defer func(_begin time.Time) {
 		var (

@@ -44,10 +44,10 @@ func (http *httpProductsAPI) WithErrorHandler(handler ErrorHandler) *httpProduct
 
 func (http *httpProductsAPI) SetRoutes(route *fiber.App) {
 	route.Post("/api/v1/products", http.serveCreateProduct)
-	route.Get("/api/v1/products/{productID}", http.serveGetProduct)
+	route.Get("/api/v1/products/:productID", http.serveGetProduct)
 	route.Get("/api/v1/products", http.serveListProducts)
-	route.Patch("/api/v1/products/{productID}", http.serveUpdateProduct)
-	route.Delete("/api/v1/products/{productID}", http.serveDeleteProduct)
+	route.Patch("/api/v1/products/:productID", http.serveUpdateProduct)
+	route.Delete("/api/v1/products/:productID", http.serveDeleteProduct)
 	route.Get("/api/v1/categories", http.serveListCategories)
 	route.Get("/api/v1/brands", http.serveListBrands)
 }
