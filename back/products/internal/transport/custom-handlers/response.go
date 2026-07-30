@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const errInternal = "monetization.errors.products.internalError"
+const errInternal = "amc.errors.products.internalError"
 
 type RestResponse struct {
 	Data             interface{}            `json:"data"`

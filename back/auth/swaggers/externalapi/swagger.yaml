@@ -18,14 +18,11 @@ paths:
                   schema:
                     type: string
                     format: uuid
-                - in: query
-                  name: oldPassword
-                  schema:
-                    type: string
-                - in: query
-                  name: newPassword
-                  schema:
-                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestAuthAPIChangePassword'
             responses:
                 "200":
                     description: Successful operation
@@ -122,15 +119,11 @@ paths:
                 - AuthAPI
             summary: Авторизация пользователя
             description: Авторизация пользователя по email и паролю
-            parameters:
-                - in: query
-                  name: password
-                  schema:
-                    type: string
-                - in: query
-                  name: email
-                  schema:
-                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestAuthAPILoginUser'
             responses:
                 "200":
                     description: Successful operation
@@ -330,37 +323,11 @@ paths:
                 - AuthAPI
             summary: Регистрация физического лица
             description: Создание нового пользователя-физлица. ИНН необязателен, остальные поля обязательны.
-            parameters:
-                - in: query
-                  name: city
-                  schema:
-                    type: string
-                - in: query
-                  name: inn
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: fio
-                  schema:
-                    type: string
-                - in: query
-                  name: phone
-                  schema:
-                    type: string
-                - in: query
-                  name: email
-                  schema:
-                    type: string
-                - in: query
-                  name: deliveryAddress
-                  schema:
-                    type: string
-                - in: query
-                  name: password
-                  schema:
-                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestAuthAPIRegisterIndividual'
             responses:
                 "200":
                     description: Successful operation
@@ -457,123 +424,11 @@ paths:
                 - AuthAPI
             summary: Регистрация ИП/организации
             description: Создание нового пользователя с реквизитами ИП/организации. Все поля кроме email и пароля необязательны.
-            parameters:
-                - in: query
-                  name: fullName
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: inn
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: okved
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: legalAddress
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: directorPosition
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: website
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: bankName
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: kpp
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: directorFullName
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: phone
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: bankAccount
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: bankBik
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: correspondentAccount
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: email
-                  schema:
-                    type: string
-                - in: query
-                  name: password
-                  schema:
-                    type: string
-                - in: query
-                  name: shortName
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: ogrn
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: taxSystem
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: actualAddress
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: additionalPhone
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestAuthAPIRegisterIP'
             responses:
                 "200":
                     description: Successful operation
@@ -879,14 +734,157 @@ components:
     schemas:
         requestAuthAPIChangePassword:
             type: object
+            required:
+                - oldPassword
+                - newPassword
+            properties:
+                newPassword:
+                    type: string
+                oldPassword:
+                    type: string
+            description: Изменение пароля пользователя
         requestAuthAPILoginUser:
             type: object
+            required:
+                - email
+                - password
+            properties:
+                email:
+                    type: string
+                password:
+                    type: string
+            description: Авторизация пользователя по email и паролю
         requestAuthAPILogoutUser:
             type: object
         requestAuthAPIRegisterIP:
             type: object
+            required:
+                - email
+                - password
+                - fullName
+                - shortName
+                - inn
+                - kpp
+                - ogrn
+                - okved
+                - taxSystem
+                - legalAddress
+                - actualAddress
+                - directorFullName
+                - directorPosition
+                - phone
+                - additionalPhone
+                - website
+                - bankAccount
+                - bankName
+                - bankBik
+                - correspondentAccount
+            properties:
+                actualAddress:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                additionalPhone:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                bankAccount:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                bankBik:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                bankName:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                correspondentAccount:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                directorFullName:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                directorPosition:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                email:
+                    type: string
+                fullName:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                inn:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                kpp:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                legalAddress:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                ogrn:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                okved:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                password:
+                    type: string
+                phone:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                shortName:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                taxSystem:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                website:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+            description: Создание нового пользователя с реквизитами ИП/организации. Все поля кроме email и пароля необязательны.
         requestAuthAPIRegisterIndividual:
             type: object
+            required:
+                - fio
+                - phone
+                - email
+                - deliveryAddress
+                - password
+                - city
+                - inn
+            properties:
+                city:
+                    type: string
+                deliveryAddress:
+                    type: string
+                email:
+                    type: string
+                fio:
+                    type: string
+                inn:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                password:
+                    type: string
+                phone:
+                    type: string
+            description: Создание нового пользователя-физлица. ИНН необязателен, остальные поля обязательны.
         requestAuthAPISendEmailVerification:
             type: object
         requestAuthAPIVerifyEmailCode:

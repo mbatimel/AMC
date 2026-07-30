@@ -4,14 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 )
+
+const foreignKeyViolationCode = "23503"
 
 var (
 	ErrProductPriceNotFound = errors.New("product price not found")
 	ErrCartItemNotFound     = errors.New("cart item not found")
+	ErrCounterpartyNotFound = errors.New("counterparty not found")
 )
 
 type CartItemRow struct {
@@ -39,6 +44,10 @@ func (s *Storage) GetOrCreateCart(ctx context.Context, userID uuid.UUID, counter
 		INSERT INTO carts (user_id, counterparty_id) VALUES ($1, $2) RETURNING id
 	`, userID, counterpartyID).Scan(&cartID)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == foreignKeyViolationCode && strings.Contains(pgErr.ConstraintName, "counterparty") {
+			return uuid.Nil, ErrCounterpartyNotFound
+		}
 		return uuid.Nil, fmt.Errorf("create cart: %w", err)
 	}
 	return cartID, nil
