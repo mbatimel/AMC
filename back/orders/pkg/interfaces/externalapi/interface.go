@@ -101,7 +101,7 @@ type OrdersAPI interface {
 
 	// GetOrder returns one order by ID.
 	// @tg http-method=GET
-	// @tg http-path=/v1/orders/{orderID}
+	// @tg http-path=/v1/orders/id
 	// @tg http-args=orderID|orderID
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=clientID|clientID
@@ -129,7 +129,7 @@ type OrdersAPI interface {
 
 	// CancelOrder cancels an order.
 	// @tg http-method=POST
-	// @tg http-path=/v1/orders/{orderID}/cancel
+	// @tg http-path=/v1/orders/cancel
 	// @tg http-args=orderID|orderID
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=comment|comment
@@ -141,7 +141,7 @@ type OrdersAPI interface {
 
 	// RepeatOrder repeats an order.
 	// @tg http-method=POST
-	// @tg http-path=/v1/orders/{orderID}/repeat
+	// @tg http-path=/v1/orders/repeat
 	// @tg http-args=orderID|orderID
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=clientID|clientID
@@ -153,7 +153,7 @@ type OrdersAPI interface {
 
 	// GetOrderDocuments returns order documents.
 	// @tg http-method=GET
-	// @tg http-path=/v1/orders/{orderID}/documents
+	// @tg http-path=/v1/orders/documents
 	// @tg http-args=orderID|orderID
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/orders/internal/transport/custom-handlers:GetOrderDocuments
@@ -164,7 +164,7 @@ type OrdersAPI interface {
 
 	// GetOrderHistory returns order history.
 	// @tg http-method=GET
-	// @tg http-path=/v1/orders/{orderID}/history
+	// @tg http-path=/v1/orders/history
 	// @tg http-args=orderID|orderID
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-response=github.com/mbatimel/AMC/orders/internal/transport/custom-handlers:GetOrderHistory
@@ -175,7 +175,7 @@ type OrdersAPI interface {
 
 	// UpdateOrderStatus updates order and payment statuses.
 	// @tg http-method=PATCH
-	// @tg http-path=/v1/admin/orders/{orderID}/status
+	// @tg http-path=/v1/admin/orders/status
 	// @tg http-headers=userID|X-User-Id
 	// @tg http-args=orderID|orderID
 	// @tg http-args=status|status

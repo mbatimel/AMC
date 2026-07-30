@@ -197,6 +197,16 @@ func (http *httpOrdersAPI) serveCreateOrder(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPICreateOrder
 
+	if _clientID := ctx.Query("clientID"); _clientID != "" {
+		var clientID string
+		clientID = _clientID
+		request.ClientID = clientID
+	}
+	if _deliveryType := ctx.Query("deliveryType"); _deliveryType != "" {
+		var deliveryType string
+		deliveryType = _deliveryType
+		request.DeliveryType = deliveryType
+	}
 	if _deliveryAddress := ctx.Query("deliveryAddress"); _deliveryAddress != "" {
 		var deliveryAddress string
 		deliveryAddress = _deliveryAddress
@@ -221,16 +231,6 @@ func (http *httpOrdersAPI) serveCreateOrder(ctx *fiber.Ctx) (err error) {
 		var comment string
 		comment = _comment
 		request.Comment = comment
-	}
-	if _clientID := ctx.Query("clientID"); _clientID != "" {
-		var clientID string
-		clientID = _clientID
-		request.ClientID = clientID
-	}
-	if _deliveryType := ctx.Query("deliveryType"); _deliveryType != "" {
-		var deliveryType string
-		deliveryType = _deliveryType
-		request.DeliveryType = deliveryType
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -471,6 +471,16 @@ func (http *httpOrdersAPI) serveUpdateOrderStatus(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIUpdateOrderStatus
 
+	if _comment := ctx.Query("comment"); _comment != "" {
+		var comment string
+		comment = _comment
+		request.Comment = comment
+	}
+	if _changedBy := ctx.Query("changedBy"); _changedBy != "" {
+		var changedBy string
+		changedBy = _changedBy
+		request.ChangedBy = changedBy
+	}
 	if _orderID := ctx.Query("orderID"); _orderID != "" {
 		var orderID uuid.UUID
 		orderID, _ = uuid.Parse(_orderID)
@@ -485,16 +495,6 @@ func (http *httpOrdersAPI) serveUpdateOrderStatus(ctx *fiber.Ctx) (err error) {
 		var paymentStatus string
 		paymentStatus = _paymentStatus
 		request.PaymentStatus = paymentStatus
-	}
-	if _comment := ctx.Query("comment"); _comment != "" {
-		var comment string
-		comment = _comment
-		request.Comment = comment
-	}
-	if _changedBy := ctx.Query("changedBy"); _changedBy != "" {
-		var changedBy string
-		changedBy = _changedBy
-		request.ChangedBy = changedBy
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
