@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 import type { ProductListItem } from '@/core/shared/api/products';
 
+import { IconPlus } from '@/core/shared/icons';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
 import { getStockLevel } from '@/core/shared/lib/stock';
 import { getProductPath } from '@/core/shared/router/paths';
@@ -117,7 +118,13 @@ export const CatalogB2BTable = ({ onAddToCart, products }: CatalogB2BTableProps)
                     size="sm"
                     variant="primary"
                   >
-                    {isOut ? 'Нет' : '+ В корзину'}
+                    {isOut ? (
+                      'Нет'
+                    ) : (
+                      <>
+                        <IconPlus currentColor="currentColor" height={14} width={14} />В корзину
+                      </>
+                    )}{' '}
                   </Button>
                 </td>
               </tr>

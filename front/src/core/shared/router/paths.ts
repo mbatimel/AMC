@@ -1,7 +1,10 @@
 export enum AppPath {
   Cabinet = '/cabinet',
+  CabinetOrders = '/cabinet/orders',
+  CabinetProfile = '/cabinet/profile',
   Cart = '/cart',
   Catalog = '/catalog',
+  Checkout = '/checkout',
   ForgotPassword = '/forgot-password',
   Home = '/',
   Login = '/login',
@@ -10,3 +13,6 @@ export enum AppPath {
 }
 
 export const getProductPath = (productId: string): string => `${AppPath.Product}/${productId}`;
+
+export const getCabinetOrderPath = (orderId: string): string =>
+  `${AppPath.CabinetOrders}/${orderId}`;

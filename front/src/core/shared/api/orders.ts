@@ -1,6 +1,78 @@
+import {
+  assertApiSuccess,
+  fetchWithNetworkFallback,
+  omitEmptyParams,
+  parseApiErrorMessage,
+} from './parseApiError';
+
 export type CityItem = {
   city: string;
   id: string;
+};
+
+export type ListOrdersParams = {
+  clientID?: string;
+  limit?: number;
+  offset?: number;
+  paymentStatus?: string;
+  sort?: string;
+  status?: string;
+  userId: string;
+};
+
+export type ListOrdersResult = {
+  items: Order[];
+  pagination: OrdersPagination;
+};
+
+export type Order = {
+  client_id: string;
+  comment: string;
+  contact_name: string;
+  created_at: string;
+  delivery_address: string;
+  delivery_type: string;
+  discount_total: number;
+  documents: OrderDocument[];
+  email: string;
+  id: string;
+  items: OrderItem[];
+  number: string;
+  payment_status: string;
+  phone: string;
+  status: string;
+  subtotal: number;
+  total: number;
+  updated_at: string;
+  user_id: string;
+  vat: number;
+};
+
+export type OrderDocument = {
+  created_at: string;
+  id: string;
+  name: string;
+  order_id: string;
+  type: string;
+  url: string;
+};
+
+export type OrderItem = {
+  id: string;
+  order_id: string;
+  price: number;
+  product_id: string;
+  product_name: string;
+  qty: number;
+  sku: string;
+  total: number;
+  vat: number;
+};
+
+export type OrdersPagination = {
+  limit: number;
+  offset: number;
+  total: number;
 };
 
 export class OrdersApiError extends Error {
@@ -12,6 +84,12 @@ export class OrdersApiError extends Error {
     this.status = status;
   }
 }
+
+const asNumber = (value: unknown, fallback = 0): number =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+const asString = (value: unknown, fallback = ''): string =>
+  typeof value === 'string' ? value : fallback;
 
 const parseCities = (data: unknown): CityItem[] => {
   if (typeof data !== 'object' || data === null) {
@@ -83,7 +161,11 @@ const parseErrorMessage = async (response: Response): Promise<string> => {
 };
 
 export const getCitiesRequest = async (): Promise<CityItem[]> => {
-  const response = await fetch('/api/v1/orders/cities');
+  const response = await fetchWithNetworkFallback(
+    '/api/v1/orders/cities',
+    undefined,
+    'Не удалось загрузить список городов',
+  );
 
   if (!response.ok) {
     throw new OrdersApiError(response.status, await parseErrorMessage(response));
@@ -97,4 +179,215 @@ export const getCitiesRequest = async (): Promise<CityItem[]> => {
   }
 
   return cities;
+};
+
+const parseOrderItem = (value: unknown): null | OrderItem => {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const id = asString(record.id);
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    order_id: asString(record.order_id),
+    price: asNumber(record.price),
+    product_id: asString(record.product_id),
+    product_name: asString(record.product_name),
+    qty: asNumber(record.qty),
+    sku: asString(record.sku),
+    total: asNumber(record.total),
+    vat: asNumber(record.vat),
+  };
+};
+
+const parseOrderDocument = (value: unknown): null | OrderDocument => {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const id = asString(record.id);
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    created_at: asString(record.created_at),
+    id,
+    name: asString(record.name),
+    order_id: asString(record.order_id),
+    type: asString(record.type),
+    url: asString(record.url),
+  };
+};
+
+const parseOrder = (value: unknown): null | Order => {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const id = asString(record.id);
+
+  if (!id) {
+    return null;
+  }
+
+  const items = Array.isArray(record.items)
+    ? record.items.flatMap((item) => {
+        const parsed = parseOrderItem(item);
+
+        return parsed ? [parsed] : [];
+      })
+    : [];
+
+  const documents = Array.isArray(record.documents)
+    ? record.documents.flatMap((doc) => {
+        const parsed = parseOrderDocument(doc);
+
+        return parsed ? [parsed] : [];
+      })
+    : [];
+
+  return {
+    client_id: asString(record.client_id),
+    comment: asString(record.comment),
+    contact_name: asString(record.contact_name),
+    created_at: asString(record.created_at),
+    delivery_address: asString(record.delivery_address),
+    delivery_type: asString(record.delivery_type),
+    discount_total: asNumber(record.discount_total),
+    documents,
+    email: asString(record.email),
+    id,
+    items,
+    number: asString(record.number),
+    payment_status: asString(record.payment_status),
+    phone: asString(record.phone),
+    status: asString(record.status),
+    subtotal: asNumber(record.subtotal),
+    total: asNumber(record.total),
+    updated_at: asString(record.updated_at),
+    user_id: asString(record.user_id),
+    vat: asNumber(record.vat),
+  };
+};
+
+export const listOrdersRequest = async ({
+  userId,
+  ...params
+}: ListOrdersParams): Promise<ListOrdersResult> => {
+  const query = omitEmptyParams({
+    clientID: params.clientID,
+    limit: params.limit,
+    offset: params.offset,
+    paymentStatus: params.paymentStatus,
+    sort: params.sort,
+    status: params.status,
+  });
+  const response = await fetchWithNetworkFallback(
+    `/api/v1/orders${query}`,
+    {
+      headers: { 'X-User-Id': userId },
+    },
+    'Не удалось загрузить заказы',
+  );
+
+  if (!response.ok) {
+    throw new OrdersApiError(
+      response.status,
+      await parseApiErrorMessage(response, 'Не удалось загрузить заказы'),
+    );
+  }
+
+  const record = assertApiSuccess(await response.json(), 'Некорректный ответ заказов');
+  const payload = record.data;
+
+  if (typeof payload !== 'object' || payload === null) {
+    throw new OrdersApiError(500, 'Некорректный ответ заказов');
+  }
+
+  const data = payload as Record<string, unknown>;
+  const rawItems = Array.isArray(data.items) ? data.items : [];
+  const paginationRaw =
+    typeof data.pagination === 'object' && data.pagination !== null
+      ? (data.pagination as Record<string, unknown>)
+      : {};
+
+  return {
+    items: rawItems.flatMap((item) => {
+      const parsed = parseOrder(item);
+
+      return parsed ? [parsed] : [];
+    }),
+    pagination: {
+      limit: asNumber(paginationRaw.limit, params.limit ?? 20),
+      offset: asNumber(paginationRaw.offset, params.offset ?? 0),
+      total: asNumber(paginationRaw.total),
+    },
+  };
+};
+
+export type CreateOrderPayload = {
+  clientID?: string;
+  comment?: string;
+  contactName: string;
+  deliveryAddress: string;
+  deliveryType: string;
+  email?: string;
+  phone?: string;
+  userId: string;
+};
+
+export const createOrderRequest = async ({
+  userId,
+  ...params
+}: CreateOrderPayload): Promise<Order> => {
+  const query = omitEmptyParams({
+    clientID: params.clientID,
+    comment: params.comment,
+    contactName: params.contactName,
+    deliveryAddress: params.deliveryAddress,
+    deliveryType: params.deliveryType,
+    email: params.email,
+    phone: params.phone,
+  });
+  const response = await fetchWithNetworkFallback(
+    `/api/v1/orders${query}`,
+    {
+      headers: { 'X-User-Id': userId },
+      method: 'POST',
+    },
+    'Не удалось оформить заказ',
+  );
+
+  if (!response.ok) {
+    throw new OrdersApiError(
+      response.status,
+      await parseApiErrorMessage(response, 'Не удалось оформить заказ'),
+    );
+  }
+
+  const record = assertApiSuccess(await response.json(), 'Некорректный ответ создания заказа');
+  const payload = record.data;
+
+  if (typeof payload !== 'object' || payload === null) {
+    throw new OrdersApiError(500, 'Некорректный ответ создания заказа');
+  }
+
+  const data = payload as Record<string, unknown>;
+  const order = parseOrder(data.order ?? data);
+
+  if (!order) {
+    throw new OrdersApiError(500, 'Некорректный ответ создания заказа');
+  }
+
+  return order;
 };

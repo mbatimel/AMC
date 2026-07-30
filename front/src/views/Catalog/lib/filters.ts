@@ -95,3 +95,15 @@ export const countActiveFilters = (filters: CatalogFilters): number => {
 
   return count;
 };
+
+/** Ключ только по полям, уходящим в listProducts — без view/brandName. */
+export const toCatalogProductsQueryKey = (filters: CatalogFilters): string =>
+  [
+    filters.brandID ?? '',
+    filters.categoryID ?? '',
+    filters.gost ?? '',
+    filters.inStock ? '1' : '0',
+    filters.material ?? '',
+    filters.q ?? '',
+    filters.size ?? '',
+  ].join('\u001f');

@@ -285,7 +285,7 @@ export const CartPage = (): JSX.Element => {
                 <Button
                   className={clsx(styles.checkoutButton)}
                   fullWidth
-                  onPress={() => router.push(AppPath.Cabinet)}
+                  onPress={() => router.push(AppPath.Checkout)}
                   variant="primary"
                 >
                   → Оформить заказ

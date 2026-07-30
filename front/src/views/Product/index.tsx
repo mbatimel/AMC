@@ -6,11 +6,8 @@ import { useUnit } from 'effector-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import type { Product } from '@/core/shared/api/products';
-
 import { useCart } from '@/core/entities/cart';
 import { useFavorites } from '@/core/entities/favorites';
-import { getProductRequest } from '@/core/shared/api/products';
 import { formatPrice, normalizeQtyToPackage } from '@/core/shared/lib/formatPrice';
 import { getStockLevel } from '@/core/shared/lib/stock';
 import { AppPath } from '@/core/shared/router/paths';
@@ -20,6 +17,7 @@ import { QuantityStepper } from '@/core/shared/ui/QuantityStepper';
 import { ToastViewport } from '@/core/shared/ui/Toast';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
+import { $isProductPending, $product, $productError, productOpened } from './model';
 import styles from './Product.module.css';
 
 type ProductTab = 'certs' | 'delivery' | 'specs';
@@ -29,51 +27,31 @@ export const ProductPage = (): JSX.Element => {
   const productId = params.id;
   const { addToCart } = useCart();
   const favorites = useFavorites();
-  const showToast = useUnit(toastShown);
+  const [product, error, isPending, openProduct, showToast] = useUnit([
+    $product,
+    $productError,
+    $isProductPending,
+    productOpened,
+    toastShown,
+  ]);
 
-  const [product, setProduct] = useState<null | Product>(null);
-  const [error, setError] = useState<null | string>(null);
-  const [isPending, setIsPending] = useState(true);
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
   const [tab, setTab] = useState<ProductTab>('specs');
+  const [syncedProductId, setSyncedProductId] = useState<null | string>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    openProduct(productId);
+  }, [openProduct, productId]);
 
-    const load = async (): Promise<void> => {
-      setIsPending(true);
-      setError(null);
-
-      try {
-        const next = await getProductRequest(productId);
-
-        if (cancelled) {
-          return;
-        }
-
-        setProduct(next);
-        setQty(next.package_qty || 1);
-        setActiveImage(0);
-        setImageFailed(false);
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : 'Не удалось загрузить товар');
-        }
-      } finally {
-        if (!cancelled) {
-          setIsPending(false);
-        }
-      }
-    };
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [productId]);
+  if (product && product.id !== syncedProductId) {
+    setSyncedProductId(product.id);
+    setQty(product.package_qty || 1);
+    setActiveImage(0);
+    setImageFailed(false);
+    setTab('specs');
+  }
 
   const images = product?.images ?? [];
   const currentImage = images[activeImage];

@@ -178,3 +178,39 @@ export const registerIndividualRequest = async (
     ...omitEmptyFields({ inn }),
   });
 };
+
+export const changePasswordRequest = async (params: {
+  newPassword: string;
+  oldPassword: string;
+  userId: string;
+}): Promise<void> => {
+  const search = new URLSearchParams({
+    newPassword: params.newPassword,
+    oldPassword: params.oldPassword,
+  });
+  const response = await fetch(`/api/v1/auth/change-password?${search.toString()}`, {
+    headers: { 'X-User-Id': params.userId },
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    let message = 'Не удалось сменить пароль';
+
+    try {
+      const data: unknown = await response.json();
+
+      if (typeof data === 'object' && data !== null) {
+        const record = data as Record<string, unknown>;
+        const errorText = record.errorText ?? record.ErrorText;
+
+        if (typeof errorText === 'string' && errorText.length > 0) {
+          message = errorText;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    throw new AuthApiError(response.status, message);
+  }
+};

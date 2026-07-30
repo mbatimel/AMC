@@ -19,3 +19,6 @@ export const pluralize = (count: number, one: string, few: string, many: string)
 
 export const formatPositionsCount = (count: number): string =>
   `${count} ${pluralize(count, 'позиция', 'позиции', 'позиций')}`;
+
+export const formatOrdersCount = (count: number): string =>
+  `${count} ${pluralize(count, 'заказ', 'заказа', 'заказов')}`;

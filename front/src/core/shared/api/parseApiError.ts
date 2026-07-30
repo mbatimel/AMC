@@ -24,6 +24,40 @@ export const parseApiErrorMessage = async (
   return fallback;
 };
 
+/** Браузерные сетевые ошибки (`Failed to fetch` и т.п.) → русский fallback. */
+export const toDisplayErrorMessage = (error: unknown, fallback: string): string => {
+  if (!(error instanceof Error) || error.message.trim().length === 0) {
+    return fallback;
+  }
+
+  const message = error.message.trim();
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized === 'failed to fetch' ||
+    normalized === 'load failed' ||
+    normalized === 'network request failed' ||
+    normalized.includes('networkerror when attempting to fetch') ||
+    normalized.includes('fetch failed')
+  ) {
+    return fallback;
+  }
+
+  return message;
+};
+
+export const fetchWithNetworkFallback = async (
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+  networkFallback: string,
+): Promise<Response> => {
+  try {
+    return await fetch(input, init);
+  } catch (error) {
+    throw new Error(toDisplayErrorMessage(error, networkFallback), { cause: error });
+  }
+};
+
 export const assertApiSuccess = (data: unknown, fallback: string): Record<string, unknown> => {
   if (typeof data !== 'object' || data === null) {
     throw new Error(fallback);

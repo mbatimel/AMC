@@ -1,12 +1,13 @@
-import { createEffect, createEvent, createStore, sample } from 'effector';
+import { combine, createEffect, createEvent, createStore, sample } from 'effector';
 
 import type { Category, ListProductsResult, ProductListItem } from '@/core/shared/api/products';
 
+import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
 import { listCategoriesRequest, listProductsRequest } from '@/core/shared/api/products';
 
 import type { CatalogFilters } from './lib/filters';
 
-import { DEFAULT_CATALOG_FILTERS } from './lib/filters';
+import { DEFAULT_CATALOG_FILTERS, toCatalogProductsQueryKey } from './lib/filters';
 
 export const catalogMounted = createEvent();
 export const catalogFiltersApplied = createEvent<CatalogFilters>();
@@ -48,24 +49,50 @@ export const $categories = createStore<Category[]>([]).on(
   (_, categories) => categories,
 );
 
-export const $isCatalogPending = createStore(false)
-  .on(fetchCatalogProductsFx, () => true)
-  .on(fetchCatalogProductsFx.finally, () => false);
+export const $isCatalogPending = fetchCatalogProductsFx.pending;
 
 export const $catalogError = createStore<null | string>(null)
   .on(fetchCatalogProductsFx, () => null)
-  .on(fetchCatalogProductsFx.failData, (_, error) => error.message);
+  .on(fetchCatalogProductsFx.failData, (_, error) =>
+    toDisplayErrorMessage(error, 'Не удалось загрузить каталог'),
+  );
 
-export const $isCategoriesPending = createStore(false)
+export const $isCategoriesPending = fetchCategoriesFx.pending;
+
+/** Categories: один GET на сессию вкладки (пока store жив). */
+const $isCategoriesFetched = createStore(false)
   .on(fetchCategoriesFx, () => true)
-  .on(fetchCategoriesFx.finally, () => false);
+  .on(fetchCategoriesFx.fail, () => false);
+
+/** Последний успешно запрошенный ключ продуктов (API-поля). */
+const $productsQueryKey = createStore<null | string>(null)
+  .on(fetchCatalogProductsFx, (_, filters) => toCatalogProductsQueryKey(filters))
+  .on(fetchCatalogProductsFx.fail, () => null);
+
+const $canFetchCategories = combine(
+  $isCategoriesFetched,
+  fetchCategoriesFx.pending,
+  (fetched, pending) => !fetched && !pending,
+);
+
+/* eslint-disable perfectionist/sort-objects -- effector sample: clock -> source -> filter -> fn -> target */
 
 sample({
   clock: catalogMounted,
+  source: $canFetchCategories,
+  filter: Boolean,
   target: fetchCategoriesFx,
 });
 
 sample({
   clock: catalogFiltersApplied,
+  source: {
+    key: $productsQueryKey,
+    pending: fetchCatalogProductsFx.pending,
+  },
+  filter: ({ key, pending }, filters) => !pending && toCatalogProductsQueryKey(filters) !== key,
+  fn: (_, filters) => filters,
   target: fetchCatalogProductsFx,
 });
+
+/* eslint-enable perfectionist/sort-objects */

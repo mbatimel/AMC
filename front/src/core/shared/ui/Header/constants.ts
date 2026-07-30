@@ -45,7 +45,7 @@ export const HEADER_AUTH_LABEL = 'Авторизация';
 
 export const HEADER_CART_HREF = AppPath.Cart;
 
-export const HEADER_ORDERS_HREF = '#';
+export const HEADER_ORDERS_HREF = AppPath.CabinetOrders;
 
 export const HEADER_NAV_ITEMS: HeaderMenuItem[] = [
   { href: AppPath.Home, icon: IconHome, label: 'Главная' },

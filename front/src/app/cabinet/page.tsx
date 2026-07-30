@@ -1,11 +1,9 @@
-import dynamic from 'next/dynamic';
+import { redirect } from 'next/navigation';
 
-const Cabinet = dynamic(() =>
-  import('@/views/Cabinet').then((module) => ({ default: module.Cabinet })),
-);
+import { AppPath } from '@/core/shared/router/paths';
 
-const Page = (): JSX.Element => {
-  return <Cabinet />;
+const Page = (): never => {
+  redirect(AppPath.CabinetOrders);
 };
 
 export default Page;

@@ -35,10 +35,10 @@ export const FOOTER_CATALOG_LINKS: FooterLinkItem[] = [
 
 export const FOOTER_CABINET_LINKS: FooterLinkItem[] = [
   { href: AppPath.Cabinet, label: 'Личный кабинет' },
-  { href: '#', label: 'Мои заказы' },
+  { href: AppPath.CabinetOrders, label: 'Мои заказы' },
   { href: '#', label: 'Документы' },
   { href: '#', label: 'Избранное' },
-  { href: '#', label: 'Профиль' },
+  { href: AppPath.CabinetProfile, label: 'Профиль' },
 ];
 
 export const FOOTER_INFO_LINKS: FooterLinkItem[] = [
