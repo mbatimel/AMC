@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <title>AMC API Docs</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"
-          integrity="sha384-9Q2fpS+xeS4ffJy6CagnwoUl+4ldAYhOs9pgZuEKxypVModhmZFzeMlvVsAjf7uT"
-          crossorigin="anonymous">
+        integrity="sha384-9Q2fpS+xeS4ffJy6CagnwoUl+4ldAYhOs9pgZuEKxypVModhmZFzeMlvVsAjf7uT" crossorigin="anonymous">
     <style>
-        body { margin: 0; }
+        body {
+            margin: 0;
+        }
     </style>
 </head>
+
 <body>
     <div id="swagger-ui"></div>
     <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"
-            integrity="sha384-vfl/klfTFrIz5urj0HnhcXLAbzPdRHezizfy+XgFB6GqcKkhlk0lS3bIbyB39NLA"
-            crossorigin="anonymous"></script>
+        integrity="sha384-vfl/klfTFrIz5urj0HnhcXLAbzPdRHezizfy+XgFB6GqcKkhlk0lS3bIbyB39NLA"
+        crossorigin="anonymous"></script>
     <script>
         window.onload = function () {
             window.ui = SwaggerUIBundle({
@@ -23,6 +26,7 @@
                     { url: "specs/users.yaml", name: "Users" },
                     { url: "specs/orders.yaml", name: "Orders" },
                     { url: "specs/products.yaml", name: "Products" },
+                    { url: "specs/admin.yaml", name: "Admin" },
                     { url: "specs/access.yaml", name: "Access (internal)" }
                 ],
                 dom_id: "#swagger-ui",
@@ -32,4 +36,5 @@
         };
     </script>
 </body>
+
 </html>
