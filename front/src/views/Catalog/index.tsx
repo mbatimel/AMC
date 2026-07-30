@@ -19,6 +19,7 @@ import { CatalogCategories } from './ui/CatalogCategories';
 import { CatalogEmptyState } from './ui/CatalogEmptyState';
 import { CatalogFiltersPanel } from './ui/CatalogFilters';
 import { CatalogSearchSection } from './ui/CatalogSearchSection';
+import { CatalogSkeleton } from './ui/CatalogSkeleton';
 import { CatalogToolbar } from './ui/CatalogToolbar';
 
 const is1cUnavailable =
@@ -111,7 +112,7 @@ const CatalogContent = (): JSX.Element => {
               onReset={resetFilters}
             />
 
-            {isPending ? <p className={clsx(styles.status)}>Загрузка каталога…</p> : null}
+            {isPending ? <CatalogSkeleton view={filters.view} /> : null}
             {error ? <p className={clsx(styles.error)}>{error}</p> : null}
 
             {showEmpty ? <CatalogEmptyState onReset={resetAll} /> : null}
@@ -162,7 +163,15 @@ const CatalogContent = (): JSX.Element => {
 export const Catalog = (): JSX.Element => {
   return (
     <Page>
-      <Suspense fallback={<div className={clsx(styles.status)}>Загрузка каталога…</div>}>
+      <Suspense
+        fallback={
+          <div className={clsx(styles.root)}>
+            <div className={clsx(styles.container)}>
+              <CatalogSkeleton view="table" />
+            </div>
+          </div>
+        }
+      >
         <CatalogContent />
       </Suspense>
     </Page>

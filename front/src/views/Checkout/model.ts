@@ -71,6 +71,14 @@ sample({
 });
 
 sample({
+  clock: checkoutSubmitted,
+  source: $userId,
+  filter: (userId) => userId === null,
+  fn: () => 'Войдите, чтобы оформить заказ',
+  target: $checkoutError,
+});
+
+sample({
   clock: createOrderFx.done,
   source: $userId,
   filter: isUserId,

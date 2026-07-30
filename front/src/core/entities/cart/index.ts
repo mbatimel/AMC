@@ -8,10 +8,8 @@ export {
   addToCartRequested,
   cartClearRequested,
   cartHydrated,
-  cartItemQtyChanged,
   cartItemRemoved,
   clearCartFx,
   deleteCartItemFx,
   fetchCartFx,
-  updateCartItemFx,
 } from './model';

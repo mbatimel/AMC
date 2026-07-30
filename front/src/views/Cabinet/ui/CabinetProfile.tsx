@@ -18,11 +18,14 @@ import {
 } from '@heroui/react';
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import type { Profile } from '@/core/shared/api/profile';
 
+import { sessionEnded } from '@/core/entities/session';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
+import { AppPath } from '@/core/shared/router/paths';
 
 import styles from '../Cabinet.module.css';
 import { type ProfileFormSavePayload, usePasswordForm, useProfileForm } from '../lib/useProfile';
@@ -214,6 +217,7 @@ const ConditionCard = ({ label, value }: ConditionCardProps): JSX.Element => {
 };
 
 export const CabinetProfile = (): JSX.Element => {
+  const router = useRouter();
   const [
     profile,
     clients,
@@ -225,6 +229,7 @@ export const CabinetProfile = (): JSX.Element => {
     saveProfile,
     activateClient,
     changePassword,
+    logout,
   ] = useUnit([
     $profile,
     $clients,
@@ -236,9 +241,15 @@ export const CabinetProfile = (): JSX.Element => {
     profileSaveRequested,
     clientActivateRequested,
     passwordChangeRequested,
+    sessionEnded,
   ]);
 
   const client = details ?? profile?.active_client;
+
+  const handleLogout = (): void => {
+    logout();
+    router.push(AppPath.Login);
+  };
 
   return (
     <div className={clsx(styles.main)}>
@@ -411,6 +422,16 @@ export const CabinetProfile = (): JSX.Element => {
               Смена пароля
             </Typography.Heading>
             <PasswordForm onSubmit={changePassword} pending={isPasswordPending} />
+          </section>
+
+          <section className={clsx(styles.section, styles.logoutSection)}>
+            <Typography.Heading className={clsx(styles.sectionTitle)} level={3}>
+              Выход
+            </Typography.Heading>
+            <p className={clsx(styles.logoutHint)}>Завершить сессию на этом устройстве</p>
+            <Button className={clsx(styles.logoutButton)} onPress={handleLogout} variant="outline">
+              Выйти из аккаунта
+            </Button>
           </section>
         </Surface>
       ) : null}

@@ -1,9 +1,10 @@
 .root {
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  border: 1px solid #e8ecf2;
+  border-radius: 16px;
   background: var(--palette-white);
+  box-shadow: 0 8px 28px rgb(18 26 51 / 5%);
   margin-block-end: 20px;
-  padding: 16px;
+  padding: 20px;
 }
 
 .header {
@@ -11,7 +12,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-block-end: 16px;
+  margin-block-end: 18px;
 }
 
 .headerLeft {
@@ -22,44 +23,83 @@
 
 .title {
   margin: 0;
-  font-size: 16px;
+  color: #121a33;
+  font-size: 18px;
   font-weight: 700;
+  line-height: 1.2;
 }
 
-.badge {
+.activeCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-inline-size: 22px;
+  block-size: 22px;
+  border-radius: 999px;
+  background: #fde8e8;
+  color: var(--header-brand);
+  font-size: 12px;
+  font-weight: 700;
+  padding-inline: 6px;
+}
+
+.textAction {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: #121a33;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 0;
+}
+
+.textAction:hover {
+  color: var(--header-brand);
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-block-end: 14px;
+  gap: 14px;
+  margin-block-end: 16px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .label {
-  color: var(--palette-dark);
+  color: #8b93a7;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .input {
-  border: 1px solid var(--border);
+  border: 1px solid #e5e8ef;
   border-radius: 10px;
   background: var(--palette-white);
-  color: var(--palette-black);
+  box-shadow: none;
+  color: #121a33;
   font-size: 14px;
-  min-block-size: 40px;
-  padding-block: 10px;
-  padding-inline: 12px;
+  min-block-size: 44px;
+  padding-block: 11px;
+  padding-inline: 14px;
+}
+
+.input::placeholder {
+  color: #9aa3b5;
+}
+
+.input:focus {
+  border-color: #cfd6e4;
+  outline: none;
 }
 
 .footer {
@@ -75,33 +115,75 @@
   font-size: 14px;
 }
 
+.checkboxContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkboxControl {
+  inline-size: 18px;
+  block-size: 18px;
+  border: 1.5px solid #c8cedb;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--header-brand);
+}
+
+.checkbox[data-selected] .checkboxControl,
+.checkboxControl[data-selected] {
+  border-color: var(--header-brand);
+  background: var(--header-brand);
+  color: #fff;
+}
+
+.checkboxLabel {
+  color: #121a33;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
 .profile {
-  border: 1px dashed var(--border);
+  border: 1px dashed #d5dbe6;
   border-radius: 12px;
-  background: #fafbfc;
-  padding: 14px;
+  background: #f7f8fb;
+  padding: 16px;
 }
 
 .profileHeader {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-block-end: 6px;
-  color: var(--palette-dark);
-  font-size: 12px;
+  margin-block-end: 8px;
+  color: #8b93a7;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .devBadge {
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #f3ebe3;
+  color: #9a7b5f;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding-block: 5px;
+  padding-inline: 8px;
+  text-transform: uppercase;
 }
 
 .profileHint {
   margin: 0;
-  color: var(--palette-dark);
+  color: #9aa3b5;
   font-size: 13px;
+  line-height: 1.4;
 }
 
 @media (width < 900px) {

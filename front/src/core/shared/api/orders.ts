@@ -11,6 +11,7 @@ export type CityItem = {
 };
 
 export type ListOrdersParams = {
+  /** Пустой — бэк резолвит контрагента по X-User-Id. */
   clientID?: string;
   limit?: number;
   offset?: number;
@@ -336,6 +337,7 @@ export const listOrdersRequest = async ({
 };
 
 export type CreateOrderPayload = {
+  /** Пустой — бэк резолвит контрагента по X-User-Id. */
   clientID?: string;
   comment?: string;
   contactName: string;

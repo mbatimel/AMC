@@ -70,6 +70,23 @@ const parseUserId = (data: unknown): string => {
   throw new AuthApiError(500, 'Некорректный ответ сервера');
 };
 
+const localizeAuthError = (message: string): string => {
+  const normalized = message.trim().toLowerCase();
+
+  if (
+    normalized === 'invalid email or password' ||
+    normalized.includes('invalid email or password')
+  ) {
+    return 'Неверный email или пароль';
+  }
+
+  if (normalized === 'unauthorized' || normalized === 'unauthorised') {
+    return 'Неверный email или пароль';
+  }
+
+  return message;
+};
+
 const parseErrorMessage = async (response: Response): Promise<string> => {
   try {
     const data: unknown = await response.json();
@@ -85,15 +102,15 @@ const parseErrorMessage = async (response: Response): Promise<string> => {
           const field = (cause as { field?: unknown }).field;
 
           if (typeof field === 'string' && field.length > 0) {
-            return `${errorText}: ${field}`;
+            return localizeAuthError(`${errorText}: ${field}`);
           }
         }
 
-        return errorText;
+        return localizeAuthError(errorText);
       }
 
       if (typeof record.message === 'string' && record.message.length > 0) {
-        return record.message;
+        return localizeAuthError(record.message);
       }
     }
   } catch {
@@ -150,6 +167,7 @@ export const loginRequest = async ({
   email,
   password,
 }: AuthCredentials): Promise<AuthUserResponse> => {
+  // Swagger: POST /api/v1/auth/login — JSON body { email, password }
   return postAuth('/api/v1/auth/login', { email, password });
 };
 
@@ -187,13 +205,16 @@ export const changePasswordRequest = async (params: {
   userId: string;
 }): Promise<void> => {
   // Swagger: POST /api/v1/auth/change-password
-  // header X-User-Id (uuid, required); query oldPassword, newPassword
-  const search = new URLSearchParams({
-    newPassword: params.newPassword,
-    oldPassword: params.oldPassword,
-  });
-  const response = await fetch(`/api/v1/auth/change-password?${search.toString()}`, {
-    headers: { 'X-User-Id': params.userId },
+  // header X-User-Id; JSON body { oldPassword, newPassword }
+  const response = await fetch('/api/v1/auth/change-password', {
+    body: JSON.stringify({
+      newPassword: params.newPassword,
+      oldPassword: params.oldPassword,
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': params.userId,
+    },
     method: 'POST',
   });
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Checkbox, Chip, Input, Label, TextField } from '@heroui/react';
+import { Checkbox, Input, Label, TextField } from '@heroui/react';
 import clsx from 'clsx';
 import { useState } from 'react';
 
@@ -28,15 +28,15 @@ export const CatalogFiltersPanel = ({
       <div className={clsx(styles.header)}>
         <div className={clsx(styles.headerLeft)}>
           <h2 className={clsx(styles.title)}>Фильтры</h2>
-          {activeCount > 0 ? (
-            <Chip className={clsx(styles.badge)} color="danger" size="sm">
-              <Chip.Label>{activeCount}</Chip.Label>
-            </Chip>
-          ) : null}
+          {activeCount > 0 ? <span className={clsx(styles.activeCount)}>{activeCount}</span> : null}
         </div>
-        <Button onPress={() => setIsOpen((value) => !value)} size="sm" variant="ghost">
+        <button
+          className={clsx(styles.textAction)}
+          onClick={() => setIsOpen((value) => !value)}
+          type="button"
+        >
           {isOpen ? 'Свернуть' : 'Развернуть'}
-        </Button>
+        </button>
       </div>
 
       {isOpen ? (
@@ -77,24 +77,22 @@ export const CatalogFiltersPanel = ({
               isSelected={Boolean(filters.inStock)}
               onChange={(isSelected) => onChange({ inStock: isSelected || undefined })}
             >
-              <Checkbox.Content>
-                <Checkbox.Control>
+              <Checkbox.Content className={clsx(styles.checkboxContent)}>
+                <Checkbox.Control className={clsx(styles.checkboxControl)}>
                   <Checkbox.Indicator />
                 </Checkbox.Control>
-                Только в наличии
+                <span className={clsx(styles.checkboxLabel)}>Только в наличии</span>
               </Checkbox.Content>
             </Checkbox>
-            <Button onPress={onReset} size="sm" variant="outline">
+            <button className={clsx(styles.textAction)} onClick={onReset} type="button">
               Сбросить
-            </Button>
+            </button>
           </div>
 
           <div className={clsx(styles.profile)}>
             <div className={clsx(styles.profileHeader)}>
               <span>Профильные фильтры</span>
-              <Chip className={clsx(styles.devBadge)} color="warning" size="sm">
-                <Chip.Label>В разработке</Chip.Label>
-              </Chip>
+              <span className={clsx(styles.devBadge)}>В разработке</span>
             </div>
             <p className={clsx(styles.profileHint)}>
               Выберите категорию — появятся профильные свойства.
