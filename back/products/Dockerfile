@@ -20,6 +20,6 @@ RUN apk add --no-cache ca-certificates && \
 COPY --from=builder /out/products /usr/local/bin/products
 
 USER app
-EXPOSE 8081
+EXPOSE 8085
 
 ENTRYPOINT ["/usr/local/bin/products"]

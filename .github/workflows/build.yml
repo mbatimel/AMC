@@ -16,6 +16,9 @@ jobs:
           - name: access
             dockerfile: ./back/access/Dockerfile
             image: ghcr.io/mbatimel/amc-access
+          - name: admin
+            dockerfile: ./back/admin/Dockerfile
+            image: ghcr.io/mbatimel/amc-admin
           - name: auth
             dockerfile: ./back/auth/Dockerfile
             image: ghcr.io/mbatimel/amc-auth
@@ -25,6 +28,9 @@ jobs:
           - name: orders
             dockerfile: ./back/orders/Dockerfile
             image: ghcr.io/mbatimel/amc-orders
+          - name: products
+            dockerfile: ./back/products/Dockerfile
+            image: ghcr.io/mbatimel/amc-products
           - name: users
             dockerfile: ./back/users/Dockerfile
             image: ghcr.io/mbatimel/amc-users

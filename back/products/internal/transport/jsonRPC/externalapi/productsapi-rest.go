@@ -73,34 +73,6 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 
 	var request requestProductsAPIListProducts
 
-	if _inStock := ctx.Query("inStock"); _inStock != "" {
-		var inStock bool
-		inStock, err = strconv.ParseBool(_inStock)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.InStock = &inStock
-	}
-	if _limit := ctx.Query("limit"); _limit != "" {
-		var limit int
-		limit, err = strconv.Atoi(_limit)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Limit = &limit
-	}
-	if _q := ctx.Query("q"); _q != "" {
-		var q string
-		q = _q
-		request.Q = &q
-	}
-	if _material := ctx.Query("material"); _material != "" {
-		var material string
-		material = _material
-		request.Material = &material
-	}
 	if _size := ctx.Query("size"); _size != "" {
 		var size string
 		size = _size
@@ -134,6 +106,34 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 		var gost string
 		gost = _gost
 		request.Gost = &gost
+	}
+	if _inStock := ctx.Query("inStock"); _inStock != "" {
+		var inStock bool
+		inStock, err = strconv.ParseBool(_inStock)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.InStock = &inStock
+	}
+	if _limit := ctx.Query("limit"); _limit != "" {
+		var limit int
+		limit, err = strconv.Atoi(_limit)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Limit = &limit
+	}
+	if _q := ctx.Query("q"); _q != "" {
+		var q string
+		q = _q
+		request.Q = &q
+	}
+	if _material := ctx.Query("material"); _material != "" {
+		var material string
+		material = _material
+		request.Material = &material
 	}
 
 	return customhandlers.ListProducts(ctx, http.svc, request.Q, request.CategoryID, request.BrandID, request.Material, request.Size, request.Gost, request.InStock, request.Limit, request.Offset, request.Sort)
