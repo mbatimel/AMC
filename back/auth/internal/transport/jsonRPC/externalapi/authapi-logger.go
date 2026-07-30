@@ -37,7 +37,7 @@ func (m loggerAuthAPI) LoginUser(ctx context.Context, email string, password str
 				"method": "authAPI.loginUser",
 				"request": viewer.Sprintf("%+v", requestAuthAPILoginUser{
 					Email:    email,
-					Password: redactedSecret(password),
+					Password: password,
 				}),
 				"response": viewer.Sprintf("%+v", responseAuthAPILoginUser{UserID: userID}),
 			}
@@ -74,7 +74,7 @@ func (m loggerAuthAPI) RegisterIP(ctx context.Context, email string, password st
 					LegalAddress:         legalAddress,
 					Ogrn:                 ogrn,
 					Okved:                okved,
-					Password:             redactedSecret(password),
+					Password:             password,
 					Phone:                phone,
 					ShortName:            shortName,
 					TaxSystem:            taxSystem,
@@ -105,7 +105,7 @@ func (m loggerAuthAPI) RegisterIndividual(ctx context.Context, fio string, phone
 					Email:           email,
 					Fio:             fio,
 					Inn:             inn,
-					Password:        redactedSecret(password),
+					Password:        password,
 					Phone:           phone,
 				}),
 				"response": viewer.Sprintf("%+v", responseAuthAPIRegisterIndividual{UserID: userID}),

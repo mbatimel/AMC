@@ -51,16 +51,14 @@ type loginUserResponse struct {
 }
 
 // LoginUser performs the LoginUser operation (POST /api/v1/auth/login).
-// Credentials use the same JSON contract as the public frontend.
+// Credentials travel as query args because that's what the live server
+// reads (ctx.Query("email")/ctx.Query("password")) — not this client's
+// choice. Error paths deliberately omit the request URI/body from any
+// message: the URI contains the plaintext password in its query string.
 func (cli *ClientAuthAPI) LoginUser(ctx context.Context, email string, password string) (userID uuid.UUID, err error) {
 
-	reqBody, err := json.Marshal(struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}{
-		Email:    email,
-		Password: password,
-	})
+	var reqBody []byte
+	reqBody, err = json.Marshal(struct{}{})
 	if err != nil {
 		return
 	}
@@ -70,6 +68,8 @@ func (cli *ClientAuthAPI) LoginUser(ctx context.Context, email string, password 
 	_req.Header.SetMethod("POST")
 	_req.Header.Set("Content-Type", "application/json")
 	_req.SetBody(reqBody)
+	_req.URI().QueryArgs().Set("email", email)
+	_req.URI().QueryArgs().Set("password", password)
 	_resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(_resp)
 	if deadline, ok := ctx.Deadline(); ok {
