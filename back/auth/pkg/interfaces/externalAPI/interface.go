@@ -26,8 +26,6 @@ type AuthAPI interface {
 	// LoginUser ...
 	// @tg http-method=POST
 	// @tg http-path=/v1/auth/login
-	// @tg http-args=email|email
-	// @tg http-args=password|password
 	// @tg uuidPackage=github.com/google/uuid
 	// @tg summary=`Авторизация пользователя`
 	// @tg desc=`Авторизация пользователя по email и паролю`
@@ -40,26 +38,6 @@ type AuthAPI interface {
 	// RegisterIP ...
 	// @tg http-method=POST
 	// @tg http-path=/v1/auth/register/ip
-	// @tg http-args=email|email
-	// @tg http-args=password|password
-	// @tg http-args=fullName|fullName
-	// @tg http-args=shortName|shortName
-	// @tg http-args=inn|inn
-	// @tg http-args=kpp|kpp
-	// @tg http-args=ogrn|ogrn
-	// @tg http-args=okved|okved
-	// @tg http-args=taxSystem|taxSystem
-	// @tg http-args=legalAddress|legalAddress
-	// @tg http-args=actualAddress|actualAddress
-	// @tg http-args=directorFullName|directorFullName
-	// @tg http-args=directorPosition|directorPosition
-	// @tg http-args=phone|phone
-	// @tg http-args=additionalPhone|additionalPhone
-	// @tg http-args=website|website
-	// @tg http-args=bankAccount|bankAccount
-	// @tg http-args=bankName|bankName
-	// @tg http-args=bankBik|bankBik
-	// @tg http-args=correspondentAccount|correspondentAccount
 	// @tg uuidPackage=github.com/google/uuid
 	// @tg summary=`Регистрация ИП/организации`
 	// @tg desc=`Создание нового пользователя с реквизитами ИП/организации. Все поля кроме email и пароля необязательны.`
@@ -90,13 +68,6 @@ type AuthAPI interface {
 	// RegisterIndividual ...
 	// @tg http-method=POST
 	// @tg http-path=/v1/auth/register/individual
-	// @tg http-args=fio|fio
-	// @tg http-args=phone|phone
-	// @tg http-args=email|email
-	// @tg http-args=deliveryAddress|deliveryAddress
-	// @tg http-args=password|password
-	// @tg http-args=city|city
-	// @tg http-args=inn|inn
 	// @tg uuidPackage=github.com/google/uuid
 	// @tg summary=`Регистрация физического лица`
 	// @tg desc=`Создание нового пользователя-физлица. ИНН необязателен, остальные поля обязательны.`

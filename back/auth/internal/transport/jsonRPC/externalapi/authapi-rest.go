@@ -22,6 +22,13 @@ func (http *httpAuthAPI) loginUser(ctx context.Context, request requestAuthAPILo
 func (http *httpAuthAPI) serveLoginUser(ctx *fiber.Ctx) (err error) {
 
 	var request requestAuthAPILoginUser
+	if len(ctx.Body()) > 0 {
+		if err = ctx.BodyParser(&request); err != nil {
+			ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+			_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+			return
+		}
+	}
 
 	if _email := ctx.Query("email"); _email != "" {
 		var email string
@@ -63,6 +70,13 @@ func (http *httpAuthAPI) registerIP(ctx context.Context, request requestAuthAPIR
 func (http *httpAuthAPI) serveRegisterIP(ctx *fiber.Ctx) (err error) {
 
 	var request requestAuthAPIRegisterIP
+	if len(ctx.Body()) > 0 {
+		if err = ctx.BodyParser(&request); err != nil {
+			ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+			_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+			return
+		}
+	}
 
 	if _additionalPhone := ctx.Query("additionalPhone"); _additionalPhone != "" {
 		var additionalPhone string
@@ -194,6 +208,13 @@ func (http *httpAuthAPI) registerIndividual(ctx context.Context, request request
 func (http *httpAuthAPI) serveRegisterIndividual(ctx *fiber.Ctx) (err error) {
 
 	var request requestAuthAPIRegisterIndividual
+	if len(ctx.Body()) > 0 {
+		if err = ctx.BodyParser(&request); err != nil {
+			ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+			_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+			return
+		}
+	}
 
 	if _deliveryAddress := ctx.Query("deliveryAddress"); _deliveryAddress != "" {
 		var deliveryAddress string

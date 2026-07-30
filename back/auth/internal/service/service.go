@@ -55,6 +55,11 @@ func NewAuthApiService(logger zerolog.Logger, storage Storage, accessClient Acce
 }
 
 func (s *service) LoginUser(ctx context.Context, email string, password string) (userID uuid.UUID, err error) {
+	email = strings.TrimSpace(email)
+	if email == "" || password == "" {
+		return uuid.Nil, customErrors.InvalidCredentialsError()
+	}
+
 	user, err := s.storage.GetUserByEmail(ctx, email)
 	if errors.Is(err, postgres.ErrUserNotFound) {
 		return uuid.Nil, customErrors.InvalidCredentialsError()
