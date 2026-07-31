@@ -12,7 +12,8 @@
 
 - No test framework exists in `front` (no `test` script, no Jest/Vitest). Verification for every task is `yarn typecheck`, `yarn lint`, and `yarn build` — run these instead of a test suite.
 - Package manager is Yarn (classic, `yarn.lock` present) — use `yarn`, not `npm`/`pnpm`.
-- `admin-front` must NOT contain `src/app/portal-api/*` or `src/core/shared/server/*` — that stays exclusively in `front` (design decision, avoids split-brain state in `portal.json`).
+- `admin-front` must NOT contain `src/app/portal-api/*` or the stateful parts of `src/core/shared/server/portal/*` (`store.ts`, `defaults.ts`, `response.ts`) — that stays exclusively in `front` (design decision, avoids split-brain state in `portal.json`). **Correction found during Task 2 review:** `src/core/shared/server/portal/types.ts` is the one exception — it's a pure type-definitions file (158 lines, zero imports, no Node/fs code), and `admin.ts`, `portalUsers.ts`, `signupRequests.ts`, `content.ts`, `feedback.ts`, and `support.ts` all import types from it. It must be duplicated into `admin-front/src/core/shared/server/portal/types.ts` (same copy-by-value pattern as the API clients) — see the Task 2 correction below.
+- **Correction found during Task 2 review:** `signupRequests.ts` is not admin-only — `front/src/core/entities/session/model.ts` (`registerModerationFx`, the public registration flow) calls `createSignupRequest` from it after a customer signs up, so the public site needs it too. It belongs in the **duplicate** bucket (like `content.ts`/`feedback.ts`/`support.ts`/`products.ts`), not the **move** bucket. Task 2 below still moves it into `admin-front` (needed there for `listSignupRequests`/`decideSignupRequest`), but a fix round restores a copy at `front/src/core/shared/api/signupRequests.ts` too.
 - Admin routes in `admin-front` are de-prefixed: `/admin/products` → `/products`, `/admin/login` → `/login`, admin dashboard `/admin` → `/`.
 - Cookie name stays `admin_user_id` (`ADMIN_USER_ID_COOKIE`), host-only (no `Domain=` attribute) — no change needed, it will naturally scope to `admin.wk.amctechgroup.ru`.
 - Every file copy must preserve file content exactly except where a task explicitly lists a rename/edit.
@@ -477,6 +478,8 @@ git commit -m "refactor: move adminSession entity and admin-only API clients to 
 
 These files are used by **both** apps (public site reads/writes the same `portal-api` data that admin edits), so they're copied, not moved — `front` keeps its own copy unchanged.
 
+**Correction found during Task 2 review:** `content.ts`, `feedback.ts`, and `support.ts` each import types from `@/core/shared/server/portal/types` (`ContentPageKey`/etc., `OrderFeedback`, `SupportRequest`/`SupportRequestStatus`). That file must exist in `admin-front` for these to compile. Task 2's fix round already copied `admin-front/src/core/shared/server/portal/types.ts` (needed there for `admin.ts`/`portalUsers.ts`/`signupRequests.ts` too) — by the time this task runs, that file already exists in `admin-front`. Don't copy it again; just confirm it's present (Step 0 below).
+
 **Files:**
 - Create (copy of `front/src/core/shared/api/content.ts`): `admin-front/src/core/shared/api/content.ts`
 - Create (copy of `front/src/core/shared/api/feedback.ts`): `admin-front/src/core/shared/api/feedback.ts`
@@ -487,6 +490,11 @@ These files are used by **both** apps (public site reads/writes the same `portal
 
 **Interfaces:**
 - Produces: `@/core/shared/api/{content,feedback,support,products,portalClient,parseApiError}` in admin-front, byte-identical to front's versions at copy time. `admin.ts`, `portalUsers.ts`, `signupRequests.ts` (moved in Task 2) import `portalRequest`/`PortalApiError` from `./portalClient` and error helpers from `./parseApiError` — this task unblocks their compilation.
+
+- [ ] **Step 0: Confirm `server/portal/types.ts` is already present in admin-front**
+
+Run: `ls admin-front/src/core/shared/server/portal/types.ts`
+Expected: file exists (copied there by Task 2's fix round). If it's missing, copy it now: `mkdir -p admin-front/src/core/shared/server/portal && cp front/src/core/shared/server/portal/types.ts admin-front/src/core/shared/server/portal/types.ts` — and nothing else from `front/src/core/shared/server/` (no `store.ts`, `defaults.ts`, `response.ts`, no `server/assistant/*`).
 
 - [ ] **Step 1: Copy the files**
 
