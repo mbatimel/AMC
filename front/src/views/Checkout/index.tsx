@@ -9,9 +9,10 @@ import { useEffect } from 'react';
 import { useCart } from '@/core/entities/cart';
 import { useCity } from '@/core/entities/city';
 import { useSession } from '@/core/entities/session';
+import { formatPrice } from '@/core/shared/lib/formatPrice';
+import { formatPositionsCount } from '@/core/shared/lib/pluralize';
 import { AppPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
-import { ToastViewport } from '@/core/shared/ui/Toast';
 
 import styles from './Checkout.module.css';
 import {
@@ -60,6 +61,13 @@ export const CheckoutPage = (): JSX.Element => {
     }
   }, [cartCount, isAuthenticated, isCartPending, isHydrated, isSuccessOpen, router]);
 
+  useEffect(
+    () => () => {
+      closeSuccess();
+    },
+    [closeSuccess],
+  );
+
   if (!isHydrated || !isAuthenticated) {
     return (
       <Page>
@@ -102,16 +110,18 @@ export const CheckoutPage = (): JSX.Element => {
             <Typography.Heading className={clsx(styles.title)} level={1}>
               Оформление заказа
             </Typography.Heading>
+            <p className={clsx(styles.subtitle)}>
+              {formatPositionsCount(cartCount)} · {formatPrice(cart.total)}
+            </p>
           </header>
 
           <div className={clsx(styles.layout)}>
-            <CheckoutForm error={error} isPending={isPending} onSubmit={submit} />
-            <CheckoutSummary cart={cart} cityName={selectedCityName || 'ваш город'} />
+            <CheckoutForm cityName={selectedCityName || 'Самара'} error={error} onSubmit={submit} />
+            <CheckoutSummary cart={cart} isPending={isPending} />
           </div>
         </div>
 
         <CheckoutSuccessModal isOpen={isSuccessOpen} onClose={closeSuccess} order={successOrder} />
-        <ToastViewport />
       </div>
     </Page>
   );

@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 import type { ProductListItem } from '@/core/shared/api/products';
 
-import { IconPlus } from '@/core/shared/icons';
+import { IconPlus, IconPriceTag } from '@/core/shared/icons';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
 import { getStockLevel } from '@/core/shared/lib/stock';
 import { getProductPath } from '@/core/shared/router/paths';
@@ -21,12 +21,24 @@ type CatalogB2BTableProps = {
   products: ProductListItem[];
 };
 
+const formatPlainNumber = (value: number): string =>
+  new Intl.NumberFormat('ru-RU', {
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  }).format(Math.round(value));
+
 const ProductThumb = ({ product }: { product: ProductListItem }): JSX.Element => {
   const image = product.images?.find((item) => item.is_primary) ?? product.images?.[0];
   const [failed, setFailed] = useState(false);
 
   if (!image || failed) {
-    return <ProductImageFallback categoryName={product.category_name} className={styles.thumb} />;
+    return (
+      <ProductImageFallback
+        categoryName={product.category_name}
+        className={clsx(styles.thumbFallback)}
+        label=""
+      />
+    );
   }
 
   return (
@@ -54,10 +66,8 @@ export const CatalogB2BTable = ({ onAddToCart, products }: CatalogB2BTableProps)
             <th>Материал</th>
             <th>Размер</th>
             <th>Уп.</th>
-            <th>Остаток</th>
             <th>Цена</th>
-            <th>Кол-во</th>
-            <th aria-label="Действие" />
+            <th aria-label="Действия" />
           </tr>
         </thead>
         <tbody>
@@ -65,7 +75,9 @@ export const CatalogB2BTable = ({ onAddToCart, products }: CatalogB2BTableProps)
             const stockLevel = getStockLevel(product.stock_qty);
             const isOut = stockLevel === 'out';
             const qty = qtyById[product.id] ?? product.package_qty;
-            const hasDiscount = product.discount_percent > 0;
+            const showDiscount =
+              product.discount_percent > 0 ||
+              (product.base_price > 0 && product.base_price > product.client_price);
 
             return (
               <tr key={product.id}>
@@ -74,58 +86,59 @@ export const CatalogB2BTable = ({ onAddToCart, products }: CatalogB2BTableProps)
                     <ProductThumb product={product} />
                   </div>
                 </td>
-                <td className={clsx(styles.sku)}>{product.sku}</td>
-                <td>
+                <td className={clsx(styles.muted)}>{product.sku || '—'}</td>
+                <td className={clsx(styles.nameCell)}>
                   <Link className={clsx(styles.nameLink)} href={getProductPath(product.id)}>
                     {product.name}
                   </Link>
                 </td>
-                <td>{product.gost || '—'}</td>
-                <td>{product.material || '—'}</td>
-                <td>{product.size || '—'}</td>
-                <td>{product.package_qty} шт</td>
+                <td className={clsx(styles.muted)}>{product.gost || '—'}</td>
+                <td className={clsx(styles.muted)}>{product.material || '—'}</td>
+                <td className={clsx(styles.muted)}>{product.size || '—'}</td>
+                <td className={clsx(styles.muted)}>{product.package_qty} шт</td>
                 <td>
-                  <span
-                    className={clsx(
-                      styles.stock,
-                      stockLevel === 'out' && styles.stockOut,
-                      stockLevel === 'low' && styles.stockLow,
-                    )}
-                  >
-                    {product.stock_qty}
-                  </span>
+                  {showDiscount ? (
+                    <div className={clsx(styles.priceCell)}>
+                      <span className={clsx(styles.basePrice)}>
+                        {formatPlainNumber(product.base_price)}
+                      </span>
+                      <span className={clsx(styles.priceBadge)}>
+                        <IconPriceTag currentColor="currentColor" height={12} width={12} />
+                        {formatPrice(product.client_price)}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className={clsx(styles.price)}>{formatPrice(product.client_price)}</span>
+                  )}
                 </td>
                 <td>
-                  <span className={clsx(styles.price, hasDiscount && styles.pricePromo)}>
-                    {formatPrice(product.client_price)}
-                  </span>
-                </td>
-                <td>
-                  <QuantityStepper
-                    disabled={isOut}
-                    onChange={(value) =>
-                      setQtyById((current) => ({ ...current, [product.id]: value }))
-                    }
-                    step={product.package_qty}
-                    value={qty}
-                  />
-                </td>
-                <td>
-                  <Button
-                    className={clsx(styles.cartButton)}
-                    isDisabled={isOut}
-                    onPress={() => onAddToCart(product.id, product.name, qty, product.package_qty)}
-                    size="sm"
-                    variant="primary"
-                  >
-                    {isOut ? (
-                      'Нет'
-                    ) : (
-                      <>
-                        <IconPlus currentColor="currentColor" height={14} width={14} />В корзину
-                      </>
-                    )}{' '}
-                  </Button>
+                  <div className={clsx(styles.actions)}>
+                    <QuantityStepper
+                      className={clsx(styles.stepper)}
+                      disabled={isOut}
+                      onChange={(value) =>
+                        setQtyById((current) => ({ ...current, [product.id]: value }))
+                      }
+                      step={product.package_qty}
+                      value={qty}
+                    />
+                    <Button
+                      className={clsx(styles.cartButton)}
+                      isDisabled={isOut}
+                      onPress={() =>
+                        onAddToCart(product.id, product.name, qty, product.package_qty)
+                      }
+                      size="sm"
+                    >
+                      {isOut ? (
+                        'Нет'
+                      ) : (
+                        <>
+                          <IconPlus currentColor="currentColor" height={14} width={14} />В корзину
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </td>
               </tr>
             );

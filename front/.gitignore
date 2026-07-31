@@ -5,3 +5,4 @@ node_modules/
 *.local
 vi-portal
 tsconfig.tsbuildinfo
+.portal-data/

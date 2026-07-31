@@ -21,6 +21,39 @@
 └── front/
 ```
 
+## Frontend
+
+`front/` — Next.js (App Router, FSD, Effector, HeroUI). Публичная часть,
+личный кабинет клиента и админ-панель живут в одном приложении.
+
+| Раздел | Маршруты |
+| --- | --- |
+| Публичные страницы | `/`, `/catalog`, `/product/:id`, `/brands`, `/about`, `/terms`, `/promo`, `/certificates`, `/contacts`, `/support`, `/assistant`, `/legal/:docId` |
+| Кабинет клиента | `/cabinet`, `/cabinet/orders`, `/cabinet/orders/:id`, `/cabinet/documents`, `/cabinet/favorites`, `/cabinet/profile` |
+| Оформление | `/cart`, `/checkout` |
+| Админ-панель | `/admin`, `/admin/login`, `/admin/content/:pageKey`, `/admin/banners`, `/admin/products`, `/admin/products/:id`, `/admin/categories`, `/admin/legal`, `/admin/users`, `/admin/signup-requests`, `/admin/feedback`, `/admin/support`, `/admin/audit-log` |
+
+Доступ в `/admin/*` проверяется в `front/src/proxy.ts` по cookie `admin_user_id`
+и подтверждается ролью `admin` в `back/access`.
+
+Модули без своего Go-сервиса (контент страниц, баннеры, юр. документы, заявки,
+отзывы, обращения) обслуживаются route-handlers в `front/src/app/portal-api` —
+см. README в этом каталоге и схему таблиц в `docs/portal-content-schema.sql`.
+
+### ИИ-помощник по подбору инструмента (M-04)
+
+Работает на DeepSeek: модель через tool calling ищет позиции в `back/products`
+и отвечает строго по найденному. Ключ задаётся переменной `DEEPSEEK_API_KEY`
+(только на сервере, в клиентский бандл не попадает). Если ключ не задан или
+модель недоступна — помощник автоматически работает на поиске по каталогу и
+сценарных ответах, чат не ломается.
+
+```bash
+cp front/.env.example front/.env.local   # заполнить DEEPSEEK_API_KEY
+```
+
+Подробности и список переменных — `front/src/app/portal-api/README.md`.
+
 ## Backend-сервисы
 
 | Папка | Модуль ТЗ | Назначение |

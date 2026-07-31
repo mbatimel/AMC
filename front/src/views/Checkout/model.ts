@@ -10,7 +10,7 @@ import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
 
 import type { CheckoutFormValues } from './lib/types';
 
-import { deliveryTypeLabel } from './lib/constants';
+import { deliveryTypeShortLabel } from './lib/constants';
 
 export const checkoutSubmitted = createEvent<CheckoutFormValues>();
 export const checkoutSuccessClosed = createEvent();
@@ -50,7 +50,7 @@ export const $checkoutError = createStore<null | string>(null)
 export const $successOrderView = $lastOrder.map((order) =>
   order
     ? {
-        deliveryType: deliveryTypeLabel(order.delivery_type),
+        deliveryType: deliveryTypeShortLabel(order.delivery_type),
         number: order.number || order.id.slice(0, 8),
         total: order.total,
       }
@@ -68,6 +68,14 @@ sample({
   filter: isUserId,
   fn: (userId, form) => ({ form, userId }),
   target: createOrderFx,
+});
+
+sample({
+  clock: checkoutSubmitted,
+  source: $userId,
+  filter: (userId) => userId === null,
+  fn: () => 'Войдите, чтобы оформить заказ',
+  target: $checkoutError,
 });
 
 sample({

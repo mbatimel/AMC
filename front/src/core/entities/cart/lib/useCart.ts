@@ -9,29 +9,25 @@ import {
   $isCartPending,
   addToCartRequested,
   cartClearRequested,
-  cartItemQtyChanged,
   cartItemRemoved,
 } from '../model';
 
 export const useCart = () => {
-  const [cart, cartCount, isCartPending, cartError, addToCart, changeQty, removeItem, clear] =
-    useUnit([
-      $cart,
-      $cartCount,
-      $isCartPending,
-      $cartError,
-      addToCartRequested,
-      cartItemQtyChanged,
-      cartItemRemoved,
-      cartClearRequested,
-    ]);
+  const [cart, cartCount, isCartPending, cartError, addToCart, removeItem, clear] = useUnit([
+    $cart,
+    $cartCount,
+    $isCartPending,
+    $cartError,
+    addToCartRequested,
+    cartItemRemoved,
+    cartClearRequested,
+  ]);
 
   return {
     addToCart,
     cart,
     cartCount,
     cartError,
-    changeQty,
     clear,
     isCartPending,
     removeItem,

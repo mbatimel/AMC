@@ -1,10 +1,12 @@
 'use client';
 
-import { Button } from '@heroui/react';
 import clsx from 'clsx';
 import { useMemo, useState } from 'react';
 
 import type { Category } from '@/core/shared/api/products';
+
+import { IconChevronRight } from '@/core/shared/icons/IconChevronRight';
+import { IconLayers } from '@/core/shared/icons/IconLayers';
 
 import styles from './CatalogCategories.module.css';
 
@@ -47,6 +49,7 @@ export const CatalogCategories = ({
 }: CatalogCategoriesProps): JSX.Element => {
   const tree = useMemo(() => buildTree(categories), [categories]);
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const isAllActive = !selectedCategoryId;
 
   const toggleExpanded = (id: string): void => {
     setExpandedIds((current) =>
@@ -61,30 +64,30 @@ export const CatalogCategories = ({
 
     return (
       <li key={node.id}>
-        <div className={clsx(styles.row)} style={{ paddingInlineStart: `${12 + depth * 12}px` }}>
-          {hasChildren ? (
-            <Button
-              aria-expanded={isExpanded}
-              aria-label={isExpanded ? 'Свернуть' : 'Развернуть'}
-              className={clsx(styles.chevron)}
-              isIconOnly
-              onPress={() => toggleExpanded(node.id)}
-              size="sm"
-              variant="ghost"
-            >
-              {isExpanded ? '▾' : '▸'}
-            </Button>
-          ) : (
-            <span className={clsx(styles.chevronSpacer)} />
-          )}
-          <Button
+        <div className={clsx(styles.row)} style={{ paddingInlineStart: depth > 0 ? 12 : 0 }}>
+          <button
             className={clsx(styles.item, isActive && styles.itemActive)}
-            fullWidth
-            onPress={() => onSelect(node.id)}
-            variant={isActive ? 'secondary' : 'ghost'}
+            onClick={() => {
+              if (hasChildren) {
+                toggleExpanded(node.id);
+              }
+
+              onSelect(node.id);
+            }}
+            type="button"
           >
-            <span>{node.name}</span>
-          </Button>
+            <span className={clsx(styles.itemLeading)}>
+              <IconChevronRight
+                className={clsx(
+                  styles.chevron,
+                  isExpanded && hasChildren && styles.chevronExpanded,
+                )}
+                height={14}
+                width={14}
+              />
+              <span className={clsx(styles.itemLabel)}>{node.name}</span>
+            </span>
+          </button>
         </div>
         {hasChildren && isExpanded ? (
           <ul className={clsx(styles.list)}>
@@ -100,15 +103,22 @@ export const CatalogCategories = ({
       <h2 className={clsx(styles.title)}>Категории</h2>
       <ul className={clsx(styles.list)}>
         <li>
-          <Button
-            className={clsx(styles.item, !selectedCategoryId && styles.itemActive)}
-            fullWidth
-            onPress={() => onSelect(undefined)}
-            variant={!selectedCategoryId ? 'secondary' : 'ghost'}
+          <button
+            className={clsx(styles.item, isAllActive && styles.itemActive)}
+            onClick={() => onSelect(undefined)}
+            type="button"
           >
-            <span>Все товары</span>
+            <span className={clsx(styles.itemLeading)}>
+              <IconLayers
+                className={clsx(styles.allIcon)}
+                currentColor="currentColor"
+                height={18}
+                width={18}
+              />
+              <span className={clsx(styles.itemLabel)}>Все товары</span>
+            </span>
             <span className={clsx(styles.count)}>{totalAll}</span>
-          </Button>
+          </button>
         </li>
         {tree.map((node) => renderNode(node))}
       </ul>

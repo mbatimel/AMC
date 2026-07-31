@@ -6,11 +6,16 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        destination: `${apiProxyTarget}/api/v1/orders/`,
+        source: '/api/v1/orders',
+      },
+      {
         destination: `${apiProxyTarget}/api/:path*`,
         source: '/api/:path*',
       },
     ];
   },
+  skipTrailingSlashRedirect: true,
   output: 'standalone',
   reactStrictMode: true,
 };

@@ -1,0 +1,186 @@
+.bone {
+  border-radius: 8px;
+  background: #e8ecf2;
+
+  @mixin flashSkeleton;
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 32px;
+  border: 1px solid #e8ecf2;
+  border-radius: 16px;
+  background: var(--palette-white);
+  padding: 24px;
+}
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mainImage {
+  min-block-size: 380px;
+  border-radius: 14px;
+}
+
+.thumbs {
+  display: flex;
+  gap: 8px;
+}
+
+.thumb {
+  block-size: 72px;
+  inline-size: 72px;
+  border-radius: 10px;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sku {
+  block-size: 12px;
+  inline-size: 140px;
+}
+
+.title {
+  block-size: 28px;
+  inline-size: 85%;
+}
+
+.titleSm {
+  block-size: 28px;
+  inline-size: 55%;
+}
+
+.price {
+  block-size: 36px;
+  inline-size: 120px;
+  margin-block-start: 4px;
+}
+
+.hint {
+  block-size: 12px;
+  inline-size: 110px;
+}
+
+.stock {
+  block-size: 40px;
+  inline-size: 100%;
+  border-radius: 10px;
+}
+
+.buyRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block-start: 4px;
+}
+
+.stepper {
+  block-size: 44px;
+  inline-size: 120px;
+  border-radius: 10px;
+}
+
+.cartBtn {
+  block-size: 44px;
+  inline-size: 140px;
+  border-radius: 10px;
+}
+
+.favBtn {
+  block-size: 44px;
+  inline-size: 44px;
+  border-radius: 10px;
+}
+
+.infoCards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-block-start: 4px;
+}
+
+.infoCard {
+  block-size: 72px;
+  border-radius: 12px;
+}
+
+.tabs {
+  overflow: hidden;
+  border: 1px solid #e8ecf2;
+  border-radius: 16px;
+  background: var(--palette-white);
+}
+
+.tabList {
+  display: flex;
+  gap: 12px;
+  border-block-end: 1px solid #eef1f6;
+  padding-block: 16px;
+  padding-inline: 20px;
+}
+
+.tab {
+  block-size: 16px;
+  inline-size: 120px;
+}
+
+.tabPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-inline-size: 720px;
+  padding: 8px 24px 24px;
+}
+
+.specRow {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  border-block-end: 1px solid #eef1f6;
+  padding-block: 14px;
+}
+
+.specRow:last-child {
+  border-block-end: 0;
+}
+
+.specLabel {
+  block-size: 12px;
+  inline-size: 70%;
+}
+
+.specValue {
+  block-size: 14px;
+  inline-size: 50%;
+}
+
+@media (width < 900px) {
+  .hero,
+  .infoCards {
+    grid-template-columns: 1fr;
+  }
+
+  .mainImage {
+    min-block-size: 260px;
+  }
+
+  .specRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}

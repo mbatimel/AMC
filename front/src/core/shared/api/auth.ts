@@ -1,3 +1,5 @@
+import { parseApiErrorMessage } from './parseApiError';
+
 export type AuthCredentials = {
   email: string;
   password: string;
@@ -68,6 +70,23 @@ const parseUserId = (data: unknown): string => {
   throw new AuthApiError(500, 'Некорректный ответ сервера');
 };
 
+const localizeAuthError = (message: string): string => {
+  const normalized = message.trim().toLowerCase();
+
+  if (
+    normalized === 'invalid email or password' ||
+    normalized.includes('invalid email or password')
+  ) {
+    return 'Неверный email или пароль';
+  }
+
+  if (normalized === 'unauthorized' || normalized === 'unauthorised') {
+    return 'Неверный email или пароль';
+  }
+
+  return message;
+};
+
 const parseErrorMessage = async (response: Response): Promise<string> => {
   try {
     const data: unknown = await response.json();
@@ -83,15 +102,15 @@ const parseErrorMessage = async (response: Response): Promise<string> => {
           const field = (cause as { field?: unknown }).field;
 
           if (typeof field === 'string' && field.length > 0) {
-            return `${errorText}: ${field}`;
+            return localizeAuthError(`${errorText}: ${field}`);
           }
         }
 
-        return errorText;
+        return localizeAuthError(errorText);
       }
 
       if (typeof record.message === 'string' && record.message.length > 0) {
-        return record.message;
+        return localizeAuthError(record.message);
       }
     }
   } catch {
@@ -148,6 +167,7 @@ export const loginRequest = async ({
   email,
   password,
 }: AuthCredentials): Promise<AuthUserResponse> => {
+  // Swagger: POST /api/v1/auth/login — JSON body { email, password }
   return postAuth('/api/v1/auth/login', { email, password });
 };
 
@@ -184,33 +204,28 @@ export const changePasswordRequest = async (params: {
   oldPassword: string;
   userId: string;
 }): Promise<void> => {
-  const search = new URLSearchParams({
-    newPassword: params.newPassword,
-    oldPassword: params.oldPassword,
-  });
-  const response = await fetch(`/api/v1/auth/change-password?${search.toString()}`, {
-    headers: { 'X-User-Id': params.userId },
+  // Swagger: POST /api/v1/auth/change-password
+  // header X-User-Id; JSON body { oldPassword, newPassword }
+  const response = await fetch('/api/v1/auth/change-password', {
+    body: JSON.stringify({
+      newPassword: params.newPassword,
+      oldPassword: params.oldPassword,
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': params.userId,
+    },
     method: 'POST',
   });
 
   if (!response.ok) {
-    let message = 'Не удалось сменить пароль';
-
-    try {
-      const data: unknown = await response.json();
-
-      if (typeof data === 'object' && data !== null) {
-        const record = data as Record<string, unknown>;
-        const errorText = record.errorText ?? record.ErrorText;
-
-        if (typeof errorText === 'string' && errorText.length > 0) {
-          message = errorText;
-        }
-      }
-    } catch {
-      // ignore
+    if (response.status === 401) {
+      throw new AuthApiError(response.status, 'Неверный текущий пароль');
     }
 
-    throw new AuthApiError(response.status, message);
+    throw new AuthApiError(
+      response.status,
+      await parseApiErrorMessage(response, 'Не удалось сменить пароль'),
+    );
   }
 };

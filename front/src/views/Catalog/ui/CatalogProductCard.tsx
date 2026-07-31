@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 import type { ProductListItem } from '@/core/shared/api/products';
 
+import { IconCart, IconPriceTag } from '@/core/shared/icons';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
 import { getStockLevel } from '@/core/shared/lib/stock';
 import { getProductPath } from '@/core/shared/router/paths';
@@ -31,7 +32,9 @@ export const CatalogProductCard = ({
   const [failed, setFailed] = useState(false);
   const stockLevel = getStockLevel(product.stock_qty);
   const isOut = stockLevel === 'out';
-  const hasDiscount = product.discount_percent > 0;
+  const showDiscount =
+    product.discount_percent > 0 ||
+    (product.base_price > 0 && product.base_price > product.client_price);
 
   return (
     <article className={clsx(styles.root)}>
@@ -69,32 +72,36 @@ export const CatalogProductCard = ({
             />
           )}
         </div>
-        {hasDiscount ? (
-          <Chip className={clsx(styles.discount)} color="warning" size="sm">
-            <Chip.Label>-{Math.round(product.discount_percent)}%</Chip.Label>
-          </Chip>
+        {showDiscount && product.discount_percent > 0 ? (
+          <span className={clsx(styles.discount)}>-{Math.round(product.discount_percent)}%</span>
         ) : null}
       </div>
 
       <div className={clsx(styles.body)}>
         <p className={clsx(styles.meta)}>
-          {product.sku}
-          {product.gost ? ` • ${product.gost}` : ''}
+          {[product.sku, product.gost].filter(Boolean).join(' · ')}
         </p>
         <h3 className={clsx(styles.title)}>{product.name}</h3>
         <p className={clsx(styles.specs)}>
           {[product.material, product.size, `уп. ${product.package_qty} шт`]
             .filter(Boolean)
-            .join(' • ')}
+            .join(' · ')}
         </p>
 
         <div className={clsx(styles.priceBlock)}>
-          <span className={clsx(styles.price, hasDiscount && styles.pricePromo)}>
-            {formatPrice(product.client_price)}
-          </span>
-          {hasDiscount ? (
-            <span className={clsx(styles.oldPrice)}>{formatPrice(product.base_price)}</span>
-          ) : null}
+          <div className={clsx(styles.priceRow)}>
+            {showDiscount ? (
+              <>
+                <span className={clsx(styles.priceBadge)}>
+                  <IconPriceTag currentColor="currentColor" height={12} width={12} />
+                  {formatPrice(product.client_price)}
+                </span>
+                <span className={clsx(styles.oldPrice)}>{formatPrice(product.base_price)}</span>
+              </>
+            ) : (
+              <span className={clsx(styles.price)}>{formatPrice(product.client_price)}</span>
+            )}
+          </div>
           <span className={clsx(styles.priceHint)}>Ваша оптовая цена</span>
         </div>
 
@@ -109,7 +116,13 @@ export const CatalogProductCard = ({
             size="sm"
             variant="primary"
           >
-            {isOut ? 'Нет' : 'В корзину'}
+            {isOut ? (
+              'Нет'
+            ) : (
+              <>
+                <IconCart currentColor="currentColor" height={16} width={16} />В корзину
+              </>
+            )}
           </Button>
         </div>
       </div>

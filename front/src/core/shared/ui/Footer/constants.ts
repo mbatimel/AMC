@@ -1,4 +1,4 @@
-import { AppPath } from '@/core/shared/router/paths';
+import { AppPath, getLegalDocPath } from '@/core/shared/router/paths';
 
 export type FooterLinkItem = {
   href: string;
@@ -36,24 +36,24 @@ export const FOOTER_CATALOG_LINKS: FooterLinkItem[] = [
 export const FOOTER_CABINET_LINKS: FooterLinkItem[] = [
   { href: AppPath.Cabinet, label: 'Личный кабинет' },
   { href: AppPath.CabinetOrders, label: 'Мои заказы' },
-  { href: '#', label: 'Документы' },
-  { href: '#', label: 'Избранное' },
+  { href: AppPath.CabinetDocuments, label: 'Документы' },
+  { href: AppPath.CabinetFavorites, label: 'Избранное' },
   { href: AppPath.CabinetProfile, label: 'Профиль' },
 ];
 
 export const FOOTER_INFO_LINKS: FooterLinkItem[] = [
-  { href: '#', label: 'О компании' },
-  { href: '#', label: 'Условия работы' },
-  { href: '#', label: 'Сертификаты' },
-  { href: '#', label: 'Контакты' },
-  { href: '#', label: 'Поддержка' },
+  { href: AppPath.About, label: 'О компании' },
+  { href: AppPath.Terms, label: 'Условия работы' },
+  { href: AppPath.Certificates, label: 'Сертификаты' },
+  { href: AppPath.Contacts, label: 'Контакты' },
+  { href: AppPath.Support, label: 'Поддержка' },
 ];
 
 export const FOOTER_LEGAL_LINKS: FooterLinkItem[] = [
-  { href: '#', label: 'Оферта' },
-  { href: '#', label: 'Конфиденциальность' },
-  { href: '#', label: 'Согласие на ПД' },
-  { href: '#', label: 'Пользовательское соглашение' },
+  { href: getLegalDocPath('offer'), label: 'Оферта' },
+  { href: getLegalDocPath('privacy'), label: 'Конфиденциальность' },
+  { href: getLegalDocPath('consent'), label: 'Согласие на ПД' },
+  { href: getLegalDocPath('user-agreement'), label: 'Пользовательское соглашение' },
 ];
 
 export const FOOTER_COPYRIGHT = '© 2026, ООО ПО «Волжский инструмент». Все права защищены.';

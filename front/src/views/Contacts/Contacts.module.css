@@ -1,0 +1,72 @@
+.grid {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  gap: 12px;
+}
+
+.row {
+  display: grid;
+  align-items: start;
+  gap: 4px;
+  grid-template-columns: 180px 1fr;
+}
+
+.term {
+  color: var(--palette-dark);
+  font-size: 14px;
+}
+
+.value {
+  margin: 0;
+  font-size: 15px;
+}
+
+.value a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.value a:hover {
+  color: var(--link-hover);
+}
+
+.managers {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.manager {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--palette-ulight);
+}
+
+.managerName {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.managerRole {
+  margin: 0 0 10px;
+  color: var(--palette-dark);
+  font-size: 13px;
+}
+
+.managerContact {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.managerContact a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+@media (width <= 680px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -5,11 +5,12 @@ import clsx from 'clsx';
 import { useUnit } from 'effector-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { $authError, $isAuthPending, loginFx, sessionHydrated } from '@/core/entities/session';
 import { IconLogin } from '@/core/shared/icons/IconLogin';
 import { readFormString } from '@/core/shared/lib/readFormString';
+import { validateEmail } from '@/core/shared/lib/validateContact';
 import { AppPath } from '@/core/shared/router/paths';
 import { AuthShell } from '@/core/shared/ui/AuthShell';
 import { AuthCardHeader } from '@/core/shared/ui/AuthShell/AuthCardHeader';
@@ -18,6 +19,7 @@ import formStyles from '@/core/shared/ui/AuthShell/AuthForm.module.css';
 export const Login = (): JSX.Element => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [emailError, setEmailError] = useState<null | string>(null);
   const [authError, isPending, login, hydrate] = useUnit([
     $authError,
     $isAuthPending,
@@ -35,6 +37,13 @@ export const Login = (): JSX.Element => {
     const formData = new FormData(event.currentTarget);
     const email = readFormString(formData, 'email').trim();
     const password = readFormString(formData, 'password');
+    const nextEmailError = validateEmail(email);
+
+    setEmailError(nextEmailError);
+
+    if (nextEmailError) {
+      return;
+    }
 
     void login({ email, password })
       .then(() => {
@@ -54,10 +63,16 @@ export const Login = (): JSX.Element => {
         title="Вход в личный кабинет"
       />
       <Form className={clsx(formStyles.form)} onSubmit={handleSubmit}>
-        <TextField className={clsx(formStyles.field)} isRequired name="email" type="email">
+        <TextField
+          className={clsx(formStyles.field)}
+          isInvalid={Boolean(emailError)}
+          isRequired
+          name="email"
+          type="email"
+        >
           <Label className={clsx(formStyles.label)}>E-mail</Label>
           <Input className={clsx(formStyles.input)} fullWidth placeholder="client@company.ru" />
-          <FieldError />
+          {emailError ? <FieldError>{emailError}</FieldError> : <FieldError />}
         </TextField>
         <TextField className={clsx(formStyles.field)} isRequired name="password" type="password">
           <Label className={clsx(formStyles.label)}>Пароль</Label>

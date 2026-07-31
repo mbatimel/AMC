@@ -1,54 +1,28 @@
 'use client';
 
-import clsx from 'clsx';
-import { useUnit } from 'effector-react';
-import { useEffect } from 'react';
+import { Toast, toast } from '@heroui/react';
+import { createEffect, sample } from 'effector';
 
-import { $toasts, toastDismissed } from './model';
-import styles from './Toast.module.css';
+import { toastShown, type ToastTone } from './model';
 
-export const ToastViewport = (): JSX.Element | null => {
-  const [toasts, dismiss] = useUnit([$toasts, toastDismissed]);
+const presentToastFx = createEffect(
+  ({ message, tone }: { message: string; tone?: ToastTone }): void => {
+    if (tone === 'error') {
+      toast.danger(message);
 
-  useEffect(() => {
-    if (toasts.length === 0) {
       return;
     }
 
-    const timers = toasts.map((toast) =>
-      window.setTimeout(() => {
-        dismiss(toast.id);
-      }, 3200),
-    );
+    toast.success(message);
+  },
+);
 
-    return () => {
-      timers.forEach((timer) => window.clearTimeout(timer));
-    };
-  }, [dismiss, toasts]);
+sample({
+  clock: toastShown,
+  target: presentToastFx,
+});
 
-  if (toasts.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className={clsx(styles.viewport)}>
-      {toasts.map((toast) => (
-        <div
-          className={clsx(styles.toast, toast.tone === 'error' && styles.toastError)}
-          key={toast.id}
-          role="status"
-        >
-          <span>{toast.message}</span>
-          <button
-            aria-label="Закрыть"
-            className={clsx(styles.close)}
-            onClick={() => dismiss(toast.id)}
-            type="button"
-          >
-            ×
-          </button>
-        </div>
-      ))}
-    </div>
-  );
+/** Провайдер HeroUI Toast; показ идёт через `toastShown` → `presentToastFx`. */
+export const ToastViewport = (): JSX.Element => {
+  return <Toast.Provider placement="bottom end" />;
 };

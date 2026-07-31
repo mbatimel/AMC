@@ -50,45 +50,63 @@ export const formatOrderDate = (value: string): string => {
   }).format(date);
 };
 
-export const statusChipColor = (
+export const formatOrderDateTime = (value: string): string => {
+  if (!value) {
+    return '—';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+};
+
+export const statusTone = (
   status: string,
-): 'accent' | 'danger' | 'default' | 'success' | 'warning' => {
+): 'cancelled' | 'completed' | 'default' | 'new' | 'processing' | 'shipped' => {
   if (status === 'cancelled') {
-    return 'danger';
+    return 'cancelled';
   }
 
   if (status === 'completed' || status === 'delivered') {
-    return 'default';
+    return 'completed';
   }
 
   if (status === 'processing') {
-    return 'warning';
+    return 'processing';
   }
 
   if (status === 'shipped') {
-    return 'success';
+    return 'shipped';
   }
 
   if (status === 'new' || status === 'confirmed') {
-    return 'accent';
+    return 'new';
   }
 
   return 'default';
 };
 
-export const paymentChipColor = (
-  status: string,
-): 'accent' | 'danger' | 'default' | 'success' | 'warning' => {
+export const paymentTone = (status: string): 'default' | 'paid' | 'pending' | 'unpaid' => {
   if (status === 'paid') {
-    return 'success';
+    return 'paid';
   }
 
   if (status === 'unpaid' || status === 'not_paid') {
-    return 'danger';
+    return 'unpaid';
   }
 
   if (status === 'partially_paid' || status === 'pending') {
-    return 'warning';
+    return 'pending';
   }
 
   return 'default';

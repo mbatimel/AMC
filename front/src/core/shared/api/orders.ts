@@ -11,6 +11,7 @@ export type CityItem = {
 };
 
 export type ListOrdersParams = {
+  /** Пустой — бэк резолвит контрагента по X-User-Id. */
   clientID?: string;
   limit?: number;
   offset?: number;
@@ -35,6 +36,7 @@ export type Order = {
   discount_total: number;
   documents: OrderDocument[];
   email: string;
+  history: OrderHistoryItem[];
   id: string;
   items: OrderItem[];
   number: string;
@@ -55,6 +57,16 @@ export type OrderDocument = {
   order_id: string;
   type: string;
   url: string;
+};
+
+export type OrderHistoryItem = {
+  changed_by: string;
+  comment: string;
+  created_at: string;
+  id: string;
+  order_id: string;
+  payment_status: string;
+  status: string;
 };
 
 export type OrderItem = {
@@ -228,6 +240,29 @@ const parseOrderDocument = (value: unknown): null | OrderDocument => {
   };
 };
 
+const parseOrderHistoryItem = (value: unknown): null | OrderHistoryItem => {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const id = asString(record.id);
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    changed_by: asString(record.changed_by),
+    comment: asString(record.comment),
+    created_at: asString(record.created_at),
+    id,
+    order_id: asString(record.order_id),
+    payment_status: asString(record.payment_status),
+    status: asString(record.status),
+  };
+};
+
 const parseOrder = (value: unknown): null | Order => {
   if (typeof value !== 'object' || value === null) {
     return null;
@@ -256,6 +291,14 @@ const parseOrder = (value: unknown): null | Order => {
       })
     : [];
 
+  const history = Array.isArray(record.history)
+    ? record.history.flatMap((item) => {
+        const parsed = parseOrderHistoryItem(item);
+
+        return parsed ? [parsed] : [];
+      })
+    : [];
+
   return {
     client_id: asString(record.client_id),
     comment: asString(record.comment),
@@ -266,6 +309,7 @@ const parseOrder = (value: unknown): null | Order => {
     discount_total: asNumber(record.discount_total),
     documents,
     email: asString(record.email),
+    history,
     id,
     items,
     number: asString(record.number),
@@ -292,8 +336,10 @@ export const listOrdersRequest = async ({
     sort: params.sort,
     status: params.status,
   });
+  // Со слэшем: nginx location `/api/v1/orders/`; без слэша — 301 на http://… → CORS
+  // (браузер ещё и кэширует 301 на GET).
   const response = await fetchWithNetworkFallback(
-    `/api/v1/orders${query}`,
+    `/api/v1/orders/${query}`,
     {
       headers: { 'X-User-Id': userId },
     },
@@ -336,6 +382,7 @@ export const listOrdersRequest = async ({
 };
 
 export type CreateOrderPayload = {
+  /** Пустой — бэк резолвит контрагента по X-User-Id. */
   clientID?: string;
   comment?: string;
   contactName: string;
@@ -359,8 +406,9 @@ export const createOrderRequest = async ({
     email: params.email,
     phone: params.phone,
   });
+  // Со слэшем: nginx location `/api/v1/orders/`; без слэша — 301 на http://… → CORS.
   const response = await fetchWithNetworkFallback(
-    `/api/v1/orders${query}`,
+    `/api/v1/orders/${query}`,
     {
       headers: { 'X-User-Id': userId },
       method: 'POST',
@@ -387,6 +435,51 @@ export const createOrderRequest = async ({
 
   if (!order) {
     throw new OrdersApiError(500, 'Некорректный ответ создания заказа');
+  }
+
+  return order;
+};
+
+export type GetOrderParams = {
+  /** Пустой — бэк резолвит контрагента по X-User-Id. */
+  clientID?: string;
+  orderID: string;
+  userId: string;
+};
+
+export const getOrderRequest = async ({
+  clientID,
+  orderID,
+  userId,
+}: GetOrderParams): Promise<Order> => {
+  const query = omitEmptyParams({ clientID, orderID });
+  const response = await fetchWithNetworkFallback(
+    `/api/v1/orders/id${query}`,
+    {
+      headers: { 'X-User-Id': userId },
+    },
+    'Не удалось загрузить заказ',
+  );
+
+  if (!response.ok) {
+    throw new OrdersApiError(
+      response.status,
+      await parseApiErrorMessage(response, 'Не удалось загрузить заказ'),
+    );
+  }
+
+  const record = assertApiSuccess(await response.json(), 'Некорректный ответ заказа');
+  const payload = record.data;
+
+  if (typeof payload !== 'object' || payload === null) {
+    throw new OrdersApiError(500, 'Некорректный ответ заказа');
+  }
+
+  const data = payload as Record<string, unknown>;
+  const order = parseOrder(data.order ?? data);
+
+  if (!order) {
+    throw new OrdersApiError(500, 'Некорректный ответ заказа');
   }
 
   return order;

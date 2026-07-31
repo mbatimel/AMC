@@ -1,6 +1,6 @@
 'use client';
 
-import { Alert, Button, Description, Modal, useOverlayState } from '@heroui/react';
+import { Button, Modal, useOverlayState } from '@heroui/react';
 import clsx from 'clsx';
 import { useRouter } from 'next/navigation';
 
@@ -36,24 +36,24 @@ export const CheckoutSuccessModal = ({
     },
   });
 
+  /** Не закрываем модалку до ухода со страницы — иначе пустая корзина редиректит на /cart. */
+  const leaveTo = (path: string): void => {
+    router.push(path);
+  };
+
   return (
     <Modal state={state}>
       <Modal.Backdrop>
-        <Modal.Container className={clsx(styles.successDialog)} size="md">
+        <Modal.Container className={clsx(styles.successDialog)} size="lg">
           <Modal.Dialog>
             <Modal.Header>
               <Modal.Heading>Заказ успешно оформлен</Modal.Heading>
               <Modal.CloseTrigger aria-label="Закрыть" />
             </Modal.Header>
             <Modal.Body className={clsx(styles.successBody)}>
-              <Alert status="success">
-                <Alert.Indicator />
-                <Alert.Content>
-                  <Alert.Description>
-                    Заказ <strong>{order?.number ?? '—'}</strong> создан и передан в обработку
-                  </Alert.Description>
-                </Alert.Content>
-              </Alert>
+              <p className={clsx(styles.successBanner)} role="status">
+                Заказ <strong>{order?.number ?? '—'}</strong> создан и передан в обработку
+              </p>
 
               {order ? (
                 <dl className={clsx(styles.successMeta)}>
@@ -63,30 +63,28 @@ export const CheckoutSuccessModal = ({
                   </div>
                   {order.deliveryType ? (
                     <div>
-                      <dt>Доставка</dt>
+                      <dt>Способ доставки</dt>
                       <dd>{order.deliveryType}</dd>
                     </div>
                   ) : null}
                 </dl>
               ) : null}
 
-              <Description>Счёт и документы появятся в личном кабинете и на email.</Description>
+              <p className={clsx(styles.successInfo)}>
+                После подтверждения в течение нескольких минут вы получите счёт в ЛК и по e-mail.
+              </p>
             </Modal.Body>
             <Modal.Footer className={clsx(styles.successFooter)}>
               <Button
-                onPress={() => {
-                  onClose();
-                  router.push(AppPath.CabinetOrders);
-                }}
+                className={clsx(styles.successSecondary)}
+                onPress={() => leaveTo(AppPath.CabinetOrders)}
                 variant="outline"
               >
                 Перейти к заказам
               </Button>
               <Button
-                onPress={() => {
-                  onClose();
-                  router.push(AppPath.Catalog);
-                }}
+                className={clsx(styles.successPrimary)}
+                onPress={() => leaveTo(AppPath.Catalog)}
                 variant="primary"
               >
                 Продолжить покупки

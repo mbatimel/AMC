@@ -50,13 +50,13 @@ export const HEADER_ORDERS_HREF = AppPath.CabinetOrders;
 export const HEADER_NAV_ITEMS: HeaderMenuItem[] = [
   { href: AppPath.Home, icon: IconHome, label: 'Главная' },
   { href: AppPath.Catalog, icon: IconCatalog, label: 'Каталог' },
-  { href: '#', icon: IconBrands, label: 'Бренды' },
-  { href: '#', icon: IconAbout, label: 'О компании' },
-  { href: '#', icon: IconTerms, label: 'Условия работы' },
-  { href: '#', icon: IconPromotions, label: 'Акции' },
-  { href: '#', icon: IconCertificates, label: 'Сертификаты' },
-  { href: '#', icon: IconContacts, label: 'Контакты' },
-  { href: '#', icon: IconSupport, label: 'Поддержка' },
+  { href: AppPath.Brands, icon: IconBrands, label: 'Бренды' },
+  { href: AppPath.About, icon: IconAbout, label: 'О компании' },
+  { href: AppPath.Terms, icon: IconTerms, label: 'Условия работы' },
+  { href: AppPath.Promo, icon: IconPromotions, label: 'Акции' },
+  { href: AppPath.Certificates, icon: IconCertificates, label: 'Сертификаты' },
+  { href: AppPath.Contacts, icon: IconContacts, label: 'Контакты' },
+  { href: AppPath.Support, icon: IconSupport, label: 'Поддержка' },
 ];
 
 export const HEADER_CABINET_ITEMS: HeaderMenuItem[] = [

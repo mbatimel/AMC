@@ -7,7 +7,6 @@ import { Suspense } from 'react';
 
 import { AppPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
-import { ToastViewport } from '@/core/shared/ui/Toast';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
 import styles from './Catalog.module.css';
@@ -20,6 +19,7 @@ import { CatalogCategories } from './ui/CatalogCategories';
 import { CatalogEmptyState } from './ui/CatalogEmptyState';
 import { CatalogFiltersPanel } from './ui/CatalogFilters';
 import { CatalogSearchSection } from './ui/CatalogSearchSection';
+import { CatalogSkeleton } from './ui/CatalogSkeleton';
 import { CatalogToolbar } from './ui/CatalogToolbar';
 
 const is1cUnavailable =
@@ -112,7 +112,7 @@ const CatalogContent = (): JSX.Element => {
               onReset={resetFilters}
             />
 
-            {isPending ? <p className={clsx(styles.status)}>Загрузка каталога…</p> : null}
+            {isPending ? <CatalogSkeleton view={filters.view} /> : null}
             {error ? <p className={clsx(styles.error)}>{error}</p> : null}
 
             {showEmpty ? <CatalogEmptyState onReset={resetAll} /> : null}
@@ -156,7 +156,6 @@ const CatalogContent = (): JSX.Element => {
           </div>
         </div>
       </div>
-      <ToastViewport />
     </div>
   );
 };
@@ -164,7 +163,15 @@ const CatalogContent = (): JSX.Element => {
 export const Catalog = (): JSX.Element => {
   return (
     <Page>
-      <Suspense fallback={<div className={clsx(styles.status)}>Загрузка каталога…</div>}>
+      <Suspense
+        fallback={
+          <div className={clsx(styles.root)}>
+            <div className={clsx(styles.container)}>
+              <CatalogSkeleton view="table" />
+            </div>
+          </div>
+        }
+      >
         <CatalogContent />
       </Suspense>
     </Page>

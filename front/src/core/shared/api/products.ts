@@ -312,7 +312,7 @@ export const getProductRequest = async (productId: string): Promise<Product> => 
 };
 
 export const listCategoriesRequest = async (): Promise<Category[]> => {
-  const response = await fetch('/api/v1/categories?limit=200&offset=0');
+  const response = await fetch('/api/v1/categories?limit=100&offset=0');
 
   if (!response.ok) {
     throw new ProductsApiError(
@@ -345,7 +345,7 @@ export const listCategoriesRequest = async (): Promise<Category[]> => {
 };
 
 export const listBrandsRequest = async (): Promise<Brand[]> => {
-  const response = await fetch('/api/v1/brands?limit=200&offset=0');
+  const response = await fetch('/api/v1/brands?limit=100&offset=0');
 
   if (!response.ok) {
     throw new ProductsApiError(
@@ -374,4 +374,106 @@ export const listBrandsRequest = async (): Promise<Brand[]> => {
     },
     'Не удалось загрузить бренды',
   );
+};
+
+/* ------------------------------------------------------------------ *
+ * Админские операции над каталогом (ProductsAPI, требуют X-User-Id)
+ * ------------------------------------------------------------------ */
+
+export type ProductWritePayload = {
+  basePrice: number;
+  brandID?: string;
+  categoryID?: string;
+  clientPrice: number;
+  description: string;
+  discountPercent: number;
+  gost: string;
+  images: { alt?: string; is_primary?: boolean; sort_order?: number; url: string }[];
+  isPublished: boolean;
+  material: string;
+  name: string;
+  packageQty: number;
+  size: string;
+  sku: string;
+  stockQty: number;
+};
+
+const productWriteBody = (payload: ProductWritePayload): Record<string, unknown> => ({
+  basePrice: payload.basePrice,
+  brandID: payload.brandID || undefined,
+  categoryID: payload.categoryID || undefined,
+  clientPrice: payload.clientPrice,
+  description: payload.description,
+  discountPercent: payload.discountPercent,
+  gost: payload.gost,
+  images: payload.images,
+  isPublished: payload.isPublished,
+  material: payload.material,
+  name: payload.name,
+  packageQty: payload.packageQty,
+  size: payload.size,
+  sku: payload.sku,
+  stockQty: payload.stockQty,
+});
+
+const adminHeaders = (userId: string): HeadersInit => ({
+  'Content-Type': 'application/json',
+  'X-User-Id': userId,
+});
+
+export const createProductRequest = async (
+  userId: string,
+  payload: ProductWritePayload,
+): Promise<void> => {
+  const response = await fetch('/api/v1/products', {
+    body: JSON.stringify(productWriteBody(payload)),
+    headers: adminHeaders(userId),
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new ProductsApiError(
+      response.status,
+      await parseApiErrorMessage(response, 'Не удалось создать товар'),
+    );
+  }
+
+  assertApiSuccess(await response.json(), 'Не удалось создать товар');
+};
+
+export const updateProductRequest = async (
+  userId: string,
+  productId: string,
+  payload: ProductWritePayload,
+): Promise<void> => {
+  const response = await fetch(`/api/v1/products/${productId}`, {
+    body: JSON.stringify(productWriteBody(payload)),
+    headers: adminHeaders(userId),
+    method: 'PATCH',
+  });
+
+  if (!response.ok) {
+    throw new ProductsApiError(
+      response.status,
+      await parseApiErrorMessage(response, 'Не удалось сохранить товар'),
+    );
+  }
+
+  assertApiSuccess(await response.json(), 'Не удалось сохранить товар');
+};
+
+export const deleteProductRequest = async (userId: string, productId: string): Promise<void> => {
+  const response = await fetch(`/api/v1/products/${productId}`, {
+    headers: { 'X-User-Id': userId },
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new ProductsApiError(
+      response.status,
+      await parseApiErrorMessage(response, 'Не удалось удалить товар'),
+    );
+  }
+
+  assertApiSuccess(await response.json(), 'Не удалось удалить товар');
 };

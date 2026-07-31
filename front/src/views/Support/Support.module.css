@@ -1,0 +1,131 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.row {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  color: var(--palette-black);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.input,
+.select,
+.textarea {
+  inline-size: 100%;
+}
+
+.textarea {
+  min-block-size: 140px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+  resize: vertical;
+}
+
+.error {
+  margin: 0;
+  color: var(--alert);
+  font-size: 14px;
+}
+
+.success {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 18px;
+  border: 1px solid var(--success-alt);
+  border-radius: 12px;
+  background: var(--success-bg);
+  gap: 8px;
+}
+
+.successTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.successText {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.requests {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  gap: 12px;
+  list-style: none;
+}
+
+.request {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.requestHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.requestSubject {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.requestStatus {
+  padding-block: 2px;
+  padding-inline: 10px;
+  border-radius: 999px;
+  background: var(--palette-ulight);
+  color: var(--palette-dark);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.requestMeta {
+  margin: 6px 0 0;
+  color: var(--palette-dark);
+  font-size: 13px;
+}
+
+.requestText {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.requestAnswer {
+  margin: 8px 0 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--highlight-bg);
+  font-size: 14px;
+}
+
+@media (width <= 680px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

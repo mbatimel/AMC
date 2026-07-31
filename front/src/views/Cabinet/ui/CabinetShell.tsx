@@ -7,7 +7,6 @@ import { useEffect } from 'react';
 
 import { AppPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
-import { ToastViewport } from '@/core/shared/ui/Toast';
 
 import styles from '../Cabinet.module.css';
 import { cabinetOrdersOpened } from '../model/orders';
@@ -40,7 +39,6 @@ export const CabinetShell = ({ children }: CabinetShellProps): JSX.Element => {
             <div className={clsx(styles.content)}>{children}</div>
           </div>
         </div>
-        <ToastViewport />
       </div>
     </Page>
   );

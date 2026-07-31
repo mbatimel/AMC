@@ -1,3 +1,5 @@
+'use client';
+
 import clsx from 'clsx';
 
 import { IconSearch } from '@/core/shared/icons';
@@ -6,6 +8,8 @@ import type { UseHeaderSearchResult } from '../../model/types';
 
 import desktopStyles from '../desktop/HeaderDesktop.module.css';
 import mobileStyles from '../mobile/HeaderMobile.module.css';
+import { HeaderSearchSuggest } from './HeaderSearchSuggest';
+import suggestStyles from './HeaderSearchSuggest.module.css';
 
 type HeaderSearchFormProps = {
   search: UseHeaderSearchResult;
@@ -26,6 +30,7 @@ export const HeaderSearchForm = ({ search, variant }: HeaderSearchFormProps): JS
   const isIconOnlySubmit = variant === 'mobile' || variant === 'drawer';
   const formClassName = clsx(
     styles.search,
+    suggestStyles.searchAnchor,
     variant === 'mobile' && mobileStyles.searchMobile,
     variant === 'drawer' && mobileStyles.searchDrawer,
   );
@@ -38,7 +43,9 @@ export const HeaderSearchForm = ({ search, variant }: HeaderSearchFormProps): JS
       <input
         className={clsx(styles.searchInput)}
         name="query"
+        onBlur={() => search.onSuggestClose()}
         onChange={(event) => search.onQueryChange(event.target.value)}
+        onFocus={() => search.onSuggestOpen()}
         placeholder={placeholder}
         type="search"
         value={search.query}
@@ -51,6 +58,8 @@ export const HeaderSearchForm = ({ search, variant }: HeaderSearchFormProps): JS
         <IconSearch height={16} width={16} />
         {!isIconOnlySubmit && <span>Найти</span>}
       </button>
+
+      <HeaderSearchSuggest search={search} />
     </form>
   );
 };

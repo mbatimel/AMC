@@ -2,17 +2,18 @@
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--palette-white);
-  padding-block: 16px;
+  padding-block: 18px;
   padding-inline: 12px;
 }
 
 .title {
   margin: 0;
-  margin-block-end: 12px;
-  color: var(--palette-dark);
+  margin-block-end: 14px;
+  padding-inline: 10px;
+  color: #8b93a7;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -24,48 +25,89 @@
 
 .row {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  align-items: stretch;
 }
 
 .item {
   display: flex;
   flex: 1;
-  align-items: center;
-  gap: 8px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 400;
+  align-items: flex-start;
   justify-content: space-between;
-  padding-block: 10px;
-  padding-inline: 12px;
+  gap: 12px;
+  inline-size: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #121a33;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  padding-block: 12px;
+  padding-inline: 10px;
   text-align: start;
 }
 
+.item:hover {
+  background: #f4f6f9;
+}
+
 .itemActive {
-  background: #fde8e8;
+  background: #eef2f7;
   color: var(--header-brand);
-  font-weight: 600;
 }
 
-.count {
-  border-radius: 999px;
-  background: var(--palette-ulight);
-  color: var(--palette-dark);
-  font-size: 12px;
-  font-weight: 600;
-  padding-block: 2px;
-  padding-inline: 8px;
+.itemActive:hover {
+  background: #eef2f7;
 }
 
-.chevron,
-.chevronSpacer {
-  inline-size: 28px;
+.itemLeading {
+  display: flex;
+  min-inline-size: 0;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.itemLabel {
+  min-inline-size: 0;
+}
+
+.allIcon {
   flex-shrink: 0;
-  min-inline-size: 28px;
+  margin-block-start: 1px;
+  color: #c0c6d4;
+}
+
+.itemActive .allIcon {
+  color: var(--header-brand);
 }
 
 .chevron {
-  color: var(--palette-dark);
-  font-size: 12px;
+  flex-shrink: 0;
+  margin-block-start: 3px;
+  color: #c0c6d4;
+  transition: transform 0.15s ease;
+}
+
+.chevronExpanded {
+  transform: rotate(90deg);
+}
+
+.itemActive .chevron {
+  color: var(--header-brand);
+}
+
+.count {
+  flex-shrink: 0;
+  color: #9aa3b5;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  padding-block-start: 1px;
+}
+
+.itemActive .count {
+  color: #9aa3b5;
 }

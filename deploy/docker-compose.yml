@@ -136,6 +136,13 @@ services:
     environment:
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
+      # ИИ-помощник: пустой ключ -> работает поиск по каталогу и сценарии
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-v4-flash}
+      # Контент, баннеры, заявки, обращения и отзывы (см. front/src/app/portal-api)
+      PORTAL_DATA_FILE: /data/portal.json
+    volumes:
+      - front_portal_data:/data
     depends_on:
       - access
     networks: [amc_net]
@@ -184,6 +191,7 @@ services:
 
 volumes:
   postgres_data:
+  front_portal_data:
 
 networks:
   amc_net:

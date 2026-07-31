@@ -151,13 +151,9 @@
 .table th,
 .table td {
   border-block-end: 1px solid #eef1f6;
-  padding: 16px;
+  padding: 18px 16px;
   text-align: start;
   vertical-align: middle;
-}
-
-.table tbody tr:last-child td {
-  border-block-end: 0;
 }
 
 .table th {
@@ -168,20 +164,62 @@
   text-transform: uppercase;
 }
 
+.table th:nth-child(2),
+.table th:nth-child(3),
+.table th:nth-child(4),
+.table td:nth-child(2),
+.table td:nth-child(3),
+.table td:nth-child(4) {
+  text-align: end;
+}
+
+.table th:nth-child(3),
+.table td:nth-child(3) {
+  text-align: center;
+}
+
+.table th:last-child,
+.table td:last-child {
+  inline-size: 48px;
+  padding-inline: 8px;
+  text-align: center;
+}
+
+.table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
 .productCell {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-inline-size: 220px;
+  gap: 14px;
+  min-inline-size: 240px;
 }
 
 .thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  border: 1px solid #eef1f6;
-  border-radius: 8px;
-  background: #f3f5f9;
-  block-size: 52px;
-  inline-size: 52px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #eef3f8;
+  block-size: 56px;
+  inline-size: 56px;
+}
+
+.thumbFallback {
+  gap: 0;
+  background: #eef3f8;
+}
+
+.thumbFallback :global(svg) {
+  block-size: 32px;
+  inline-size: 32px;
+}
+
+.thumbFallback :global(span) {
+  display: none;
 }
 
 .productInfo {
@@ -210,8 +248,9 @@
 }
 
 .priceCell {
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 2px;
 }
 
@@ -227,6 +266,23 @@
   font-size: 12px;
 }
 
+/* Как поле qty в Figma, без кнопок ± */
+.qtyBox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border, #e6e9f0);
+  border-radius: 8px;
+  background: #fff;
+  block-size: 36px;
+  color: var(--palette-black);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-inline-size: 56px;
+  padding-inline: 12px;
+}
+
 .sum {
   color: var(--palette-black);
   font-size: 14px;
@@ -234,11 +290,31 @@
   white-space: nowrap;
 }
 
-.remove {
-  color: #98a0b3;
+.removeCell {
+  vertical-align: middle;
 }
 
-.remove:hover {
+.remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  block-size: 32px;
+  color: #98a0b3;
+  cursor: pointer;
+  inline-size: 32px;
+  padding: 0;
+}
+
+.remove:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.remove:hover:not(:disabled) {
+  background: #f3f5f9;
   color: var(--palette-black);
 }
 
@@ -246,15 +322,16 @@
   border: 1px solid #e6e9f0;
   border-radius: 12px;
   background: #fff;
-  box-shadow: 0 10px 30px rgb(15 23 42 / 6%);
-  padding: 20px;
+  box-shadow: 0 8px 28px rgb(15 23 42 / 5%);
+  padding: 22px 20px 20px;
 }
 
 .summaryTitle {
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   color: var(--palette-black);
   font-size: 18px;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .summaryRow,
@@ -264,7 +341,7 @@
   justify-content: space-between;
   gap: 12px;
   margin-block-end: 10px;
-  color: var(--palette-dark);
+  color: #5b6478;
   font-size: 14px;
 }
 
@@ -275,12 +352,12 @@
 
 .discount,
 .discount strong {
-  color: var(--success);
+  color: #1f7a45;
 }
 
 .totalRow {
-  margin-block: 6px 16px;
-  padding-block-start: 12px;
+  margin-block: 8px 16px;
+  padding-block-start: 14px;
   border-block-start: 1px solid #eef1f6;
   color: var(--palette-black);
   font-size: 15px;
@@ -288,16 +365,17 @@
 }
 
 .totalRow strong {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .tips {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-block-end: 16px;
+  margin-block-end: 18px;
 }
 
 .tip {
@@ -323,8 +401,9 @@
   border-radius: 10px;
   background: var(--header-brand);
   color: #fff;
+  font-size: 15px;
   font-weight: 700;
-  min-block-size: 44px;
+  min-block-size: 48px;
   padding-inline: 16px;
 }
 

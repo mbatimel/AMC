@@ -1,0 +1,36 @@
+.steps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding-inline-start: 20px;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestion {
+  padding-block: 8px;
+  padding-inline: 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--palette-white);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.suggestion:hover {
+  border-color: var(--header-brand);
+  color: var(--header-brand);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}

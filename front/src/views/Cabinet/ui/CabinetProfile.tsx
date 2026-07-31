@@ -18,81 +18,109 @@ import {
 } from '@heroui/react';
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 import type { Profile } from '@/core/shared/api/profile';
 
+import { sessionEnded } from '@/core/entities/session';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
+import { AppPath } from '@/core/shared/router/paths';
 
 import styles from '../Cabinet.module.css';
+import { type ProfileFormSavePayload, usePasswordForm, useProfileForm } from '../lib/useProfile';
 import {
   $clientDetails,
   $clients,
   $conditions,
   $isProfilePending,
+  $passwordChangeVersion,
   $profile,
   $profileError,
+  changePasswordFx,
   clientActivateRequested,
   passwordChangeRequested,
   profileSaveRequested,
 } from '../model/profile';
 
 type ProfileUserFormProps = {
-  onSave: (payload: {
-    email: string;
-    firstName: string;
-    lastName: string;
-    middleName: string;
-    phone: string;
-  }) => void;
+  onSave: (payload: ProfileFormSavePayload) => void;
   pending: boolean;
   profile: Profile;
 };
 
 const ProfileUserForm = ({ onSave, pending, profile }: ProfileUserFormProps): JSX.Element => {
-  const [firstName, setFirstName] = useState(profile.first_name);
-  const [lastName, setLastName] = useState(profile.last_name);
-  const [middleName, setMiddleName] = useState(profile.middle_name);
-  const [email, setEmail] = useState(profile.email);
-  const [phone, setPhone] = useState(profile.phone);
+  const form = useProfileForm({ onSave, profile });
 
   return (
-    <Form
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSave({
-          email: email.trim(),
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          middleName: middleName.trim(),
-          phone: phone.trim(),
-        });
-      }}
-    >
+    <Form onSubmit={form.handleSubmit}>
       <div className={clsx(styles.formGrid)}>
-        <TextField isRequired name="lastName" onChange={setLastName} value={lastName}>
-          <Label>Фамилия</Label>
-          <Input />
+        <TextField
+          className={clsx(styles.formField)}
+          isRequired
+          name="firstName"
+          onChange={form.setFirstName}
+          validate={form.validateFirstName}
+          value={form.firstName}
+        >
+          <Label className={clsx(styles.formLabel)}>Имя</Label>
+          <Input className={clsx(styles.formInput)} fullWidth placeholder="Иван" />
+          <FieldError />
         </TextField>
-        <TextField isRequired name="firstName" onChange={setFirstName} value={firstName}>
-          <Label>Имя</Label>
-          <Input />
+        <TextField
+          className={clsx(styles.formField)}
+          isRequired
+          name="lastName"
+          onChange={form.setLastName}
+          validate={form.validateLastName}
+          value={form.lastName}
+        >
+          <Label className={clsx(styles.formLabel)}>Фамилия</Label>
+          <Input className={clsx(styles.formInput)} fullWidth placeholder="Иванов" />
+          <FieldError />
         </TextField>
-        <TextField name="middleName" onChange={setMiddleName} value={middleName}>
-          <Label>Отчество</Label>
-          <Input />
+        <TextField
+          className={clsx(styles.formField)}
+          name="middleName"
+          onChange={form.setMiddleName}
+          value={form.middleName}
+        >
+          <Label className={clsx(styles.formLabel)}>Отчество</Label>
+          <Input className={clsx(styles.formInput)} fullWidth placeholder="Иванович" />
         </TextField>
-        <TextField isRequired name="phone" onChange={setPhone} value={phone}>
-          <Label>Телефон</Label>
-          <Input type="tel" />
+        <TextField
+          className={clsx(styles.formField)}
+          isRequired
+          name="phone"
+          onChange={form.setPhone}
+          validate={form.validatePhoneField}
+          value={form.phone}
+        >
+          <Label className={clsx(styles.formLabel)}>Телефон</Label>
+          <Input
+            className={clsx(styles.formInput)}
+            fullWidth
+            placeholder="+7 999 123 45 67"
+            type="tel"
+          />
+          <FieldError />
         </TextField>
-        <TextField isRequired name="email" onChange={setEmail} value={email}>
-          <Label>Email</Label>
-          <Input type="email" />
+        <TextField
+          className={clsx(styles.formField)}
+          isRequired
+          name="email"
+          onChange={form.setEmail}
+          type="email"
+          validate={form.validateEmailField}
+          value={form.email}
+        >
+          <Label className={clsx(styles.formLabel)}>Email</Label>
+          <Input className={clsx(styles.formInput)} fullWidth placeholder="client@company.ru" />
+          <FieldError />
         </TextField>
       </div>
       <div className={clsx(styles.formActions)}>
-        <Button isDisabled={pending} type="submit" variant="primary">
+        <Button className={clsx(styles.formSubmit)} isDisabled={pending} type="submit">
           Сохранить
         </Button>
       </div>
@@ -107,57 +135,64 @@ const PasswordForm = ({
   onSubmit: (payload: { newPassword: string; oldPassword: string }) => void;
   pending: boolean;
 }): JSX.Element => {
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState<null | string>(null);
+  const form = usePasswordForm({ onSubmit });
+  const passwordChangeVersion = useUnit($passwordChangeVersion);
+
+  useEffect(() => {
+    if (passwordChangeVersion === 0) {
+      return;
+    }
+
+    form.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- только после успешного ответа API
+  }, [passwordChangeVersion]);
 
   return (
-    <Form
-      onSubmit={(event) => {
-        event.preventDefault();
-
-        if (newPassword !== confirmPassword) {
-          setPasswordError('Пароли не совпадают');
-
-          return;
-        }
-
-        if (newPassword.length < 6) {
-          setPasswordError('Минимум 6 символов');
-
-          return;
-        }
-
-        setPasswordError(null);
-        onSubmit({ newPassword, oldPassword });
-        setOldPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      }}
-    >
+    <Form onSubmit={form.handleSubmit}>
       <div className={clsx(styles.formGrid)}>
-        <TextField isRequired name="oldPassword" onChange={setOldPassword} value={oldPassword}>
-          <Label>Текущий пароль</Label>
-          <Input type="password" />
-        </TextField>
-        <TextField isRequired name="newPassword" onChange={setNewPassword} value={newPassword}>
-          <Label>Новый пароль</Label>
-          <Input type="password" />
+        <TextField
+          className={clsx(styles.formField)}
+          isRequired
+          name="oldPassword"
+          onChange={form.setOldPassword}
+          type="password"
+          validate={form.validateOldPassword}
+          value={form.oldPassword}
+        >
+          <Label className={clsx(styles.formLabel)}>Текущий пароль</Label>
+          <Input className={clsx(styles.formInput)} fullWidth placeholder="••••••••" />
+          <FieldError />
         </TextField>
         <TextField
+          className={clsx(styles.formField)}
+          isRequired
+          minLength={6}
+          name="newPassword"
+          onChange={form.setNewPassword}
+          type="password"
+          validate={form.validateNewPassword}
+          value={form.newPassword}
+        >
+          <Label className={clsx(styles.formLabel)}>Новый пароль</Label>
+          <Input className={clsx(styles.formInput)} fullWidth placeholder="••••••••" />
+          <FieldError />
+        </TextField>
+        <TextField
+          className={clsx(styles.formField)}
           isRequired
           name="confirmPassword"
-          onChange={setConfirmPassword}
-          value={confirmPassword}
+          onChange={form.setConfirmPassword}
+          type="password"
+          validate={form.validateConfirmPassword}
+          value={form.confirmPassword}
         >
-          <Label>Повтор нового пароля</Label>
-          <Input type="password" />
-          {passwordError ? <FieldError>{passwordError}</FieldError> : null}
+          <Label className={clsx(styles.formLabel)}>Повтор нового пароля</Label>
+          <Input className={clsx(styles.formInput)} fullWidth placeholder="••••••••" />
+          <FieldError />
         </TextField>
       </div>
       <div className={clsx(styles.formActions)}>
-        <Button isDisabled={pending} type="submit" variant="secondary">
+        <Button className={clsx(styles.formSubmitSecondary)} isDisabled={pending} type="submit">
           Изменить пароль
         </Button>
       </div>
@@ -182,29 +217,39 @@ const ConditionCard = ({ label, value }: ConditionCardProps): JSX.Element => {
 };
 
 export const CabinetProfile = (): JSX.Element => {
+  const router = useRouter();
   const [
     profile,
     clients,
     details,
     conditions,
     pending,
+    isPasswordPending,
     error,
     saveProfile,
     activateClient,
     changePassword,
+    logout,
   ] = useUnit([
     $profile,
     $clients,
     $clientDetails,
     $conditions,
     $isProfilePending,
+    changePasswordFx.pending,
     $profileError,
     profileSaveRequested,
     clientActivateRequested,
     passwordChangeRequested,
+    sessionEnded,
   ]);
 
   const client = details ?? profile?.active_client;
+
+  const handleLogout = (): void => {
+    logout();
+    router.push(AppPath.Login);
+  };
 
   return (
     <div className={clsx(styles.main)}>
@@ -376,7 +421,17 @@ export const CabinetProfile = (): JSX.Element => {
             <Typography.Heading className={clsx(styles.sectionTitle)} level={3}>
               Смена пароля
             </Typography.Heading>
-            <PasswordForm onSubmit={changePassword} pending={pending} />
+            <PasswordForm onSubmit={changePassword} pending={isPasswordPending} />
+          </section>
+
+          <section className={clsx(styles.section, styles.logoutSection)}>
+            <Typography.Heading className={clsx(styles.sectionTitle)} level={3}>
+              Выход
+            </Typography.Heading>
+            <p className={clsx(styles.logoutHint)}>Завершить сессию на этом устройстве</p>
+            <Button className={clsx(styles.logoutButton)} onPress={handleLogout} variant="outline">
+              Выйти из аккаунта
+            </Button>
           </section>
         </Surface>
       ) : null}

@@ -8,7 +8,6 @@ import {
   clearCartRequest,
   deleteCartItemRequest,
   getCartRequest,
-  updateCartItemRequest,
 } from '@/core/shared/api/cart';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
@@ -29,9 +28,11 @@ const emptyCart = (): Cart => ({
   vat: 0,
 });
 
+const isUserId = (userId: null | string): userId is string =>
+  typeof userId === 'string' && userId.length > 0;
+
 export const cartHydrated = createEvent();
 export const addToCartRequested = createEvent<AddToCartPayload>();
-export const cartItemQtyChanged = createEvent<{ cartItemID: string; qty: number }>();
 export const cartItemRemoved = createEvent<string>();
 export const cartClearRequested = createEvent();
 
@@ -40,11 +41,6 @@ export const fetchCartFx = createEffect(async (userId: string) => getCartRequest
 export const addToCartFx = createEffect(
   async ({ productID, qty, userId }: AddToCartPayload & { userId: string }) =>
     addCartItemRequest({ productID, qty, userId }),
-);
-
-export const updateCartItemFx = createEffect(
-  async ({ cartItemID, qty, userId }: { cartItemID: string; qty: number; userId: string }) =>
-    updateCartItemRequest({ cartItemID, qty, userId }),
 );
 
 export const deleteCartItemFx = createEffect(
@@ -57,7 +53,6 @@ export const clearCartFx = createEffect(async (userId: string) => clearCartReque
 export const $cart = createStore<Cart>(emptyCart())
   .on(fetchCartFx.doneData, (_, cart) => cart)
   .on(addToCartFx.doneData, (_, cart) => cart)
-  .on(updateCartItemFx.doneData, (_, cart) => cart)
   .on(deleteCartItemFx.doneData, (_, cart) => cart)
   .on(clearCartFx.doneData, (_, cart) => cart)
   .reset(sessionEnded);
@@ -72,7 +67,6 @@ export const $cartCount = $cart.map((cart) => cart.items.length);
 export const $isCartPending = combine(
   fetchCartFx.pending,
   addToCartFx.pending,
-  updateCartItemFx.pending,
   deleteCartItemFx.pending,
   clearCartFx.pending,
   (...flags) => flags.some(Boolean),
@@ -83,7 +77,6 @@ export const $cartError = createStore<null | string>(null)
   .on(addToCartFx, () => null)
   .on(fetchCartFx.failData, (_, error) => error.message)
   .on(addToCartFx.failData, (_, error) => error.message)
-  .on(updateCartItemFx.failData, (_, error) => error.message)
   .on(deleteCartItemFx.failData, (_, error) => error.message)
   .on(clearCartFx.failData, (_, error) => error.message)
   .reset(sessionEnded);
@@ -96,49 +89,27 @@ const $canFetchCart = combine(
 
 /* eslint-disable perfectionist/sort-objects -- effector sample: clock -> source -> filter -> fn -> target */
 
-/** Один GET при появлении userId (hydrate сессии / логин). */
 sample({
-  clock: $userId,
+  clock: [$userId, cartHydrated],
   source: combine($canFetchCart, $userId, (canFetch, userId) =>
-    canFetch && typeof userId === 'string' && userId.length > 0 ? userId : null,
+    canFetch && isUserId(userId) ? userId : null,
   ),
-  filter: (userId): userId is string => typeof userId === 'string',
-  target: fetchCartFx,
-});
-
-/** Ручной hydrate — только если ещё не грузили. */
-sample({
-  clock: cartHydrated,
-  source: combine($canFetchCart, $userId, (canFetch, userId) =>
-    canFetch && typeof userId === 'string' && userId.length > 0 ? userId : null,
-  ),
-  filter: (userId): userId is string => typeof userId === 'string',
+  filter: isUserId,
   target: fetchCartFx,
 });
 
 sample({
   clock: addToCartRequested,
   source: $userId,
-  filter: (userId: null | string): userId is string =>
-    typeof userId === 'string' && userId.length > 0,
+  filter: isUserId,
   fn: (userId, payload) => ({ ...payload, userId }),
   target: addToCartFx,
 });
 
 sample({
-  clock: cartItemQtyChanged,
-  source: $userId,
-  filter: (userId: null | string): userId is string =>
-    typeof userId === 'string' && userId.length > 0,
-  fn: (userId, payload) => ({ ...payload, userId }),
-  target: updateCartItemFx,
-});
-
-sample({
   clock: cartItemRemoved,
   source: $userId,
-  filter: (userId: null | string): userId is string =>
-    typeof userId === 'string' && userId.length > 0,
+  filter: isUserId,
   fn: (userId, cartItemID) => ({ cartItemID, userId }),
   target: deleteCartItemFx,
 });
@@ -146,8 +117,7 @@ sample({
 sample({
   clock: cartClearRequested,
   source: $userId,
-  filter: (userId: null | string): userId is string =>
-    typeof userId === 'string' && userId.length > 0,
+  filter: isUserId,
   target: clearCartFx,
 });
 
@@ -181,3 +151,5 @@ sample({
   }),
   target: toastShown,
 });
+
+/* eslint-enable perfectionist/sort-objects */

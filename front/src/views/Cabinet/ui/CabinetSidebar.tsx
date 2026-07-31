@@ -11,6 +11,7 @@ import { IconFavorite, IconOrders, IconTerms, IconUser } from '@/core/shared/ico
 import { AppPath } from '@/core/shared/router/paths';
 
 import styles from '../Cabinet.module.css';
+import { $cabinetDocuments } from '../model/documents';
 import { $ordersTotal } from '../model/orders';
 import { $conditions, $profile } from '../model/profile';
 
@@ -23,13 +24,13 @@ const NAV_ITEMS = [
   },
   {
     badgeKey: 'documents' as const,
-    href: '#documents',
+    href: AppPath.CabinetDocuments,
     icon: IconTerms,
     label: 'Документы',
   },
   {
     badgeKey: 'favorites' as const,
-    href: '#favorites',
+    href: AppPath.CabinetFavorites,
     icon: IconFavorite,
     label: 'Избранное',
   },
@@ -43,7 +44,12 @@ const NAV_ITEMS = [
 
 export const CabinetSidebar = (): JSX.Element => {
   const pathname = usePathname();
-  const [profile, conditions, ordersTotal] = useUnit([$profile, $conditions, $ordersTotal]);
+  const [profile, conditions, ordersTotal, documents] = useUnit([
+    $profile,
+    $conditions,
+    $ordersTotal,
+    $cabinetDocuments,
+  ]);
   const { favoriteIds } = useFavorites();
 
   const companyName =
@@ -57,7 +63,7 @@ export const CabinetSidebar = (): JSX.Element => {
       : null;
 
   const badges: Record<'documents' | 'favorites' | 'orders', number> = {
-    documents: 0,
+    documents: documents.length,
     favorites: favoriteIds.length,
     orders: ordersTotal,
   };

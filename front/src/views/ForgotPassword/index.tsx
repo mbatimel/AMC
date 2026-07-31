@@ -7,6 +7,8 @@ import { useState } from 'react';
 
 import { IconKey } from '@/core/shared/icons/IconKey';
 import { IconMail } from '@/core/shared/icons/IconMail';
+import { readFormString } from '@/core/shared/lib/readFormString';
+import { validateEmail } from '@/core/shared/lib/validateContact';
 import { AppPath } from '@/core/shared/router/paths';
 import { AuthShell } from '@/core/shared/ui/AuthShell';
 import { AuthCardHeader } from '@/core/shared/ui/AuthShell/AuthCardHeader';
@@ -14,9 +16,21 @@ import formStyles from '@/core/shared/ui/AuthShell/AuthForm.module.css';
 
 export const ForgotPassword = (): JSX.Element => {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [emailError, setEmailError] = useState<null | string>(null);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const email = readFormString(formData, 'email').trim();
+    const nextEmailError = validateEmail(email);
+
+    setEmailError(nextEmailError);
+
+    if (nextEmailError) {
+      return;
+    }
+
     setIsSubmitted(true);
   };
 
@@ -28,10 +42,16 @@ export const ForgotPassword = (): JSX.Element => {
         title="Восстановление пароля"
       />
       <Form className={clsx(formStyles.form)} onSubmit={handleSubmit}>
-        <TextField className={clsx(formStyles.field)} isRequired name="email" type="email">
+        <TextField
+          className={clsx(formStyles.field)}
+          isInvalid={Boolean(emailError)}
+          isRequired
+          name="email"
+          type="email"
+        >
           <Label className={clsx(formStyles.label)}>E-mail</Label>
           <Input fullWidth placeholder="client@company.ru" />
-          <FieldError />
+          {emailError ? <FieldError>{emailError}</FieldError> : <FieldError />}
         </TextField>
         {isSubmitted ? (
           <p className={clsx(formStyles.success)}>

@@ -15,8 +15,7 @@ import { formatPrice } from '@/core/shared/lib/formatPrice';
 import { formatPositionsCount } from '@/core/shared/lib/pluralize';
 import { AppPath, getProductPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
-import { QuantityStepper } from '@/core/shared/ui/QuantityStepper';
-import { ToastViewport } from '@/core/shared/ui/Toast';
+import { ProductImageFallback } from '@/core/shared/ui/ProductImageFallback';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
 import styles from './Cart.module.css';
@@ -87,7 +86,7 @@ export const CartPage = (): JSX.Element => {
   const showToast = useUnit(toastShown);
   const { isAuthenticated, isHydrated } = useSession();
   const { selectedCityName } = useCity();
-  const { cart, cartCount, changeQty, clear, isCartPending, removeItem } = useCart();
+  const { cart, cartCount, clear, isCartPending, removeItem } = useCart();
 
   useEffect(() => {
     if (!isHydrated) {
@@ -196,7 +195,12 @@ export const CartPage = (): JSX.Element => {
                       <tr key={item.id}>
                         <td>
                           <div className={clsx(styles.productCell)}>
-                            <div aria-hidden className={clsx(styles.thumb)} />
+                            <div className={clsx(styles.thumb)}>
+                              <ProductImageFallback
+                                className={clsx(styles.thumbFallback)}
+                                label=""
+                              />
+                            </div>
                             <div className={clsx(styles.productInfo)}>
                               <Link
                                 className={clsx(styles.productLink)}
@@ -217,32 +221,19 @@ export const CartPage = (): JSX.Element => {
                           </div>
                         </td>
                         <td>
-                          <QuantityStepper
-                            onChange={(value) => {
-                              if (value <= 0) {
-                                removeItem(item.id);
-
-                                return;
-                              }
-
-                              changeQty({ cartItemID: item.id, qty: value });
-                            }}
-                            step={1}
-                            value={item.qty}
-                          />
+                          <span className={clsx(styles.qtyBox)}>{item.qty}</span>
                         </td>
                         <td className={clsx(styles.sum)}>{formatPrice(item.total)}</td>
-                        <td>
-                          <Button
+                        <td className={clsx(styles.removeCell)}>
+                          <button
                             aria-label="Удалить"
                             className={clsx(styles.remove)}
-                            isIconOnly
-                            onPress={() => removeItem(item.id)}
-                            size="sm"
-                            variant="ghost"
+                            disabled={isCartPending}
+                            onClick={() => removeItem(item.id)}
+                            type="button"
                           >
                             <IconClose height={16} width={16} />
-                          </Button>
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -288,7 +279,7 @@ export const CartPage = (): JSX.Element => {
                   onPress={() => router.push(AppPath.Checkout)}
                   variant="primary"
                 >
-                  → Оформить заказ
+                  Оформить заказ
                 </Button>
                 <Link className={clsx(styles.continueLink)} href={AppPath.Catalog}>
                   Продолжить покупки
@@ -297,7 +288,6 @@ export const CartPage = (): JSX.Element => {
             </div>
           )}
         </div>
-        <ToastViewport />
       </div>
     </Page>
   );

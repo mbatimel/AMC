@@ -1,0 +1,44 @@
+.error {
+  margin: 0;
+  color: var(--alert);
+}
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th {
+  padding-block: 10px;
+  padding-inline: 12px;
+  border-block-end: 1px solid var(--border);
+  color: var(--palette-dark);
+  font-size: 12px;
+  text-align: start;
+  text-transform: uppercase;
+}
+
+.table td {
+  padding-block: 10px;
+  padding-inline: 12px;
+  border-block-end: 1px solid var(--border);
+}
+
+.otherDocs {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  gap: 8px;
+  list-style: none;
+}
+
+.link {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.link:hover {
+  color: var(--link-hover);
+}
