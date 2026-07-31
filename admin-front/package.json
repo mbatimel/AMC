@@ -1,0 +1,74 @@
+{
+  "name": "amc-admin-front",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "yarn lint:js && yarn lint:css",
+    "lint:fix": "yarn lint:js:fix && yarn lint:css:fix",
+    "lint:js": "eslint \"src/**/*.{ts,tsx}\" \"next.config.ts\" --no-error-on-unmatched-pattern",
+    "lint:js:fix": "eslint \"src/**/*.{ts,tsx}\" \"next.config.ts\" --fix --no-error-on-unmatched-pattern",
+    "lint:css": "stylelint \"src/**/*.css\"",
+    "lint:css:fix": "stylelint \"src/**/*.css\" --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "cd .. && husky .husky",
+    "typecheck": "tsc --noEmit"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix --no-error-on-unmatched-pattern",
+      "prettier --write"
+    ],
+    "src/**/*.css": [
+      "stylelint --fix",
+      "prettier --write"
+    ],
+    "next.config.ts": [
+      "eslint --fix --no-error-on-unmatched-pattern",
+      "prettier --write"
+    ],
+    "**/*.{js,json,md}": "prettier --write"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/postcss": "^4.3.1",
+    "@types/node": "^26.0.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-effector": "^0.19.0",
+    "eslint-plugin-perfectionist": "^5.9.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.7.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.2.0",
+    "postcss": "^8.5.15",
+    "postcss-mixins": "^12.1.2",
+    "prettier": "^3.9.1",
+    "react-scan": "0.5.7",
+    "stylelint": "^17.14.0",
+    "stylelint-config-standard": "^40.0.0",
+    "stylelint-use-logical": "^2.1.3",
+    "tailwindcss": "^4.3.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.0"
+  },
+  "dependencies": {
+    "@heroui/react": "^3.2.1",
+    "@heroui/styles": "^3.2.1",
+    "clsx": "^2.1.1",
+    "effector": "^23.4.4",
+    "effector-react": "^23.3.0",
+    "next": "^16.2.9",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "resolutions": {
+    "react-grab": "0.1.50"
+  }
+}
