@@ -23,11 +23,11 @@ export const AdminShell = ({ children }: AdminShellProps): JSX.Element => {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, isHydrated, logout } = useAdminSession();
-  const isLoginRoute = pathname === AppPath.AdminLogin;
+  const isLoginRoute = pathname === AppPath.Login;
 
   useEffect(() => {
     if (isHydrated && !isAuthenticated && !isLoginRoute) {
-      router.replace(AppPath.AdminLogin);
+      router.replace(AppPath.Login);
     }
   }, [isAuthenticated, isHydrated, isLoginRoute, router]);
 
@@ -46,7 +46,7 @@ export const AdminShell = ({ children }: AdminShellProps): JSX.Element => {
   return (
     <div className={clsx(styles.shell)}>
       <header className={clsx(styles.topbar)}>
-        <Link className={clsx(styles.brand)} href={AppPath.Admin}>
+        <Link className={clsx(styles.brand)} href={AppPath.Home}>
           ВИ-Портал · Админ-панель
         </Link>
         <div className={clsx(styles.topbarActions)}>
@@ -57,7 +57,7 @@ export const AdminShell = ({ children }: AdminShellProps): JSX.Element => {
             className={clsx(styles.topbarButton)}
             onClick={() => {
               logout();
-              router.replace(AppPath.AdminLogin);
+              router.replace(AppPath.Login);
             }}
             type="button"
           >
@@ -73,8 +73,8 @@ export const AdminShell = ({ children }: AdminShellProps): JSX.Element => {
               {group.title ? <p className={clsx(styles.navTitle)}>{group.title}</p> : null}
               {group.items.map((item) => {
                 const isActive =
-                  item.href === AppPath.Admin
-                    ? pathname === AppPath.Admin
+                  item.href === AppPath.Home
+                    ? pathname === AppPath.Home
                     : pathname.startsWith(item.href);
 
                 return (

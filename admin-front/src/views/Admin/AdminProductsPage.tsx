@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 
 import { formatPrice } from '@/core/shared/lib/formatPrice';
-import { getAdminProductPath } from '@/core/shared/router/paths';
+import { getProductPath } from '@/core/shared/router/paths';
 
 import styles from './Admin.module.css';
 import {
@@ -43,7 +43,7 @@ export const AdminProductsPage = (): JSX.Element => {
         actions={
           <Link
             className={clsx(styles.smallButton, styles.smallButtonPrimary)}
-            href={getAdminProductPath('new')}
+            href={getProductPath('new')}
           >
             Добавить товар
           </Link>
@@ -104,7 +104,7 @@ export const AdminProductsPage = (): JSX.Element => {
               <tr key={product.id}>
                 <td>{product.sku}</td>
                 <td>
-                  <Link href={getAdminProductPath(product.id)}>{product.name}</Link>
+                  <Link href={getProductPath(product.id)}>{product.name}</Link>
                 </td>
                 <td>{product.gost || '—'}</td>
                 <td>{product.stock_qty}</td>
@@ -125,7 +125,7 @@ export const AdminProductsPage = (): JSX.Element => {
                 </td>
                 <td>
                   <div className={clsx(styles.rowActions)}>
-                    <Link className={clsx(styles.smallButton)} href={getAdminProductPath(product.id)}>
+                    <Link className={clsx(styles.smallButton)} href={getProductPath(product.id)}>
                       Изменить
                     </Link>
                     <button

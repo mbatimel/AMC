@@ -114,7 +114,7 @@ export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Elem
 
   useEffect(() => {
     const unsubscribe = saveProductFx.done.watch(() => {
-      router.push(AppPath.AdminProducts);
+      router.push(AppPath.Products);
     });
 
     return () => {
@@ -127,7 +127,7 @@ export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Elem
       <AdminPageHeader
         actions={
           <>
-            <Link className={clsx(styles.smallButton)} href={AppPath.AdminProducts}>
+            <Link className={clsx(styles.smallButton)} href={AppPath.Products}>
               К списку
             </Link>
             <Button isDisabled={isSaving} onPress={submit} variant="primary">

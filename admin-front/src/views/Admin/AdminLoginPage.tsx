@@ -37,7 +37,7 @@ export const AdminLoginPage = (): JSX.Element => {
 
   useEffect(() => {
     if (adminUserId) {
-      router.replace(AppPath.Admin);
+      router.replace(AppPath.Home);
     }
   }, [adminUserId, router]);
 
@@ -51,7 +51,7 @@ export const AdminLoginPage = (): JSX.Element => {
       password: readFormString(formData, 'password'),
     })
       .then(() => {
-        router.replace(AppPath.Admin);
+        router.replace(AppPath.Home);
       })
       .catch(() => {
         // текст ошибки — в $adminAuthError

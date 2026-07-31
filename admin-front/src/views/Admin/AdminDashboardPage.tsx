@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 
 import { useContent } from '@/core/entities/content';
-import { AppPath, getAdminContentPath } from '@/core/shared/router/paths';
+import { AppPath, getContentPath } from '@/core/shared/router/paths';
 
 import styles from './Admin.module.css';
 import { formatAdminDateTime } from './lib/nav';
@@ -116,7 +116,7 @@ export const AdminDashboardPage = (): JSX.Element => {
             </table>
           )}
           <p className={clsx(styles.hint)}>
-            <Link href={AppPath.AdminLegal}>Открыть редактор документов →</Link>
+            <Link href={AppPath.Legal}>Открыть редактор документов →</Link>
           </p>
         </section>
 
@@ -137,7 +137,7 @@ export const AdminDashboardPage = (): JSX.Element => {
             </table>
           )}
           <p className={clsx(styles.hint)}>
-            <Link href={AppPath.AdminAuditLog}>Открыть журнал →</Link>
+            <Link href={AppPath.AuditLog}>Открыть журнал →</Link>
           </p>
         </section>
       </div>
@@ -145,19 +145,19 @@ export const AdminDashboardPage = (): JSX.Element => {
       <section className={clsx(styles.card)}>
         <h2 className={clsx(styles.cardTitle)}>Быстрые переходы</h2>
         <div className={clsx(styles.actionsRow)}>
-          <Link className={clsx(styles.smallButton)} href={getAdminContentPath('home')}>
+          <Link className={clsx(styles.smallButton)} href={getContentPath('home')}>
             Главная страница
           </Link>
-          <Link className={clsx(styles.smallButton)} href={AppPath.AdminBanners}>
+          <Link className={clsx(styles.smallButton)} href={AppPath.Banners}>
             Баннеры
           </Link>
-          <Link className={clsx(styles.smallButton)} href={AppPath.AdminProducts}>
+          <Link className={clsx(styles.smallButton)} href={AppPath.Products}>
             Товары
           </Link>
-          <Link className={clsx(styles.smallButton)} href={AppPath.AdminSignupRequests}>
+          <Link className={clsx(styles.smallButton)} href={AppPath.SignupRequests}>
             Заявки
           </Link>
-          <Link className={clsx(styles.smallButton)} href={AppPath.AdminSupport}>
+          <Link className={clsx(styles.smallButton)} href={AppPath.Support}>
             Обращения
           </Link>
         </div>
