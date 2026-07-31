@@ -729,7 +729,10 @@ git commit -m "feat(admin-front): add de-prefixed router paths and auth proxy"
 
 ## Task 6: Move admin views and routes into admin-front, rewrite path references
 
+**Correction found while preparing this task's dispatch:** `views/Admin` (`AdminDashboardPage.tsx`, `AdminBannersPage.tsx`, `AdminContentPage.tsx`, `AdminLegalPage.tsx`, and `views/Admin/model/content.ts`) imports `useContent`/`contentInvalidated` from `@/core/entities/content` — a small effector entity (store + `useContent` hook) that caches content/banners/legal docs, used by both the public site and admin. It only depends on `@/core/shared/api/content` and `@/core/shared/api/parseApiError` (both already duplicated in Task 3), so it's self-contained and safe to duplicate whole. The original file list omitted it entirely — added as Step 0 below.
+
 **Files:**
+- Create (copy of `front/src/core/entities/content/`): `admin-front/src/core/entities/content/`
 - Move: `front/src/views/Admin/` → `admin-front/src/views/Admin/`
 - Move: `front/src/app/admin/page.tsx` → `admin-front/src/app/page.tsx`
 - Move: `front/src/app/admin/login/page.tsx` → `admin-front/src/app/login/page.tsx`
@@ -749,8 +752,17 @@ git commit -m "feat(admin-front): add de-prefixed router paths and auth proxy"
 - Modify: `admin-front/src/views/Admin/AdminDashboardPage.tsx`, `AdminLoginPage.tsx`, `AdminProductPage.tsx`, `AdminProductsPage.tsx`, `ui/AdminShell.tsx`, `lib/nav.ts` — rewrite `AppPath.Admin*` / `getAdminContentPath` / `getAdminProductPath` to the new names from Task 5.
 
 **Interfaces:**
-- Consumes: `AppPath`, `getContentPath`, `getProductPath` from `@/core/shared/router/paths` (Task 5); `useAdminSession`, `ADMIN_ACTOR_LABEL` from `@/core/entities/adminSession` (Task 2); `AuthShell`, `FormSelect`, `Toast/model`, `IconKey`, `formatPrice`, `readFormString` (Task 4); `content`/`feedback`/`support`/`products`/`admin`/`portalUsers`/`signupRequests` API clients (Tasks 2–3).
+- Consumes: `AppPath`, `getContentPath`, `getProductPath` from `@/core/shared/router/paths` (Task 5); `useAdminSession`, `ADMIN_ACTOR_LABEL` from `@/core/entities/adminSession` (Task 2); `AuthShell`, `FormSelect`, `Toast/model`, `IconKey`, `formatPrice`, `readFormString` (Task 4); `content`/`feedback`/`support`/`products`/`admin`/`portalUsers`/`signupRequests` API clients (Tasks 2–3); `useContent`, `contentInvalidated` from `@/core/entities/content` (Step 0 below).
 - Produces: full route tree of `admin-front` — `/`, `/login`, `/products`, `/products/:id`, `/categories`, `/content/:pageKey`, `/banners`, `/legal`, `/feedback`, `/support`, `/signup-requests`, `/users`, `/audit-log`.
+
+- [ ] **Step 0: Duplicate the `content` entity**
+
+```bash
+mkdir -p admin-front/src/core/entities
+cp -r front/src/core/entities/content admin-front/src/core/entities/content
+diff -r front/src/core/entities/content admin-front/src/core/entities/content
+```
+Expected: `diff` produces no output (byte-identical copy).
 
 - [ ] **Step 1: Move the views directory**
 
