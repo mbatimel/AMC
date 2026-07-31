@@ -523,19 +523,30 @@ git commit -m "chore(admin-front): duplicate shared API clients from front"
 
 ## Task 4: Duplicate shared UI kit, icons, lib helpers, and styles
 
+**Correction found while preparing this task's dispatch (same class of gap as Tasks 2-3 — a dependency the original file list missed):** `AuthShell` is not a drop-in copy like the API clients were. Its `front` version hard-imports three things that don't exist in `admin-front`:
+1. `authErrorCleared` from `@/core/entities/session` (the **public** session entity — `admin-front` has no such entity, only `adminSession`). It's called on mount to clear the public login form's error state; the admin-front copy must clear the admin session's error state instead, using `adminAuthErrorCleared` — already exported from `@/core/entities/adminSession` (moved there in Task 2).
+2. `logoImage`/`logoImage2x` from `@/core/shared/ui/Header/assets/logo.png` — `admin-front` has no `Header` component (never copied, not needed). The two PNG files need to move to a location admin-front actually has.
+3. `FormSelect` imports `IconChevronDown` from the `@/core/shared/icons` **barrel** (`import { IconChevronDown } from '@/core/shared/icons'`) — `admin-front` doesn't have that icon file or a barrel at all yet (only `IconKey.tsx` was planned).
+
+This task now includes copying `IconChevronDown.tsx`, creating a minimal icons barrel, relocating the two logo PNGs, and hand-editing admin-front's copy of `AuthShell/index.tsx` (the only content edit in this task — everything else stays a byte-identical copy).
+
 **Files:**
-- Create (copy of `front/src/core/shared/ui/AuthShell/`): `admin-front/src/core/shared/ui/AuthShell/`
+- Create (copy of `front/src/core/shared/ui/AuthShell/`, then edited — see Step 1b): `admin-front/src/core/shared/ui/AuthShell/`
 - Create (copy of `front/src/core/shared/ui/FormSelect/`): `admin-front/src/core/shared/ui/FormSelect/`
 - Create (copy of `front/src/core/shared/ui/Toast/`): `admin-front/src/core/shared/ui/Toast/`
 - Create (copy of `front/src/core/shared/icons/IconKey.tsx`): `admin-front/src/core/shared/icons/IconKey.tsx`
+- Create (copy of `front/src/core/shared/icons/IconChevronDown.tsx`): `admin-front/src/core/shared/icons/IconChevronDown.tsx`
 - Create (copy of `front/src/core/shared/icons/types.ts`): `admin-front/src/core/shared/icons/types.ts`
+- Create: `admin-front/src/core/shared/icons/index.ts` (new minimal barrel, not a copy — front's barrel exports 29 icons, admin-front only has 2)
 - Create (copy of `front/src/core/shared/lib/formatPrice.ts`): `admin-front/src/core/shared/lib/formatPrice.ts`
 - Create (copy of `front/src/core/shared/lib/readFormString.ts`): `admin-front/src/core/shared/lib/readFormString.ts`
 - Create (copy of `front/src/core/shared/styles/`): `admin-front/src/core/shared/styles/`
 - Create (copy of `front/src/core/shared/assets/fonts/`): `admin-front/src/core/shared/assets/fonts/`
+- Create (copy of `front/src/core/shared/ui/Header/assets/logo.png` and `logo@2x.png`): `admin-front/src/core/shared/assets/logo.png`, `admin-front/src/core/shared/assets/logo@2x.png`
 
 **Interfaces:**
-- Produces: `@/core/shared/ui/{AuthShell,FormSelect,Toast}`, `@/core/shared/icons/IconKey`, `@/core/shared/lib/{formatPrice,readFormString}`, and `@/core/shared/styles/index.css` (imported by the root layout in Task 6).
+- Produces: `@/core/shared/ui/{AuthShell,FormSelect,Toast}`, `@/core/shared/icons/{IconKey,IconChevronDown}` (direct paths) and `@/core/shared/icons` (barrel, for `FormSelect`'s import style), `@/core/shared/lib/{formatPrice,readFormString}`, `@/core/shared/styles/index.css` (imported by the root layout in Task 6).
+- Consumes: `adminAuthErrorCleared` from `@/core/entities/adminSession` (Task 2). Forward-references `AppPath` from `@/core/shared/router/paths` — that file doesn't exist until Task 5 runs; this is expected and matches the same forward-dependency pattern Task 2 left for Task 3 (nothing in this task's own verification steps typechecks or builds, so it's fine for `AuthShell`/`AdminLoginPage`-style forward references to resolve later — Task 8 is where the full build proves everything ties together).
 
 - [ ] **Step 1: Copy UI components**
 
@@ -546,29 +557,71 @@ cp -r front/src/core/shared/ui/FormSelect admin-front/src/core/shared/ui/FormSel
 cp -r front/src/core/shared/ui/Toast admin-front/src/core/shared/ui/Toast
 ```
 
+- [ ] **Step 1b: Edit admin-front's `AuthShell/index.tsx`**
+
+Open `admin-front/src/core/shared/ui/AuthShell/index.tsx` (the copy just made — it is currently byte-identical to `front`'s) and make exactly these three changes:
+
+1. Replace the import line:
+```ts
+import { authErrorCleared } from '@/core/entities/session';
+```
+with:
+```ts
+import { adminAuthErrorCleared } from '@/core/entities/adminSession';
+```
+
+2. Replace the two usages of `authErrorCleared` with `adminAuthErrorCleared` (the `useUnit(authErrorCleared)` call and nothing else — the local variable name `clearAuthError` stays as-is, it's still an accurate name):
+```ts
+const clearAuthError = useUnit(adminAuthErrorCleared);
+```
+
+3. Replace the two logo import lines:
+```ts
+import logoImage from '@/core/shared/ui/Header/assets/logo.png';
+import logoImage2x from '@/core/shared/ui/Header/assets/logo@2x.png';
+```
+with:
+```ts
+import logoImage from '@/core/shared/assets/logo.png';
+import logoImage2x from '@/core/shared/assets/logo@2x.png';
+```
+
+Leave everything else in the file — including both `AppPath.Home` links (the logo click-through and the "← На сайт" link) — untouched. `AppPath.Home` resolves to `/` in admin-front's own de-prefixed paths (Task 5), i.e. the admin dashboard: both links go to the admin home, not the public storefront. That's a deliberate, minimal scope call (admin-front has no public-site URL plumbed anywhere else either) — not a bug to fix in this task.
+
 - [ ] **Step 2: No `core/shared/ui` barrel needed**
 
 Confirmed: `front/src/core/shared/ui/index.ts` does not export `AuthShell`, `FormSelect`, or `Toast`/`ToastViewport` at all — every consumer (including `front/src/app/layout.tsx`, which does `import { ToastViewport } from '@/core/shared/ui/Toast';`) imports these directly by their own path, never through the barrel. `admin-front` needs no `core/shared/ui/index.ts` file — skip creating one.
 
-- [ ] **Step 3: Copy icons and lib helpers**
+- [ ] **Step 3: Copy icons, create the minimal barrel, and copy lib helpers**
 
 ```bash
 cp front/src/core/shared/icons/IconKey.tsx admin-front/src/core/shared/icons/IconKey.tsx
+cp front/src/core/shared/icons/IconChevronDown.tsx admin-front/src/core/shared/icons/IconChevronDown.tsx
 cp front/src/core/shared/icons/types.ts admin-front/src/core/shared/icons/types.ts
 cp front/src/core/shared/lib/formatPrice.ts admin-front/src/core/shared/lib/formatPrice.ts
 cp front/src/core/shared/lib/readFormString.ts admin-front/src/core/shared/lib/readFormString.ts
+```
+
+Create `admin-front/src/core/shared/icons/index.ts` (new file, not a copy — front's barrel has 29 icon exports, admin-front only ships the 2 it uses):
+
+```ts
+export { IconChevronDown } from './IconChevronDown';
+export { IconKey } from './IconKey';
+export type { Icon, IconProps } from './types';
 ```
 
 - [ ] **Step 4: No `core/shared/lib` barrel needed**
 
 Confirmed: `front/src/core/shared/lib/index.ts` re-exports `breakpoints`, `useLayoutType`, and `validateContact` helpers — it does not export `formatPrice` or `readFormString` at all. `views/Admin` imports both directly (`from '@/core/shared/lib/formatPrice'`, `from '@/core/shared/lib/readFormString'`), never through the barrel. Skip creating a `lib/index.ts` in admin-front — it would only contain unused exports.
 
-- [ ] **Step 5: Copy styles and fonts**
+- [ ] **Step 5: Copy styles, fonts, and the logo images**
 
 ```bash
 cp -r front/src/core/shared/styles admin-front/src/core/shared/styles
 mkdir -p admin-front/src/core/shared/assets
 cp -r front/src/core/shared/assets/fonts admin-front/src/core/shared/assets/fonts
+cp front/src/core/shared/ui/Header/assets/logo.png admin-front/src/core/shared/assets/logo.png
+cp front/src/core/shared/ui/Header/assets/logo@2x.png admin-front/src/core/shared/assets/logo@2x.png
 ```
 
 - [ ] **Step 6: Verify copies**
@@ -578,6 +631,15 @@ Expected: no output.
 
 Run: `ls admin-front/src/core/shared/assets/fonts | wc -l`
 Expected: `6` (same font files as front).
+
+Run: `diff front/src/core/shared/ui/Header/assets/logo.png admin-front/src/core/shared/assets/logo.png && diff front/src/core/shared/ui/Header/assets/logo@2x.png admin-front/src/core/shared/assets/logo@2x.png`
+Expected: no output (binary files identical).
+
+Run: `diff front/src/core/shared/icons/IconChevronDown.tsx admin-front/src/core/shared/icons/IconChevronDown.tsx`
+Expected: no output.
+
+Run: `grep -n "authErrorCleared\|Header/assets" admin-front/src/core/shared/ui/AuthShell/index.tsx`
+Expected: only `adminAuthErrorCleared` appears (twice), no `Header/assets` path.
 
 - [ ] **Step 7: Commit**
 
