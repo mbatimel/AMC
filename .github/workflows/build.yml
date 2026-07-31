@@ -37,6 +37,9 @@ jobs:
           - name: front
             dockerfile: ./front/Dockerfile
             image: ghcr.io/mbatimel/amc-front
+          - name: admin-front
+            dockerfile: ./admin-front/Dockerfile
+            image: ghcr.io/mbatimel/amc-admin-front
     permissions:
       packages: write
       contents: read
