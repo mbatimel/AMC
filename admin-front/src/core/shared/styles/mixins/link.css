@@ -1,0 +1,14 @@
+@define-mixin link {
+  color: var(--link);
+  text-decoration: none;
+  transition: color 0.16s ease;
+
+  &:hover,
+  &:focus {
+    color: var(--link-hover);
+  }
+
+  &:active {
+    color: var(--link-active);
+  }
+}
