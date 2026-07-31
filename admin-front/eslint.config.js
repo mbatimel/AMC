@@ -18,6 +18,7 @@ export default defineConfig([
     'node_modules/**',
     'postcss.config.js',
     'prettier.config.js',
+    'styleguide/**',
     'stylelint.config.js',
   ]),
   js.configs.recommended,
@@ -41,6 +42,7 @@ export default defineConfig([
     rules: {
       ...react.configs.flat.recommended.rules,
       ...react.configs.flat['jsx-runtime'].rules,
+      ...reactHooks.configs.recommended.rules,
       'import/order': 'off',
       'react/react-in-jsx-scope': 'off',
     },
