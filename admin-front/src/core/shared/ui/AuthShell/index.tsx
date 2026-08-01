@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 
 import { adminAuthErrorCleared } from '@/core/entities/adminSession';
-import { AppPath } from '@/core/shared/router/paths';
 import logoImage from '@/core/shared/assets/logo.png';
 import logoImage2x from '@/core/shared/assets/logo@2x.png';
+import { AppPath } from '@/core/shared/router/paths';
 
 import styles from './AuthShell.module.css';
 

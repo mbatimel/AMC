@@ -12,7 +12,7 @@ export const config = {
 export const proxy = (request: NextRequest): NextResponse => {
   const { pathname } = request.nextUrl;
 
-  if (pathname === AppPath.Login) {
+  if (pathname === (AppPath.Login as string)) {
     return NextResponse.next();
   }
 
