@@ -5,6 +5,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/google/uuid"
@@ -171,17 +172,24 @@ func addProductImages(
 	return result, nil
 }
 
+// computeClientPrice derives the final (post-promo) price from the base
+// price and discount percentage, so callers never need to keep the two in
+// sync by hand.
+func computeClientPrice(basePrice float64, discountPercent float64) float64 {
+	return math.Round(basePrice*(1-discountPercent/100)*100) / 100
+}
+
 func upsertProductPrices(
 	ctx context.Context,
 	tx pgx.Tx,
 	productID uuid.UUID,
 	basePrice float64,
-	clientPrice float64,
 	discountPercent float64,
 ) error {
 	if _, err := tx.Exec(ctx, sqlUpsertProductPrice, productID, "base", basePrice, 0); err != nil {
 		return fmt.Errorf("upsert base price: %w", err)
 	}
+	clientPrice := computeClientPrice(basePrice, discountPercent)
 	if _, err := tx.Exec(ctx, sqlUpsertProductPrice, productID, "client", clientPrice, discountPercent); err != nil {
 		return fmt.Errorf("upsert client price: %w", err)
 	}
@@ -221,7 +229,6 @@ func (s *Storage) CreateProduct(
 		tx,
 		productID,
 		params.BasePrice,
-		params.ClientPrice,
 		params.DiscountPercent,
 	); err != nil {
 		return internalModels.Product{}, classifyWriteError(err)
@@ -469,24 +476,20 @@ func (s *Storage) UpdateProduct(
 		return internalModels.Product{}, classifyWriteError(fmt.Errorf("update product: %w", err))
 	}
 
-	if params.BasePrice != nil || params.ClientPrice != nil || params.DiscountPercent != nil {
+	if params.BasePrice != nil || params.DiscountPercent != nil {
 		current, getErr := getProductByID(ctx, tx, params.ProductID)
 		if getErr != nil {
 			return internalModels.Product{}, getErr
 		}
 		basePrice := current.BasePrice
-		clientPrice := current.ClientPrice
 		discountPercent := current.DiscountPercent
 		if params.BasePrice != nil {
 			basePrice = *params.BasePrice
 		}
-		if params.ClientPrice != nil {
-			clientPrice = *params.ClientPrice
-		}
 		if params.DiscountPercent != nil {
 			discountPercent = *params.DiscountPercent
 		}
-		if err = upsertProductPrices(ctx, tx, params.ProductID, basePrice, clientPrice, discountPercent); err != nil {
+		if err = upsertProductPrices(ctx, tx, params.ProductID, basePrice, discountPercent); err != nil {
 			return internalModels.Product{}, classifyWriteError(err)
 		}
 	}
@@ -630,7 +633,6 @@ func (s *Storage) UpdateProductPrice(
 	ctx context.Context,
 	productID uuid.UUID,
 	basePrice float64,
-	clientPrice float64,
 	discountPercent float64,
 ) error {
 	tx, err := s.pool.Begin(ctx)
@@ -641,7 +643,7 @@ func (s *Storage) UpdateProductPrice(
 	if _, err = getProductByID(ctx, tx, productID); err != nil {
 		return err
 	}
-	if err = upsertProductPrices(ctx, tx, productID, basePrice, clientPrice, discountPercent); err != nil {
+	if err = upsertProductPrices(ctx, tx, productID, basePrice, discountPercent); err != nil {
 		return classifyWriteError(err)
 	}
 	if err = tx.Commit(ctx); err != nil {

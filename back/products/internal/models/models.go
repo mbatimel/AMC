@@ -73,7 +73,6 @@ type CreateProductParams struct {
 	PackageQty      int
 	StockQty        int
 	BasePrice       float64
-	ClientPrice     float64
 	DiscountPercent float64
 	Images          []ProductImage
 	IsPublished     bool
@@ -105,7 +104,6 @@ type UpdateProductParams struct {
 	PackageQty      *int
 	StockQty        *int
 	BasePrice       *float64
-	ClientPrice     *float64
 	DiscountPercent *float64
 	Images          *[]ProductImage
 	IsPublished     *bool

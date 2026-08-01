@@ -68,7 +68,6 @@ func TestStorageProductsIntegration(t *testing.T) {
 		PackageQty:      10,
 		StockQty:        7,
 		BasePrice:       150,
-		ClientPrice:     120,
 		DiscountPercent: 20,
 		Images: []internalModels.ProductImage{
 			{URL: "https://s3.example/products/main.jpg", SortOrder: 1, IsPrimary: true},

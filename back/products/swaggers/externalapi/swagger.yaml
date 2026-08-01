@@ -210,14 +210,14 @@ paths:
             description: Получение списка категорий каталога
             parameters:
                 - in: query
-                  name: offset
+                  name: limit
                   schema:
                     oneOf:
                         - type: number
                           format: int
                         - nullable: true
                 - in: query
-                  name: limit
+                  name: offset
                   schema:
                     oneOf:
                         - type: number
@@ -407,23 +407,23 @@ paths:
             description: Получение списка товаров с фильтрами, поиском и пагинацией
             parameters:
                 - in: query
-                  name: size
+                  name: q
                   schema:
                     oneOf:
                         - type: string
                         - nullable: true
                 - in: query
-                  name: offset
+                  name: brandID
+                  schema:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                - in: query
+                  name: limit
                   schema:
                     oneOf:
                         - type: number
                           format: int
-                        - nullable: true
-                - in: query
-                  name: sort
-                  schema:
-                    oneOf:
-                        - type: string
                         - nullable: true
                 - in: query
                   name: categoryID
@@ -432,7 +432,13 @@ paths:
                         - type: string
                         - nullable: true
                 - in: query
-                  name: brandID
+                  name: material
+                  schema:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                - in: query
+                  name: size
                   schema:
                     oneOf:
                         - type: string
@@ -450,20 +456,14 @@ paths:
                         - type: boolean
                         - nullable: true
                 - in: query
-                  name: limit
+                  name: offset
                   schema:
                     oneOf:
                         - type: number
                           format: int
                         - nullable: true
                 - in: query
-                  name: q
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: material
+                  name: sort
                   schema:
                     oneOf:
                         - type: string

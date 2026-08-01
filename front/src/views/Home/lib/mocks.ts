@@ -2,7 +2,7 @@ import { AppPath } from '@/core/shared/router/paths';
 
 import type { HomePageContent } from './types';
 
-const catalogHref = (categoryID?: string): string => {
+export const catalogHref = (categoryID?: string): string => {
   if (!categoryID) {
     return AppPath.Catalog;
   }

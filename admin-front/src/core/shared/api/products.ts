@@ -384,7 +384,6 @@ export type ProductWritePayload = {
   basePrice: number;
   brandID?: string;
   categoryID?: string;
-  clientPrice: number;
   description: string;
   discountPercent: number;
   gost: string;
@@ -402,7 +401,6 @@ const productWriteBody = (payload: ProductWritePayload): Record<string, unknown>
   basePrice: payload.basePrice,
   brandID: payload.brandID || undefined,
   categoryID: payload.categoryID || undefined,
-  clientPrice: payload.clientPrice,
   description: payload.description,
   discountPercent: payload.discountPercent,
   gost: payload.gost,

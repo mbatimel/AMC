@@ -35,7 +35,6 @@ const emptyProduct = (): ProductWritePayload => ({
   basePrice: 0,
   brandID: '',
   categoryID: '',
-  clientPrice: 0,
   description: '',
   discountPercent: 0,
   gost: '',
@@ -66,38 +65,39 @@ export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Elem
     ]);
   const [draft, setDraft] = useState<ProductWritePayload>(emptyProduct);
   const [imagesText, setImagesText] = useState('');
+  const [loadedProductId, setLoadedProductId] = useState<null | string>(null);
 
   useEffect(() => {
     openCatalog();
     openProduct(productId);
   }, [openCatalog, openProduct, productId]);
 
-  useEffect(() => {
-    if (!isNew && product && product.id === productId) {
-      setDraft({
-        basePrice: product.base_price,
-        brandID: product.brand_id ?? '',
-        categoryID: product.category_id ?? '',
-        clientPrice: product.client_price,
-        description: product.description ?? '',
-        discountPercent: product.discount_percent,
-        gost: product.gost ?? '',
-        images: (product.images ?? []).map((image) => ({ url: image.url })),
-        isPublished: product.is_published !== false,
-        material: product.material ?? '',
-        name: product.name,
-        packageQty: product.package_qty,
-        size: product.size ?? '',
-        sku: product.sku,
-        stockQty: product.stock_qty,
-      });
-      setImagesText((product.images ?? []).map((image) => image.url).join('\n'));
-    }
-  }, [isNew, product, productId]);
+  if (!isNew && product && product.id === productId && loadedProductId !== productId) {
+    setLoadedProductId(productId);
+    setDraft({
+      basePrice: product.base_price,
+      brandID: product.brand_id ?? '',
+      categoryID: product.category_id ?? '',
+      description: product.description ?? '',
+      discountPercent: product.discount_percent,
+      gost: product.gost ?? '',
+      images: (product.images ?? []).map((image) => ({ url: image.url })),
+      isPublished: product.is_published !== false,
+      material: product.material ?? '',
+      name: product.name,
+      packageQty: product.package_qty,
+      size: product.size ?? '',
+      sku: product.sku,
+      stockQty: product.stock_qty,
+    });
+    setImagesText((product.images ?? []).map((image) => image.url).join('\n'));
+  }
 
   const patch = (value: Partial<ProductWritePayload>): void => {
     setDraft((previous) => ({ ...previous, ...value }));
   };
+
+  const finalPrice = draft.basePrice * (1 - draft.discountPercent / 100);
 
   const submit = (): void => {
     const images = imagesText
@@ -252,30 +252,29 @@ export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Elem
             />
           </div>
           <div className={clsx(styles.field)}>
-            <label className={clsx(styles.label)} htmlFor="product-client-price">
-              Клиентская цена, ₽
-            </label>
-            <input
-              className={clsx(styles.input)}
-              id="product-client-price"
-              min={0}
-              onChange={(event) => patch({ clientPrice: Number(event.target.value) || 0 })}
-              step="0.01"
-              type="number"
-              value={draft.clientPrice}
-            />
-          </div>
-          <div className={clsx(styles.field)}>
             <label className={clsx(styles.label)} htmlFor="product-discount">
-              Скидка, %
+              Скидка (акция), %
             </label>
             <input
               className={clsx(styles.input)}
               id="product-discount"
+              max={100}
               min={0}
               onChange={(event) => patch({ discountPercent: Number(event.target.value) || 0 })}
               type="number"
               value={draft.discountPercent}
+            />
+          </div>
+          <div className={clsx(styles.field)}>
+            <label className={clsx(styles.label)} htmlFor="product-client-price">
+              Финальная цена, ₽
+            </label>
+            <input
+              className={clsx(styles.input)}
+              disabled
+              id="product-client-price"
+              readOnly
+              value={finalPrice.toFixed(2)}
             />
           </div>
           <div className={clsx(styles.field)}>

@@ -219,6 +219,13 @@ func modelImages(images []internalModels.ProductImage) []models.ProductImage {
 	return result
 }
 
+func uuidOrEmpty(id uuid.UUID) string {
+	if id == uuid.Nil {
+		return ""
+	}
+	return id.String()
+}
+
 func modelProduct(product internalModels.Product) models.Product {
 	return models.Product{
 		ID:              product.ID.String(),
@@ -227,7 +234,7 @@ func modelProduct(product internalModels.Product) models.Product {
 		Description:     product.Description,
 		CategoryID:      product.CategoryID.String(),
 		CategoryName:    product.CategoryName,
-		BrandID:         product.BrandID.String(),
+		BrandID:         uuidOrEmpty(product.BrandID),
 		BrandName:       product.BrandName,
 		GOST:            product.GOST,
 		Material:        product.Material,
@@ -251,7 +258,7 @@ func modelProductListItem(product internalModels.Product) models.ProductListItem
 		Name:            product.Name,
 		CategoryID:      product.CategoryID.String(),
 		CategoryName:    product.CategoryName,
-		BrandID:         product.BrandID.String(),
+		BrandID:         uuidOrEmpty(product.BrandID),
 		BrandName:       product.BrandName,
 		GOST:            product.GOST,
 		Material:        product.Material,
@@ -309,7 +316,7 @@ func (s *Service) CreateProduct(
 	packageQty int,
 	stockQty int,
 	basePrice float64,
-	clientPrice float64,
+	_ float64, // clientPrice: derived from basePrice/discountPercent, see computeClientPrice
 	discountPercent float64,
 	images []models.ProductImage,
 	isPublished bool,
@@ -349,9 +356,6 @@ func (s *Service) CreateProduct(
 	if err = validateMoney("basePrice", basePrice); err != nil {
 		return response, err
 	}
-	if err = validateMoney("clientPrice", clientPrice); err != nil {
-		return response, err
-	}
 	if err = validateDiscount(discountPercent); err != nil {
 		return response, err
 	}
@@ -382,7 +386,6 @@ func (s *Service) CreateProduct(
 		PackageQty:      packageQty,
 		StockQty:        stockQty,
 		BasePrice:       basePrice,
-		ClientPrice:     clientPrice,
 		DiscountPercent: discountPercent,
 		Images:          normalizedImages,
 		IsPublished:     isPublished,
@@ -532,7 +535,6 @@ func hasUpdate(params internalModels.UpdateProductParams) bool {
 		params.PackageQty != nil ||
 		params.StockQty != nil ||
 		params.BasePrice != nil ||
-		params.ClientPrice != nil ||
 		params.DiscountPercent != nil ||
 		params.Images != nil ||
 		params.IsPublished != nil
@@ -567,7 +569,7 @@ func (s *Service) UpdateProduct(
 	packageQty *int,
 	stockQty *int,
 	basePrice *float64,
-	clientPrice *float64,
+	_ *float64, // clientPrice: derived from basePrice/discountPercent, see computeClientPrice
 	discountPercent *float64,
 	images *[]models.ProductImage,
 	isPublished *bool,
@@ -585,7 +587,6 @@ func (s *Service) UpdateProduct(
 		PackageQty:      packageQty,
 		StockQty:        stockQty,
 		BasePrice:       basePrice,
-		ClientPrice:     clientPrice,
 		DiscountPercent: discountPercent,
 		IsPublished:     isPublished,
 	}
@@ -625,11 +626,6 @@ func (s *Service) UpdateProduct(
 	}
 	if basePrice != nil {
 		if err = validateMoney("basePrice", *basePrice); err != nil {
-			return response, err
-		}
-	}
-	if clientPrice != nil {
-		if err = validateMoney("clientPrice", *clientPrice); err != nil {
 			return response, err
 		}
 	}

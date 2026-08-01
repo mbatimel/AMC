@@ -73,11 +73,6 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 
 	var request requestProductsAPIListProducts
 
-	if _size := ctx.Query("size"); _size != "" {
-		var size string
-		size = _size
-		request.Size = &size
-	}
 	if _offset := ctx.Query("offset"); _offset != "" {
 		var offset int
 		offset, err = strconv.Atoi(_offset)
@@ -92,15 +87,39 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 		sort = _sort
 		request.Sort = &sort
 	}
-	if _categoryID := ctx.Query("categoryID"); _categoryID != "" {
-		var categoryID string
-		categoryID = _categoryID
-		request.CategoryID = &categoryID
+	if _q := ctx.Query("q"); _q != "" {
+		var q string
+		q = _q
+		request.Q = &q
 	}
 	if _brandID := ctx.Query("brandID"); _brandID != "" {
 		var brandID string
 		brandID = _brandID
 		request.BrandID = &brandID
+	}
+	if _limit := ctx.Query("limit"); _limit != "" {
+		var limit int
+		limit, err = strconv.Atoi(_limit)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Limit = &limit
+	}
+	if _categoryID := ctx.Query("categoryID"); _categoryID != "" {
+		var categoryID string
+		categoryID = _categoryID
+		request.CategoryID = &categoryID
+	}
+	if _material := ctx.Query("material"); _material != "" {
+		var material string
+		material = _material
+		request.Material = &material
+	}
+	if _size := ctx.Query("size"); _size != "" {
+		var size string
+		size = _size
+		request.Size = &size
 	}
 	if _gost := ctx.Query("gost"); _gost != "" {
 		var gost string
@@ -115,25 +134,6 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
 		request.InStock = &inStock
-	}
-	if _limit := ctx.Query("limit"); _limit != "" {
-		var limit int
-		limit, err = strconv.Atoi(_limit)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Limit = &limit
-	}
-	if _q := ctx.Query("q"); _q != "" {
-		var q string
-		q = _q
-		request.Q = &q
-	}
-	if _material := ctx.Query("material"); _material != "" {
-		var material string
-		material = _material
-		request.Material = &material
 	}
 
 	return customhandlers.ListProducts(ctx, http.svc, request.Q, request.CategoryID, request.BrandID, request.Material, request.Size, request.Gost, request.InStock, request.Limit, request.Offset, request.Sort)
