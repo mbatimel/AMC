@@ -67,14 +67,6 @@ func (s *service) LoginUser(ctx context.Context, email string, password string) 
 		return uuid.Nil, customErrors.InvalidCredentialsError()
 	}
 
-	allowed, err := s.accessClient.CheckAccess(ctx, user.ID, RoleCodeBuyer)
-	if err != nil {
-		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
-	}
-	if !allowed {
-		return uuid.Nil, customErrors.ForbiddenError()
-	}
-
 	return user.ID, nil
 }
 
