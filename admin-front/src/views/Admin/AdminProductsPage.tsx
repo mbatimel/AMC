@@ -11,8 +11,8 @@ import { getProductPath } from '@/core/shared/router/paths';
 import styles from './Admin.module.css';
 import {
   $adminCatalogError,
-  $adminProducts,
   $adminProductQuery,
+  $adminProducts,
   $adminProductsTotal,
   $isAdminCatalogPending,
   adminCatalogOpened,

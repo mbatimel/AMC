@@ -16,3 +16,5 @@ export enum AppPath {
 export const getContentPath = (pageKey: string): string => `${AppPath.Content}/${pageKey}`;
 
 export const getProductPath = (productId: string): string => `${AppPath.Products}/${productId}`;
+
+export const PUBLIC_CATALOG_URL = `${process.env.NEXT_PUBLIC_SITE_ORIGIN ?? 'https://wk.amctechgroup.ru'}/catalog`;

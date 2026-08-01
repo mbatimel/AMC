@@ -10,8 +10,8 @@ import { AppPath, getContentPath } from '@/core/shared/router/paths';
 
 import styles from './Admin.module.css';
 import { formatAdminDateTime } from './lib/nav';
-import { $adminProducts, $adminProductsTotal, adminCatalogOpened } from './model/catalog';
 import { $auditLog, adminAuditLogOpened } from './model/audit';
+import { $adminProducts, $adminProductsTotal, adminCatalogOpened } from './model/catalog';
 import { $adminSupport, adminSupportOpened } from './model/feedback';
 import { $signupRequests, adminUsersOpened } from './model/users';
 import { AdminPageHeader } from './ui/AdminPageHeader';

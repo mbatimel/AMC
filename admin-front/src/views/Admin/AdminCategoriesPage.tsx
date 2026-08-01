@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 
 import type { Category } from '@/core/shared/api/products';
 
-import { AppPath } from '@/core/shared/router/paths';
+import { PUBLIC_CATALOG_URL } from '@/core/shared/router/paths';
 
 import styles from './Admin.module.css';
 import { $adminBrands, $adminCategories, adminCatalogOpened } from './model/catalog';
@@ -42,7 +42,7 @@ const CategoryTree = ({ nodes }: { nodes: CategoryNode[] }): JSX.Element => (
     {nodes.map((node) => (
       <li key={node.id}>
         <div className={clsx(styles.treeNode)}>
-          <Link href={`${AppPath.Catalog}?categoryID=${node.id}`}>{node.name}</Link>
+          <Link href={`${PUBLIC_CATALOG_URL}?categoryID=${node.id}`}>{node.name}</Link>
         </div>
         {node.children.length > 0 ? (
           <div className={clsx(styles.treeChildren)}>
