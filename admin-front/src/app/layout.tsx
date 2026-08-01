@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 
-import { ReactScan } from '@/app/ReactScan';
+import { JSX } from 'react/jsx-runtime';
+
 import '@/core/shared/styles/index.css';
-import { AdminShell } from '@/views/Admin';
+import { ReactScan } from '@/app/ReactScan';
 import { ToastViewport } from '@/core/shared/ui/Toast';
+import { AdminShell } from '@/views/Admin';
 
 export const metadata: Metadata = {
   title: 'AMC Admin',

@@ -1,3 +1,5 @@
+import type { JSX } from 'react';
+
 import dynamic from 'next/dynamic';
 
 import type { ContentPageKey } from '@/core/shared/api/content';
