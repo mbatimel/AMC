@@ -1080,40 +1080,107 @@ git commit -m "refactor(front): remove admin panel code, now served by admin-fro
 
 ## Task 8: Verify admin-front builds standalone
 
-**Files:** none (verification only — fix whatever surfaces).
+**Environment note:** the system's default `node` is v21.4.0, incompatible with this project's eslint config (needs 20.19+/22.13+/24+). A compatible `node@22` is installed via Homebrew at `/Users/macbook/.brew/opt/node@22/bin`, not on default PATH. Prepend it for every yarn command: `export PATH="/Users/macbook/.brew/opt/node@22/bin:$PATH"`.
+
+**Note on unexpected prior commits:** at the time this task was prepared, three commits (each titled `fix new problem`, same author as the rest of this branch) had already landed on top of Task 7's commit, made by a process outside this plan's execution. They: (1) added `admin-front/Dockerfile`, a `deploy/docker-compose.yml` `admin-front` service, and a CI matrix entry in `.github/workflows/build.yml` — with **different values than Task 9 below specifies** (port 3001 not 3000, a direct `ADMIN_API_URL` env pointing at the internal `admin` backend service instead of the nginx+`/portal-api/`-proxy design, and a Dockerfile that still provisions an unused `/data` volume for `PORTAL_DATA_FILE`); (2) added a missing `@react-aria/utils` entry to `admin-front/yarn.lock`; (3) added `admin-front/src/types/jsx.d.ts` (a global `JSX.Element` shim) and reordered two import lines in `admin-front/src/app/layout.tsx`. Do not revert any of this — treat it as already-landed groundwork. Task 9 (next) reconciles the deploy-wiring discrepancies; this task only needs to get `admin-front` typechecking/linting/building clean, and the `jsx.d.ts` shim already covers one class of typecheck error.
+
+**Diagnosis already run once before this task's dispatch (findings below), so the fixes are known — this task executes them, not discovers them from scratch:**
+
+**Files:**
+- Modify: `admin-front/src/core/shared/router/paths.ts` — add one exported constant.
+- Modify: `admin-front/src/views/Admin/AdminCategoriesPage.tsx` — one line, use the new constant.
+- Modify: `admin-front/src/views/Admin/AdminDashboardPage.tsx` — reorder two import lines (auto-fixable).
+- Modify: `admin-front/src/views/Admin/AdminProductsPage.tsx` — reorder two named imports (auto-fixable).
+- Modify: `admin-front/.env.example` — document the new env var.
 
 **Interfaces:**
-- Consumes: everything from Tasks 1–6.
+- Consumes: everything from Tasks 1–6, plus the three externally-landed commits described above.
 - Produces: confidence that `admin-front` is a fully working, independently buildable Next.js app.
 
-- [ ] **Step 1: Typecheck**
+- [ ] **Step 1: Install and typecheck**
 
-Run: `cd admin-front && yarn typecheck`
-Expected: exits 0. If it fails on a missing export from a barrel file (`@/core/shared/ui`, `@/core/shared/lib`, `@/views/Admin`), fix the barrel's export list to match what Task 6/Task 4 actually need — don't add exports for things nothing imports (would trip `noUnusedLocals` conventions and dead-code lint elsewhere).
+```bash
+export PATH="/Users/macbook/.brew/opt/node@22/bin:$PATH"
+cd admin-front && yarn install && yarn typecheck
+```
+
+Expected failure (already diagnosed): exactly one error —
+```
+src/views/Admin/AdminCategoriesPage.tsx(45,34): error TS2339: Property 'Catalog' does not exist on type 'typeof AppPath'.
+```
+`AdminCategoriesPage.tsx` links to the **public storefront's** catalog page filtered by category (`` `${AppPath.Catalog}?categoryID=${node.id}` `` in the original `front` code) — a legitimate "preview this category on the live site" link, not an admin-internal route. `admin-front`'s de-prefixed `AppPath` enum has no public-site paths at all (by design — Task 5 only gave it admin routes). Fix by adding a new exported constant to `admin-front/src/core/shared/router/paths.ts` (append after the `AppPath` enum, don't add `Catalog` to the enum itself — the enum is for admin-front's own routes only):
+
+```ts
+export const PUBLIC_CATALOG_URL = `${process.env.NEXT_PUBLIC_SITE_ORIGIN ?? 'https://wk.amctechgroup.ru'}/catalog`;
+```
+
+In `admin-front/src/views/Admin/AdminCategoriesPage.tsx`, change:
+```tsx
+<Link href={`${AppPath.Catalog}?categoryID=${node.id}`}>{node.name}</Link>
+```
+to:
+```tsx
+<Link href={`${PUBLIC_CATALOG_URL}?categoryID=${node.id}`}>{node.name}</Link>
+```
+Confirmed: `AppPath` is imported only for this one `.Catalog` usage in this file (line 10: `import { AppPath } from '@/core/shared/router/paths';`, no other `AppPath.` reference anywhere else in the file). Replace that import line with:
+```ts
+import { PUBLIC_CATALOG_URL } from '@/core/shared/router/paths';
+```
+
+Append to `admin-front/.env.example` (the file already exists from Task 1 — just add these two lines at the end, don't recreate it):
+```
+# Публичный домен фронта — используется только для ссылок «превью на сайте»
+# (например, категория товаров из AdminCategoriesPage)
+NEXT_PUBLIC_SITE_ORIGIN=https://wk.amctechgroup.ru
+```
+
+Re-run `yarn typecheck` after the fix. Expected: exits 0.
 
 - [ ] **Step 2: Lint**
 
-Run: `cd admin-front && yarn lint`
-Expected: exits 0.
+```bash
+yarn lint
+```
+
+Expected (already diagnosed): two trivial, auto-fixable import-order errors, plus a set of pre-existing issues inherited unchanged from `front`'s original admin code (same code, same lint config, same rule severities — these are not new regressions introduced by the split; see the file:line list below).
+
+Fix the two auto-fixable ones — confirm each is genuinely just import ordering (not a real bug) before fixing:
+- `admin-front/src/views/Admin/AdminDashboardPage.tsx:14` — `perfectionist/sort-imports` (`./model/audit` should come before `./model/catalog`)
+- `admin-front/src/views/Admin/AdminProductsPage.tsx:15` — `perfectionist/sort-named-imports` (`$adminProductQuery` before `$adminProducts`)
+
+```bash
+yarn lint:js:fix
+```
+
+**Leave the following as documented pre-existing debt inherited from `front` (do not attempt to fix — the underlying application logic and effector patterns are unchanged by this migration, and fixing them risks behavior changes out of this task's scope; matches the precedent Task 7 set for `front`'s own pre-existing lint debt):**
+- `react-hooks/set-state-in-effect` (Important-looking but pre-existing) in `AdminLegalPage.tsx:32`, `AdminLegalPage.tsx:40`, `AdminProductPage.tsx:77`
+- `effector/no-watch` warning in `AdminProductPage.tsx:116`
+- `Unused eslint-disable directive` warnings in `views/Admin/model/content.ts:58`, `model/feedback.ts:74`, `model/users.ts:76`
+- `@typescript-eslint/no-unsafe-enum-comparison` errors in `ui/AdminShell.tsx:26,76,77` (same `pathname === AppPath.X` pattern existed in `front`'s original file before Task 6's rename — verified via `git show` against the pre-Task-6 commit; the identifier names changed but the type-level shape did not)
+
+Re-run `yarn lint` after the two auto-fixes. Expected: the count drops by exactly the two fixed errors (from 17 errors/5 warnings to 15 errors/5 warnings); the remaining errors are all in the "leave as-is" list above. If `yarn lint` exits non-zero because ESLint's exit code reflects any remaining error (it will, since errors — not just warnings — remain), that's expected and fine: this task's bar is "no NEW errors beyond the documented pre-existing list", not "exit code 0". Note this explicitly in your report so the task reviewer doesn't mistake it for an unaddressed failure.
 
 - [ ] **Step 3: Build**
 
-Run: `cd admin-front && yarn build`
-Expected: build succeeds. Confirm the printed route table matches: `/`, `/login`, `/products`, `/products/[productId]`, `/categories`, `/content/[pageKey]`, `/banners`, `/legal`, `/feedback`, `/support`, `/signup-requests`, `/users`, `/audit-log`.
-
-- [ ] **Step 4: Manual smoke test**
-
-Run: `cd admin-front && API_PROXY_TARGET=https://wk.amctechgroup.ru PORTAL_API_PROXY_TARGET=https://wk.amctechgroup.ru yarn dev`
-Open `http://localhost:3000/` in a browser — expect a redirect to `/login` (no `admin_user_id` cookie yet). Log in with valid admin credentials against the real backend; expect redirect to `/` showing the dashboard, and the sidebar nav (`ADMIN_NAV`) linking to the de-prefixed routes. Stop the dev server after confirming (Ctrl-C).
-
-- [ ] **Step 5: Commit any fixes made during this task**
-
 ```bash
-git add -A
-git commit -m "fix(admin-front): resolve build/typecheck issues found during verification"
+yarn build
 ```
 
-(Skip this step if Steps 1–4 required no changes.)
+Expected: build succeeds (Next.js's `next build` does not run ESLint by default in this project — only `yarn lint` does — so Step 2's remaining pre-existing lint errors do not block this). Confirm the printed route table matches: `/`, `/login`, `/products`, `/products/[productId]`, `/categories`, `/content/[pageKey]`, `/banners`, `/legal`, `/feedback`, `/support`, `/signup-requests`, `/users`, `/audit-log`.
+
+- [ ] **Step 4: Manual smoke test (best-effort)**
+
+```bash
+cd admin-front && API_PROXY_TARGET=https://wk.amctechgroup.ru PORTAL_API_PROXY_TARGET=https://wk.amctechgroup.ru NEXT_PUBLIC_SITE_ORIGIN=https://wk.amctechgroup.ru yarn dev
+```
+Open `http://localhost:3000/` in a browser if one is available in this environment — expect a redirect to `/login` (no `admin_user_id` cookie yet). If the sandbox has no network access to `wk.amctechgroup.ru` or no browser, skip actually logging in — just confirm the dev server starts without crashing and the root path redirects to `/login` (checkable via `curl -sI http://localhost:3000/` — expect a 307/308 redirect to `/login`). Stop the dev server after confirming (Ctrl-C).
+
+- [ ] **Step 5: Commit fixes**
+
+```bash
+git add admin-front/src/core/shared/router/paths.ts admin-front/src/views/Admin/AdminCategoriesPage.tsx admin-front/src/views/Admin/AdminDashboardPage.tsx admin-front/src/views/Admin/AdminProductsPage.tsx admin-front/.env.example
+git commit -m "fix(admin-front): resolve build/typecheck issues found during verification"
+```
 
 ---
 
