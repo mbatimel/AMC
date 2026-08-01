@@ -148,15 +148,18 @@ services:
     networks: [amc_net]
 
   admin-front:
-      image: ghcr.io/mbatimel/amc-admin-front:${IMAGE_TAG}
-      restart: unless-stopped
-      environment:
-        PORT: "3001"
-        HOSTNAME: "0.0.0.0"
-        ADMIN_API_URL: "http://admin:8084"
-      depends_on:
-        - admin
-      networks: [amc_net]
+    image: ghcr.io/mbatimel/amc-admin-front:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      PORT: "3001"
+      HOSTNAME: "0.0.0.0"
+      API_PROXY_TARGET: "https://wk.amctechgroup.ru"
+      PORTAL_API_PROXY_TARGET: "https://wk.amctechgroup.ru"
+      NEXT_PUBLIC_SITE_ORIGIN: "https://wk.amctechgroup.ru"
+    depends_on:
+      - access
+      - front
+    networks: [amc_net]
 
   swagger-ui:
     image: swaggerapi/swagger-ui:latest
@@ -198,6 +201,7 @@ services:
       - users
       - front
       - swagger-ui
+      - admin-front
     networks: [amc_net]
 
 volumes:

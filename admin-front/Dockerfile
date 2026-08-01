@@ -25,11 +25,6 @@ COPY --from=builder /src/public ./public
 COPY --from=builder --chown=app:app /src/.next/standalone ./
 COPY --from=builder --chown=app:app /src/.next/static ./.next/static
 
-# Каталог для PORTAL_DATA_FILE. Named volume наследует владельца этой
-# директории при первом монтировании — иначе процесс под юзером app
-# не смог бы писать состояние портальных модулей.
-RUN mkdir -p /data && chown app:app /data
-
 USER app
 EXPOSE 3001
 
