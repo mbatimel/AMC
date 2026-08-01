@@ -53,7 +53,7 @@ const toHomeContent = (
 };
 
 /**
- * Контент главной: приходит из редактора админки (`/admin/content/home`
- * и `/admin/banners`), при недоступности API — статичный fallback.
+ * Контент главной: приходит из редактора админки (admin-front, разделы
+ * «Главная страница» и «Баннеры»), при недоступности API — статичный fallback.
  */
 export const $homeContent = combine($content, $banners, toHomeContent);

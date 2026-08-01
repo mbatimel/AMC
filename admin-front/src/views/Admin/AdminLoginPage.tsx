@@ -61,7 +61,7 @@ export const AdminLoginPage = (): JSX.Element => {
   return (
     <AuthShell>
       <AuthCardHeader
-        description="Раздел /admin — отдельный вход для сотрудников портала. Доступ выдаётся ролью «admin»."
+        description="Отдельный вход для сотрудников портала. Доступ выдаётся ролью «admin»."
         icon={IconKey}
         title="Вход в админ-панель"
       />

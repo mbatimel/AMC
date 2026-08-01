@@ -18,27 +18,38 @@
 │   ├── products/
 │   ├── users/
 │   └── warehouses/
-└── front/
+├── front/
+└── admin-front/
 ```
 
 ## Frontend
 
-`front/` — Next.js (App Router, FSD, Effector, HeroUI). Публичная часть,
-личный кабинет клиента и админ-панель живут в одном приложении.
+`front/` — Next.js (App Router, FSD, Effector, HeroUI). Публичная часть и
+личный кабинет клиента. Админ-панель вынесена в отдельный проект
+`admin-front/` на своём поддомене (`admin.wk.amctechgroup.ru`).
 
 | Раздел | Маршруты |
 | --- | --- |
 | Публичные страницы | `/`, `/catalog`, `/product/:id`, `/brands`, `/about`, `/terms`, `/promo`, `/certificates`, `/contacts`, `/support`, `/assistant`, `/legal/:docId` |
 | Кабинет клиента | `/cabinet`, `/cabinet/orders`, `/cabinet/orders/:id`, `/cabinet/documents`, `/cabinet/favorites`, `/cabinet/profile` |
 | Оформление | `/cart`, `/checkout` |
-| Админ-панель | `/admin`, `/admin/login`, `/admin/content/:pageKey`, `/admin/banners`, `/admin/products`, `/admin/products/:id`, `/admin/categories`, `/admin/legal`, `/admin/users`, `/admin/signup-requests`, `/admin/feedback`, `/admin/support`, `/admin/audit-log` |
 
-Доступ в `/admin/*` проверяется в `front/src/proxy.ts` по cookie `admin_user_id`
-и подтверждается ролью `admin` в `back/access`.
+`admin-front/` — отдельное Next.js-приложение (тот же стек: App Router, FSD,
+Effector, HeroUI), деплоится и запускается независимо от `front/`.
+
+| Раздел | Маршруты |
+| --- | --- |
+| Админ-панель | `/`, `/login`, `/content/:pageKey`, `/banners`, `/products`, `/products/:id`, `/categories`, `/legal`, `/users`, `/signup-requests`, `/feedback`, `/support`, `/audit-log` |
+
+Доступ ко всем маршрутам `admin-front/`, кроме `/login`, проверяется в
+`admin-front/src/proxy.ts` по cookie `admin_user_id` и подтверждается ролью
+`admin` в `back/access`.
 
 Модули без своего Go-сервиса (контент страниц, баннеры, юр. документы, заявки,
 отзывы, обращения) обслуживаются route-handlers в `front/src/app/portal-api` —
-см. README в этом каталоге и схему таблиц в `docs/portal-content-schema.sql`.
+единственный источник данных для обоих приложений (`admin-front` обращается к
+ним через nginx-проксирование). См. README в этом каталоге и схему таблиц в
+`docs/portal-content-schema.sql`.
 
 ### ИИ-помощник по подбору инструмента (M-04)
 

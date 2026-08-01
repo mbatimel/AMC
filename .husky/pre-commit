@@ -1,2 +1,4 @@
+set -e
+
 cd front && yarn lint-staged
 cd ../admin-front && yarn lint-staged
