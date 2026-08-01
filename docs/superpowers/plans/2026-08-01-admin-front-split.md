@@ -1186,76 +1186,61 @@ git commit -m "fix(admin-front): resolve build/typecheck issues found during ver
 
 ## Task 9: Wire up deployment — Dockerfile, docker-compose, nginx, CI, husky
 
+**Correction found while preparing this task's dispatch — read this before starting:** while Task 7/8 were running, three commits from a process outside this plan's execution (confirmed not the human operator — asked directly) landed on this branch and already partially did this task's work, with different, partly-broken choices. Current state, verified directly against the checkout:
+
+- `admin-front/Dockerfile` **already exists** — multi-stage build matching the right pattern, but: (a) port is `3001` not `3000` (harmless, arbitrary, no code cares — **this plan now adopts 3001** to avoid needless churn against already-landed work, so every `3000` below is intentionally `3001` instead of what earlier tasks in this plan file said); (b) still provisions a `/data` directory and a comment about `PORTAL_DATA_FILE` — dead weight, `admin-front` never reads that env var or writes to that path (only `front` does), must be removed.
+- `deploy/docker-compose.yml` **already has** an `admin-front` service block, but: (a) indentation is inconsistent with its sibling services (6-space `environment:` block vs. the file's 4-space convention throughout) — cosmetic, fix for consistency; (b) sets `ADMIN_API_URL: "http://admin:8084"`, which **no code anywhere in `admin-front` reads** (confirmed via repo-wide grep — dead config, likely an abandoned attempt at a different design) — must be replaced with the env vars `admin-front`'s actual `next.config.ts` (Task 1) reads: `API_PROXY_TARGET`, `PORTAL_API_PROXY_TARGET`, plus `NEXT_PUBLIC_SITE_ORIGIN` (Task 8, for the public-catalog preview link); (c) `depends_on` only lists `admin`, should be `access` and `front` (matching this plan's original design — `front` because of the `/portal-api/` proxy dependency).
+- `.github/workflows/build.yml` **already has** the correct `admin-front` matrix entry (dockerfile path and image name exactly match what this task would have written) — no change needed, skip that part of Step 4.
+- `deploy/nginx/conf.d/admin.wk.amctechgroup.ru.conf` **does not exist** — nobody added it. Without it, `admin-front` isn't reachable on its own domain at all regardless of the other wiring. Still needed in full, per Step 3 below (with `admin-front:3001` instead of `:3000`).
+- `.husky/pre-commit` **is untouched** — Step 5 below still applies as originally planned.
+
 **Files:**
-- Create: `admin-front/Dockerfile`
-- Modify: `deploy/docker-compose.yml` — add `admin-front` service
+- Modify (not create — already exists): `admin-front/Dockerfile` — remove the dead `/data`/`PORTAL_DATA_FILE` provisioning, keep port `3001`.
+- Modify (not create — already exists): `deploy/docker-compose.yml` — fix indentation, replace `ADMIN_API_URL` with the real env vars, fix `depends_on`.
 - Create: `deploy/nginx/conf.d/admin.wk.amctechgroup.ru.conf`
-- Modify: `.github/workflows/build.yml` — add `admin-front` to the image matrix
+- Skip: `.github/workflows/build.yml` — already correct, verify only, don't edit.
 - Modify: `.husky/pre-commit` — run lint-staged in both apps
 
 **Interfaces:** none (infrastructure only).
 
-- [ ] **Step 1: Write `admin-front/Dockerfile`**
+- [ ] **Step 1: Fix `admin-front/Dockerfile`**
 
-Same multi-stage pattern as `front/Dockerfile`, without the `PORTAL_DATA_FILE` volume directory (admin-front has no local file store):
+Read the current file first (`cat admin-front/Dockerfile`) to confirm it still matches what's described above before editing — if it's already changed since this brief was written, stop and report rather than guessing. Remove exactly this block (the comment plus the `RUN mkdir` line) from the `runner` stage, and nothing else — keep `EXPOSE 3001` / `ENV PORT=3001` as they are:
 
 ```dockerfile
-FROM node:22-alpine AS deps
+# Каталог для PORTAL_DATA_FILE. Named volume наследует владельца этой
+# директории при первом монтировании — иначе процесс под юзером app
+# не смог бы писать состояние портальных модулей.
+RUN mkdir -p /data && chown app:app /data
 
-WORKDIR /src
-
-COPY admin-front/package.json admin-front/yarn.lock ./
-RUN yarn install --frozen-lockfile
-
-FROM node:22-alpine AS builder
-
-WORKDIR /src
-
-COPY --from=deps /src/node_modules ./node_modules
-COPY admin-front/ ./
-
-RUN yarn build
-
-FROM node:22-alpine AS runner
-
-ENV NODE_ENV=production
-WORKDIR /app
-
-RUN addgroup -S app && adduser -S app -G app
-
-COPY --from=builder /src/public ./public
-COPY --from=builder --chown=app:app /src/.next/standalone ./
-COPY --from=builder --chown=app:app /src/.next/static ./.next/static
-
-USER app
-EXPOSE 3000
-
-ENV PORT=3000
-ENV HOSTNAME=0.0.0.0
-
-ENTRYPOINT ["node", "server.js"]
 ```
+(Delete this whole block, including the blank line that follows it before `USER app` — leave exactly one blank line between the `COPY --from=builder ... .next/static` line and `USER app`, matching `front/Dockerfile`'s spacing convention.)
 
-- [ ] **Step 2: Add the `admin-front` service to `deploy/docker-compose.yml`**
+The rest of the file (deps/builder/runner stages, `COPY` lines, `ENTRYPOINT`) stays exactly as-is.
 
-Insert this service block after the existing `front:` service (before `swagger-ui:`):
+- [ ] **Step 2: Fix the `admin-front` service in `deploy/docker-compose.yml`**
+
+Read the current block first (`grep -A 12 "^  admin-front:" deploy/docker-compose.yml`) to confirm it still matches what's described above. Replace the entire `admin-front:` service block with:
 
 ```yaml
   admin-front:
     image: ghcr.io/mbatimel/amc-admin-front:${IMAGE_TAG}
     restart: unless-stopped
     environment:
-      PORT: "3000"
+      PORT: "3001"
       HOSTNAME: "0.0.0.0"
       API_PROXY_TARGET: "https://wk.amctechgroup.ru"
       PORTAL_API_PROXY_TARGET: "https://wk.amctechgroup.ru"
+      NEXT_PUBLIC_SITE_ORIGIN: "https://wk.amctechgroup.ru"
     depends_on:
       - access
       - front
     networks: [amc_net]
 ```
 
-And add `admin-front` to the `nginx` service's `depends_on` list (alongside the existing `access`, `admin`, `auth`, `orders`, `products`, `users`, `front`, `swagger-ui`).
+(4-space indentation throughout, matching every other service in this file — the existing block's `environment:` sub-keys are indented 6 spaces, that's the inconsistency being fixed.)
+
+And add `admin-front` to the `nginx` service's `depends_on` list (alongside the existing `access`, `admin`, `auth`, `orders`, `products`, `users`, `front`, `swagger-ui`) — check first whether it's already there (the external commits didn't add it, but verify).
 
 - [ ] **Step 3: Write `deploy/nginx/conf.d/admin.wk.amctechgroup.ru.conf`**
 
@@ -1326,7 +1311,7 @@ server {
     }
 
     location / {
-        proxy_pass http://admin-front:3000;
+        proxy_pass http://admin-front:3001;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -1335,17 +1320,18 @@ server {
 }
 ```
 
-`/api/v1/orders` is intentionally omitted — the admin panel has no order-management screens (confirmed: `AdminShell`/`nav.ts` cover audit-log, banners, categories, content, feedback, legal, products, signup-requests, support, users only). `/portal-api/` is proxied straight to the `front` container so `admin-front`'s browser-side fetches (relative `/portal-api/...` calls from `portalClient.ts`) hit the single source of truth without needing CORS.
+`/api/v1/orders` is intentionally omitted — the admin panel has no order-management screens (confirmed: `AdminShell`/`nav.ts` cover audit-log, banners, categories, content, feedback, legal, products, signup-requests, support, users only). `/portal-api/` is proxied straight to the `front` container (port `3000`, unaffected by `admin-front`'s port) so `admin-front`'s browser-side fetches (relative `/portal-api/...` calls from `portalClient.ts`) hit the single source of truth without needing CORS. `admin-front` itself listens on `3001` (see Step 1's correction) — note the two different ports, don't "fix" the `3001` here to `3000`, that would break the compose service.
 
-- [ ] **Step 4: Add `admin-front` to the Docker image build matrix**
+- [ ] **Step 4: Verify the Docker image build matrix (already correct, no edit needed)**
 
-In `.github/workflows/build.yml`, add this entry to `strategy.matrix.service` (alongside the existing `front` entry):
-
+Run: `grep -A2 "name: admin-front" .github/workflows/build.yml`
+Expected:
 ```yaml
           - name: admin-front
             dockerfile: ./admin-front/Dockerfile
             image: ghcr.io/mbatimel/amc-admin-front
 ```
+This was already added by the external commits and matches exactly what this task would have written — confirm it, don't touch the file.
 
 - [ ] **Step 5: Update `.husky/pre-commit` to lint-stage both apps**
 
@@ -1358,17 +1344,19 @@ cd front && yarn lint-staged
 cd ../admin-front && yarn lint-staged
 ```
 
-- [ ] **Step 6: Verify docker-compose config parses**
+- [ ] **Step 6: Verify docker-compose config parses (best-effort)**
 
 Run: `cd deploy && docker compose config --quiet`
-Expected: exits 0, no YAML/schema errors. (This validates syntax only — it does not require `IMAGE_TAG`/`PG_*` to resolve to real images, `--quiet` suppresses the rendered output but still validates.)
+Expected: exits 0, no YAML/schema errors. If the `docker` CLI isn't available in this environment, skip this step and note it in the report rather than blocking on it — it's a syntax/schema check, not something the rest of this task depends on. (This validates syntax only — it does not require `IMAGE_TAG`/`PG_*` to resolve to real images, `--quiet` suppresses the rendered output but still validates.)
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add admin-front/Dockerfile deploy/docker-compose.yml deploy/nginx/conf.d/admin.wk.amctechgroup.ru.conf .github/workflows/build.yml .husky/pre-commit
-git commit -m "feat(deploy): add admin-front service, nginx domain, and CI image build"
+git add admin-front/Dockerfile deploy/docker-compose.yml deploy/nginx/conf.d/admin.wk.amctechgroup.ru.conf .husky/pre-commit
+git commit -m "feat(deploy): fix admin-front Dockerfile/compose wiring, add nginx domain and husky lint-staged"
 ```
+
+`.github/workflows/build.yml` is deliberately excluded — Step 4 confirmed it needs no changes.
 
 ---
 
