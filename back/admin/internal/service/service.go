@@ -32,6 +32,12 @@ type Storage interface {
 	InsertAuditLogEntry(ctx context.Context, actorUserID uuid.UUID, actorLabel string, action string) error
 	ListAuditLogEntries(ctx context.Context, limit int, offset int) ([]postgres.AuditLogEntry, error)
 	CountAuditLogEntries(ctx context.Context) (int, error)
+	ListBanners(ctx context.Context, visibleOnly bool) ([]postgres.Banner, int, error)
+	GetBanner(ctx context.Context, bannerID uuid.UUID) (postgres.Banner, error)
+	CreateBanner(ctx context.Context, banner postgres.Banner) (postgres.Banner, error)
+	UpdateBanner(ctx context.Context, banner postgres.Banner, replaceImage bool) (postgres.Banner, error)
+	DeleteBanner(ctx context.Context, bannerID uuid.UUID) error
+	UpdateBannerDelay(ctx context.Context, delaySec int) error
 }
 
 // AuthClient is implemented by auth/pkg/client/transport.ClientAuthAPI.
@@ -45,19 +51,27 @@ type AccessClient interface {
 }
 
 type service struct {
-	logger       zerolog.Logger
-	storage      Storage
-	authClient   AuthClient
-	accessClient AccessClient
+	logger        zerolog.Logger
+	storage       Storage
+	authClient    AuthClient
+	accessClient  AccessClient
+	objectStorage ObjectStorage
+	maxFileSize   int64
 }
 
-func NewAdminApiService(logger zerolog.Logger, storage Storage, authClient AuthClient, accessClient AccessClient) externalapi.AdminAPI {
-	return &service{
+var _ externalapi.AdminAPI = (*service)(nil)
+
+func NewAdminApiService(logger zerolog.Logger, storage Storage, authClient AuthClient, accessClient AccessClient, options ...Option) *service {
+	result := &service{
 		logger:       logger,
 		storage:      storage,
 		authClient:   authClient,
 		accessClient: accessClient,
 	}
+	for _, option := range options {
+		option(result)
+	}
+	return result
 }
 
 // requireAdmin checks that userID currently holds the admin role. Every

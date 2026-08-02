@@ -16,10 +16,16 @@ import (
 )
 
 type fakeStorage struct {
-	inserted []auditCall
-	entries  []postgres.AuditLogEntry
-	total    int
-	listErr  error
+	inserted            []auditCall
+	entries             []postgres.AuditLogEntry
+	total               int
+	listErr             error
+	listBannersFn       func(context.Context, bool) ([]postgres.Banner, int, error)
+	getBannerFn         func(context.Context, uuid.UUID) (postgres.Banner, error)
+	createBannerFn      func(context.Context, postgres.Banner) (postgres.Banner, error)
+	updateBannerFn      func(context.Context, postgres.Banner, bool) (postgres.Banner, error)
+	deleteBannerFn      func(context.Context, uuid.UUID) error
+	updateBannerDelayFn func(context.Context, int) error
 }
 
 type auditCall struct {
@@ -39,6 +45,48 @@ func (f *fakeStorage) ListAuditLogEntries(_ context.Context, _ int, _ int) ([]po
 
 func (f *fakeStorage) CountAuditLogEntries(_ context.Context) (int, error) {
 	return f.total, nil
+}
+
+func (f *fakeStorage) ListBanners(ctx context.Context, visibleOnly bool) ([]postgres.Banner, int, error) {
+	if f.listBannersFn != nil {
+		return f.listBannersFn(ctx, visibleOnly)
+	}
+	return []postgres.Banner{}, 6, nil
+}
+
+func (f *fakeStorage) GetBanner(ctx context.Context, bannerID uuid.UUID) (postgres.Banner, error) {
+	if f.getBannerFn != nil {
+		return f.getBannerFn(ctx, bannerID)
+	}
+	return postgres.Banner{ID: bannerID}, nil
+}
+
+func (f *fakeStorage) CreateBanner(ctx context.Context, banner postgres.Banner) (postgres.Banner, error) {
+	if f.createBannerFn != nil {
+		return f.createBannerFn(ctx, banner)
+	}
+	return banner, nil
+}
+
+func (f *fakeStorage) UpdateBanner(ctx context.Context, banner postgres.Banner, replaceImage bool) (postgres.Banner, error) {
+	if f.updateBannerFn != nil {
+		return f.updateBannerFn(ctx, banner, replaceImage)
+	}
+	return banner, nil
+}
+
+func (f *fakeStorage) DeleteBanner(ctx context.Context, bannerID uuid.UUID) error {
+	if f.deleteBannerFn != nil {
+		return f.deleteBannerFn(ctx, bannerID)
+	}
+	return nil
+}
+
+func (f *fakeStorage) UpdateBannerDelay(ctx context.Context, delaySec int) error {
+	if f.updateBannerDelayFn != nil {
+		return f.updateBannerDelayFn(ctx, delaySec)
+	}
+	return nil
 }
 
 type fakeAuthClient struct {
