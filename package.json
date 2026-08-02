@@ -1,0 +1,11 @@
+{
+  "name": "amc",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "api:inventory": "node scripts/api-check/cli.mjs inventory",
+    "api:check": "node scripts/api-check/cli.mjs check",
+    "api:smoke": "node scripts/api-check/cli.mjs check --smoke",
+    "api:smoke:write": "node scripts/api-check/cli.mjs check --smoke --write"
+  }
+}

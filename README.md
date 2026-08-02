@@ -68,6 +68,23 @@ cd admin-front && yarn install && yarn dev    # http://localhost:3001
 ним через nginx-проксирование). См. README в этом каталоге и схему таблиц в
 `docs/portal-content-schema.sql`.
 
+### Проверка API-ручек фронтов
+
+Скрипт сканирует `front` + `admin-front` (`src/core/shared/api`), сверяет
+`/api/v1` со swagger и опционально делает smoke против живого API.
+
+```bash
+yarn api:inventory          # список METHOD + path
+yarn api:check              # inventory + diff со swagger
+yarn api:smoke              # + GET-smoke (API_BASE → wk.amctechgroup.ru)
+
+# с логином (заголовок X-User-Id):
+API_SMOKE_EMAIL=... API_SMOKE_PASSWORD=... yarn api:smoke
+API_SMOKE_ADMIN_EMAIL=... API_SMOKE_ADMIN_PASSWORD=... yarn api:smoke
+
+# опции: --write | --portal | --destructive | --app=front|admin-front
+```
+
 ### ИИ-помощник по подбору инструмента (M-04)
 
 Работает на DeepSeek: модель через tool calling ищет позиции в `back/products`
