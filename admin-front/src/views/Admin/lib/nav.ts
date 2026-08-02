@@ -20,7 +20,6 @@ export const ADMIN_NAV: AdminNavGroup[] = [
       { href: AppPath.Banners, label: 'Баннеры' },
       { href: getContentPath('about'), label: 'О компании' },
       { href: getContentPath('terms'), label: 'Условия работы' },
-      { href: getContentPath('promo'), label: 'Акции' },
       { href: getContentPath('certificates'), label: 'Сертификаты' },
       { href: getContentPath('contacts'), label: 'Контакты' },
     ],
@@ -30,6 +29,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     items: [
       { href: AppPath.Products, label: 'Товары' },
       { href: AppPath.Categories, label: 'Категории и бренды' },
+      { href: AppPath.Promotions, label: 'Акции' },
     ],
     title: 'Каталог',
   },

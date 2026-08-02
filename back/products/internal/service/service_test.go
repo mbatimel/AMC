@@ -33,9 +33,17 @@ type fakeStorage struct {
 	addUploadedProductImageFn func(context.Context, uuid.UUID, internalModels.ProductImage) (internalModels.ProductImage, error)
 	getProductImageFn         func(context.Context, uuid.UUID, uuid.UUID) (internalModels.ProductImage, error)
 	deleteProductImageFn      func(context.Context, uuid.UUID, uuid.UUID) error
+	createPromotionFn         func(context.Context, internalModels.CreatePromotionParams) (internalModels.Promotion, error)
+	getPromotionByIDFn        func(context.Context, uuid.UUID) (internalModels.Promotion, error)
+	listPromotionsFn          func(context.Context, int, int) ([]internalModels.Promotion, error)
+	countPromotionsFn         func(context.Context) (int, error)
+	updatePromotionFn         func(context.Context, internalModels.UpdatePromotionParams) (internalModels.Promotion, error)
+	deletePromotionFn         func(context.Context, uuid.UUID) error
 	lastCreateParams          internalModels.CreateProductParams
 	lastListParams            internalModels.ListProductsParams
 	lastUpdateParams          internalModels.UpdateProductParams
+	lastCreatePromotionParams internalModels.CreatePromotionParams
+	lastUpdatePromotionParams internalModels.UpdatePromotionParams
 }
 
 func (f *fakeStorage) CreateProduct(ctx context.Context, params internalModels.CreateProductParams) (internalModels.Product, error) {
@@ -184,6 +192,65 @@ func (f *fakeStorage) CountBrands(ctx context.Context) (int, error) {
 	return 1, nil
 }
 
+func (f *fakeStorage) CreatePromotion(ctx context.Context, params internalModels.CreatePromotionParams) (internalModels.Promotion, error) {
+	f.lastCreatePromotionParams = params
+	if f.createPromotionFn != nil {
+		return f.createPromotionFn(ctx, params)
+	}
+	promotion := samplePromotion()
+	promotion.Name = params.Name
+	promotion.DiscountPercent = params.DiscountPercent
+	promotion.StartsAt = params.StartsAt
+	promotion.EndsAt = params.EndsAt
+	promotion.Products = params.Products
+	return promotion, nil
+}
+
+func (f *fakeStorage) GetPromotionByID(ctx context.Context, id uuid.UUID) (internalModels.Promotion, error) {
+	if f.getPromotionByIDFn != nil {
+		return f.getPromotionByIDFn(ctx, id)
+	}
+	promotion := samplePromotion()
+	promotion.ID = id
+	return promotion, nil
+}
+
+func (f *fakeStorage) ListPromotions(ctx context.Context, limit int, offset int) ([]internalModels.Promotion, error) {
+	if f.listPromotionsFn != nil {
+		return f.listPromotionsFn(ctx, limit, offset)
+	}
+	return []internalModels.Promotion{samplePromotion()}, nil
+}
+
+func (f *fakeStorage) CountPromotions(ctx context.Context) (int, error) {
+	if f.countPromotionsFn != nil {
+		return f.countPromotionsFn(ctx)
+	}
+	return 1, nil
+}
+
+func (f *fakeStorage) UpdatePromotion(ctx context.Context, params internalModels.UpdatePromotionParams) (internalModels.Promotion, error) {
+	f.lastUpdatePromotionParams = params
+	if f.updatePromotionFn != nil {
+		return f.updatePromotionFn(ctx, params)
+	}
+	promotion := samplePromotion()
+	promotion.ID = params.PromotionID
+	promotion.Name = params.Name
+	promotion.DiscountPercent = params.DiscountPercent
+	promotion.StartsAt = params.StartsAt
+	promotion.EndsAt = params.EndsAt
+	promotion.Products = params.Products
+	return promotion, nil
+}
+
+func (f *fakeStorage) DeletePromotion(ctx context.Context, id uuid.UUID) error {
+	if f.deletePromotionFn != nil {
+		return f.deletePromotionFn(ctx, id)
+	}
+	return nil
+}
+
 type fakeAccess struct {
 	allowed bool
 	err     error
@@ -225,6 +292,22 @@ func sampleProduct() internalModels.Product {
 		IsPublished: true,
 		CreatedAt:   now,
 		UpdatedAt:   now,
+	}
+}
+
+func samplePromotion() internalModels.Promotion {
+	now := time.Date(2026, 7, 30, 10, 0, 0, 0, time.UTC)
+	return internalModels.Promotion{
+		ID:              uuid.MustParse("50000000-0000-0000-0000-000000000001"),
+		Name:            "Promo",
+		DiscountPercent: 20,
+		StartsAt:        now.Add(-time.Hour),
+		EndsAt:          now.Add(time.Hour),
+		Products: []internalModels.PromotionProduct{
+			{ProductID: uuid.MustParse("10000000-0000-0000-0000-000000000001"), MinQty: 10},
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 }
 
@@ -692,4 +775,157 @@ func (r *roleAccess) CheckAccess(_ context.Context, _ uuid.UUID, role int) (bool
 
 func intPointer(value int) *int {
 	return &value
+}
+
+func callCreatePromotion(ctx context.Context, svc *Service, productID uuid.UUID) (models.CreatePromotionResponse, error) {
+	now := time.Now().UTC()
+	return svc.CreatePromotion(
+		ctx,
+		uuid.New(),
+		"Promo",
+		20,
+		now.Add(-time.Hour).Format(time.RFC3339),
+		now.Add(time.Hour).Format(time.RFC3339),
+		[]models.PromotionProduct{{ProductID: productID.String(), MinQty: 10}},
+	)
+}
+
+func TestCreatePromotion(t *testing.T) {
+	storage := &fakeStorage{}
+	productID := uuid.New()
+	response, err := callCreatePromotion(context.Background(), newTestService(storage), productID)
+	if err != nil {
+		t.Fatalf("CreatePromotion() error = %v", err)
+	}
+	if response.Promotion.Status != "active" {
+		t.Fatalf("CreatePromotion() status = %q, want active", response.Promotion.Status)
+	}
+	if len(storage.lastCreatePromotionParams.Products) != 1 || storage.lastCreatePromotionParams.Products[0].ProductID != productID {
+		t.Fatalf("CreatePromotion() saved products = %+v", storage.lastCreatePromotionParams.Products)
+	}
+	if storage.lastCreatePromotionParams.Products[0].MinQty != 10 {
+		t.Fatalf("CreatePromotion() min_qty = %d, want 10", storage.lastCreatePromotionParams.Products[0].MinQty)
+	}
+}
+
+func TestCreatePromotionValidation(t *testing.T) {
+	now := time.Now().UTC()
+	validProducts := []models.PromotionProduct{{ProductID: uuid.New().String(), MinQty: 1}}
+
+	tests := []struct {
+		name            string
+		promotionName   string
+		discountPercent float64
+		startsAt        string
+		endsAt          string
+		products        []models.PromotionProduct
+	}{
+		{"empty name", "", 10, now.Format(time.RFC3339), now.Add(time.Hour).Format(time.RFC3339), validProducts},
+		{"discount below zero", "Promo", -1, now.Format(time.RFC3339), now.Add(time.Hour).Format(time.RFC3339), validProducts},
+		{"discount above 100", "Promo", 101, now.Format(time.RFC3339), now.Add(time.Hour).Format(time.RFC3339), validProducts},
+		{"malformed startsAt", "Promo", 10, "not-a-date", now.Add(time.Hour).Format(time.RFC3339), validProducts},
+		{"endsAt before startsAt", "Promo", 10, now.Format(time.RFC3339), now.Add(-time.Hour).Format(time.RFC3339), validProducts},
+		{"endsAt equal startsAt", "Promo", 10, now.Format(time.RFC3339), now.Format(time.RFC3339), validProducts},
+		{"empty products", "Promo", 10, now.Format(time.RFC3339), now.Add(time.Hour).Format(time.RFC3339), nil},
+		{"invalid product id", "Promo", 10, now.Format(time.RFC3339), now.Add(time.Hour).Format(time.RFC3339), []models.PromotionProduct{{ProductID: "not-a-uuid", MinQty: 1}}},
+		{"duplicate product id", "Promo", 10, now.Format(time.RFC3339), now.Add(time.Hour).Format(time.RFC3339), []models.PromotionProduct{{ProductID: validProducts[0].ProductID, MinQty: 1}, {ProductID: validProducts[0].ProductID, MinQty: 5}}},
+		{"min qty below one", "Promo", 10, now.Format(time.RFC3339), now.Add(time.Hour).Format(time.RFC3339), []models.PromotionProduct{{ProductID: uuid.New().String(), MinQty: 0}}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := newTestService(&fakeStorage{}).CreatePromotion(
+				context.Background(), uuid.New(), tt.promotionName, tt.discountPercent, tt.startsAt, tt.endsAt, tt.products,
+			)
+			if !errors.Is(err, customErrors.ErrValidation) {
+				t.Fatalf("CreatePromotion() error = %v, want validation", err)
+			}
+		})
+	}
+}
+
+func TestCreatePromotionProductNotFound(t *testing.T) {
+	storage := &fakeStorage{
+		getProductByIDFn: func(context.Context, uuid.UUID) (internalModels.Product, error) {
+			return internalModels.Product{}, postgres.ErrProductNotFound
+		},
+	}
+	_, err := callCreatePromotion(context.Background(), newTestService(storage), uuid.New())
+	if !errors.Is(err, customErrors.ErrNotFound) {
+		t.Fatalf("CreatePromotion() error = %v, want not found", err)
+	}
+}
+
+func TestCreatePromotionRequiresWriteAccess(t *testing.T) {
+	svc := New(zerolog.Nop(), &fakeStorage{}, &fakeAccess{allowed: false})
+	_, err := callCreatePromotion(context.Background(), svc, uuid.New())
+	if !errors.Is(err, customErrors.ErrForbidden) {
+		t.Fatalf("CreatePromotion() error = %v, want forbidden", err)
+	}
+}
+
+func TestPromotionStatusScheduledAndEnded(t *testing.T) {
+	now := time.Now().UTC()
+	if got := promotionStatus(now.Add(time.Hour), now.Add(2*time.Hour)); got != "scheduled" {
+		t.Fatalf("promotionStatus(future) = %q, want scheduled", got)
+	}
+	if got := promotionStatus(now.Add(-2*time.Hour), now.Add(-time.Hour)); got != "ended" {
+		t.Fatalf("promotionStatus(past) = %q, want ended", got)
+	}
+	if got := promotionStatus(now.Add(-time.Hour), now.Add(time.Hour)); got != "active" {
+		t.Fatalf("promotionStatus(current) = %q, want active", got)
+	}
+}
+
+func TestGetPromotionNotFound(t *testing.T) {
+	storage := &fakeStorage{
+		getPromotionByIDFn: func(context.Context, uuid.UUID) (internalModels.Promotion, error) {
+			return internalModels.Promotion{}, postgres.ErrPromotionNotFound
+		},
+	}
+	_, err := newTestService(storage).GetPromotion(context.Background(), uuid.New())
+	if !errors.Is(err, customErrors.ErrNotFound) {
+		t.Fatalf("GetPromotion() error = %v, want not found", err)
+	}
+}
+
+func TestUpdatePromotionReplacesProducts(t *testing.T) {
+	storage := &fakeStorage{}
+	promotionID := uuid.New()
+	newProductID := uuid.New()
+	now := time.Now().UTC()
+	response, err := newTestService(storage).UpdatePromotion(
+		context.Background(), uuid.New(), promotionID, "Updated", 30,
+		now.Format(time.RFC3339), now.Add(time.Hour).Format(time.RFC3339),
+		[]models.PromotionProduct{{ProductID: newProductID.String(), MinQty: 5}},
+	)
+	if err != nil {
+		t.Fatalf("UpdatePromotion() error = %v", err)
+	}
+	if response.Promotion.Name != "Updated" {
+		t.Fatalf("UpdatePromotion() name = %q, want Updated", response.Promotion.Name)
+	}
+	if len(storage.lastUpdatePromotionParams.Products) != 1 || storage.lastUpdatePromotionParams.Products[0].ProductID != newProductID {
+		t.Fatalf("UpdatePromotion() saved products = %+v", storage.lastUpdatePromotionParams.Products)
+	}
+}
+
+func TestDeletePromotion(t *testing.T) {
+	response, err := newTestService(&fakeStorage{}).DeletePromotion(context.Background(), uuid.New(), uuid.New())
+	if err != nil {
+		t.Fatalf("DeletePromotion() error = %v", err)
+	}
+	if !response.Deleted {
+		t.Fatal("DeletePromotion() Deleted = false, want true")
+	}
+}
+
+func TestListPromotions(t *testing.T) {
+	response, err := newTestService(&fakeStorage{}).ListPromotions(context.Background(), nil, nil)
+	if err != nil {
+		t.Fatalf("ListPromotions() error = %v", err)
+	}
+	if len(response.Items) != 1 {
+		t.Fatalf("ListPromotions() items = %d, want 1", len(response.Items))
+	}
 }

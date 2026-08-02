@@ -16,6 +16,11 @@ type ProductsAPIUpdateProduct func(ctx context.Context, userID uuid.UUID, produc
 type ProductsAPIDeleteProduct func(ctx context.Context, userID uuid.UUID, productID uuid.UUID) (response models.DeleteProductResponse, err error)
 type ProductsAPIListCategories func(ctx context.Context, limit *int, offset *int) (response models.ListCategoriesResponse, err error)
 type ProductsAPIListBrands func(ctx context.Context, limit *int, offset *int) (response models.ListBrandsResponse, err error)
+type ProductsAPICreatePromotion func(ctx context.Context, userID uuid.UUID, name string, discountPercent float64, startsAt string, endsAt string, products []models.PromotionProduct) (response models.CreatePromotionResponse, err error)
+type ProductsAPIGetPromotion func(ctx context.Context, promotionID uuid.UUID) (response models.GetPromotionResponse, err error)
+type ProductsAPIListPromotions func(ctx context.Context, limit *int, offset *int) (response models.ListPromotionsResponse, err error)
+type ProductsAPIUpdatePromotion func(ctx context.Context, userID uuid.UUID, promotionID uuid.UUID, name string, discountPercent float64, startsAt string, endsAt string, products []models.PromotionProduct) (response models.UpdatePromotionResponse, err error)
+type ProductsAPIDeletePromotion func(ctx context.Context, userID uuid.UUID, promotionID uuid.UUID) (response models.DeletePromotionResponse, err error)
 
 type MiddlewareProductsAPI func(next externalapi.ProductsAPI) externalapi.ProductsAPI
 
@@ -26,3 +31,8 @@ type MiddlewareProductsAPIUpdateProduct func(next ProductsAPIUpdateProduct) Prod
 type MiddlewareProductsAPIDeleteProduct func(next ProductsAPIDeleteProduct) ProductsAPIDeleteProduct
 type MiddlewareProductsAPIListCategories func(next ProductsAPIListCategories) ProductsAPIListCategories
 type MiddlewareProductsAPIListBrands func(next ProductsAPIListBrands) ProductsAPIListBrands
+type MiddlewareProductsAPICreatePromotion func(next ProductsAPICreatePromotion) ProductsAPICreatePromotion
+type MiddlewareProductsAPIGetPromotion func(next ProductsAPIGetPromotion) ProductsAPIGetPromotion
+type MiddlewareProductsAPIListPromotions func(next ProductsAPIListPromotions) ProductsAPIListPromotions
+type MiddlewareProductsAPIUpdatePromotion func(next ProductsAPIUpdatePromotion) ProductsAPIUpdatePromotion
+type MiddlewareProductsAPIDeletePromotion func(next ProductsAPIDeletePromotion) ProductsAPIDeletePromotion

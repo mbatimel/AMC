@@ -104,3 +104,56 @@ type requestProductsAPIListBrands struct {
 type responseProductsAPIListBrands struct {
 	Response models.ListBrandsResponse `json:"response,omitempty"`
 }
+
+type requestProductsAPICreatePromotion struct {
+	UserID          uuid.UUID                 `json:"userID,omitempty"`
+	Name            string                    `json:"name,omitempty"`
+	DiscountPercent float64                   `json:"discountPercent,omitempty"`
+	StartsAt        string                    `json:"startsAt,omitempty"`
+	EndsAt          string                    `json:"endsAt,omitempty"`
+	Products        []models.PromotionProduct `json:"products,omitempty"`
+}
+
+type responseProductsAPICreatePromotion struct {
+	Response models.CreatePromotionResponse `json:"response,omitempty"`
+}
+
+type requestProductsAPIGetPromotion struct {
+	PromotionID uuid.UUID `json:"promotionID,omitempty"`
+}
+
+type responseProductsAPIGetPromotion struct {
+	Response models.GetPromotionResponse `json:"response,omitempty"`
+}
+
+type requestProductsAPIListPromotions struct {
+	Limit  *int `json:"limit,omitempty"`
+	Offset *int `json:"offset,omitempty"`
+}
+
+type responseProductsAPIListPromotions struct {
+	Response models.ListPromotionsResponse `json:"response,omitempty"`
+}
+
+type requestProductsAPIUpdatePromotion struct {
+	UserID          uuid.UUID                 `json:"userID,omitempty"`
+	PromotionID     uuid.UUID                 `json:"promotionID,omitempty"`
+	Name            string                    `json:"name,omitempty"`
+	DiscountPercent float64                   `json:"discountPercent,omitempty"`
+	StartsAt        string                    `json:"startsAt,omitempty"`
+	EndsAt          string                    `json:"endsAt,omitempty"`
+	Products        []models.PromotionProduct `json:"products,omitempty"`
+}
+
+type responseProductsAPIUpdatePromotion struct {
+	Response models.UpdatePromotionResponse `json:"response,omitempty"`
+}
+
+type requestProductsAPIDeletePromotion struct {
+	UserID      uuid.UUID `json:"userID,omitempty"`
+	PromotionID uuid.UUID `json:"promotionID,omitempty"`
+}
+
+type responseProductsAPIDeletePromotion struct {
+	Response models.DeletePromotionResponse `json:"response,omitempty"`
+}

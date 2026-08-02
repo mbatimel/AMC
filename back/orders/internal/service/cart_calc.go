@@ -39,3 +39,10 @@ func calcCartTotals(subtotal float64, discountPercent float64, vatRatePercent fl
 func round2(v float64) float64 {
 	return math.Round(v*100) / 100
 }
+
+// calcEffectiveDiscount combines the product's own manual discount with the
+// best currently-qualifying promotion discount (already threshold-filtered
+// by SQL) — the higher one wins, per the "берём максимум" resolution rule.
+func calcEffectiveDiscount(manualDiscountPercent float64, promoDiscountPercent float64) float64 {
+	return math.Max(manualDiscountPercent, promoDiscountPercent)
+}

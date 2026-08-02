@@ -74,7 +74,7 @@ func TestCartRoundTrip(t *testing.T) {
 		t.Fatalf("expected price group %s, got %+v", priceGroupID, resolvedGroupID)
 	}
 
-	price, err := storage.ResolveProductPrice(ctx, productID, resolvedGroupID)
+	price, err := storage.ResolveProductPrice(ctx, productID, resolvedGroupID, 2)
 	if err != nil {
 		t.Fatalf("ResolveProductPrice: %v", err)
 	}
@@ -353,7 +353,7 @@ func TestCartAndOrderRoundTripWithoutCounterparty(t *testing.T) {
 		t.Fatalf("expected no price group for a clientless user, got %+v", priceGroupID)
 	}
 
-	price, err := storage.ResolveProductPrice(ctx, productID, priceGroupID)
+	price, err := storage.ResolveProductPrice(ctx, productID, priceGroupID, 1)
 	if err != nil {
 		t.Fatalf("ResolveProductPrice: %v", err)
 	}
@@ -436,5 +436,70 @@ func TestCartAndOrderRoundTripWithoutCounterparty(t *testing.T) {
 	// able to act on this order.
 	if _, err = storage.CancelOrder(ctx, orderID, noClient, otherUserID, "not mine"); !errors.Is(err, ErrOrderNotFound) {
 		t.Fatalf("CancelOrder(other clientless user) error = %v, want ErrOrderNotFound", err)
+	}
+}
+
+func TestResolveProductPrice_Promotion(t *testing.T) {
+	pool := testPool(t)
+	defer pool.Close()
+
+	ctx := context.Background()
+	storage := New(pool)
+
+	mustScan := func(sql string, args ...interface{}) uuid.UUID {
+		var id uuid.UUID
+		if err := pool.QueryRow(ctx, sql, args...).Scan(&id); err != nil {
+			t.Fatalf("fixture insert failed (%s): %v", sql, err)
+		}
+		return id
+	}
+
+	categoryID := mustScan(`INSERT INTO categories (name, slug) VALUES ('promo category', $1) RETURNING id`, uuid.NewString())
+	unitID := mustScan(`INSERT INTO units (code, name) VALUES ($1, 'promo unit') RETURNING id`, uuid.NewString())
+	productID := mustScan(`INSERT INTO products (category_id, unit_id, sku, name, slug) VALUES ($1, $2, $3, 'promo product', $4) RETURNING id`, categoryID, unitID, uuid.NewString(), uuid.NewString())
+	if _, err := pool.Exec(ctx, `INSERT INTO product_prices (product_id, price_type, price, discount_percent) VALUES ($1, 'base', 1000, 0)`, productID); err != nil {
+		t.Fatalf("insert base price: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO product_prices (product_id, price_type, price, discount_percent) VALUES ($1, 'client', 950, 5)`, productID); err != nil {
+		t.Fatalf("insert client price: %v", err)
+	}
+	promotionID := mustScan(`
+		INSERT INTO promotions (name, discount_percent, starts_at, ends_at)
+		VALUES ('test promo', 20, now() - interval '1 hour', now() + interval '1 hour')
+		RETURNING id
+	`)
+	if _, err := pool.Exec(ctx, `INSERT INTO promotion_products (promotion_id, product_id, min_qty) VALUES ($1, $2, 10)`, promotionID, productID); err != nil {
+		t.Fatalf("insert promotion product: %v", err)
+	}
+
+	t.Cleanup(func() {
+		pool.Exec(ctx, `DELETE FROM promotion_products WHERE promotion_id = $1`, promotionID)
+		pool.Exec(ctx, `DELETE FROM promotions WHERE id = $1`, promotionID)
+		pool.Exec(ctx, `DELETE FROM product_prices WHERE product_id = $1`, productID)
+		pool.Exec(ctx, `DELETE FROM products WHERE id = $1`, productID)
+		pool.Exec(ctx, `DELETE FROM units WHERE id = $1`, unitID)
+		pool.Exec(ctx, `DELETE FROM categories WHERE id = $1`, categoryID)
+	})
+
+	noGroup := uuid.NullUUID{}
+
+	// qty ниже min_qty акции (10) — акция не учитывается, действует только
+	// ручная скидка товара (5%): 1000 * 0.95 = 950.
+	belowThreshold, err := storage.ResolveProductPrice(ctx, productID, noGroup, 5)
+	if err != nil {
+		t.Fatalf("ResolveProductPrice (below threshold): %v", err)
+	}
+	if belowThreshold != 950 {
+		t.Fatalf("expected 950 below threshold, got %v", belowThreshold)
+	}
+
+	// qty достигает min_qty (10) — акция (20%) перебивает ручную скидку (5%)
+	// по правилу GREATEST: 1000 * 0.80 = 800.
+	atThreshold, err := storage.ResolveProductPrice(ctx, productID, noGroup, 10)
+	if err != nil {
+		t.Fatalf("ResolveProductPrice (at threshold): %v", err)
+	}
+	if atThreshold != 800 {
+		t.Fatalf("expected 800 at threshold, got %v", atThreshold)
 	}
 }

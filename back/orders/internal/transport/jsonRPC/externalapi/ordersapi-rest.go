@@ -288,21 +288,6 @@ func (http *httpOrdersAPI) serveListOrders(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIListOrders
 
-	if _clientID := ctx.Query("clientID"); _clientID != "" {
-		var clientID string
-		clientID = _clientID
-		request.ClientID = clientID
-	}
-	if _status := ctx.Query("status"); _status != "" {
-		var status string
-		status = _status
-		request.Status = status
-	}
-	if _paymentStatus := ctx.Query("paymentStatus"); _paymentStatus != "" {
-		var paymentStatus string
-		paymentStatus = _paymentStatus
-		request.PaymentStatus = paymentStatus
-	}
 	if _limit := ctx.Query("limit"); _limit != "" {
 		var limit int
 		limit, err = strconv.Atoi(_limit)
@@ -325,6 +310,21 @@ func (http *httpOrdersAPI) serveListOrders(ctx *fiber.Ctx) (err error) {
 		var sort string
 		sort = _sort
 		request.Sort = sort
+	}
+	if _clientID := ctx.Query("clientID"); _clientID != "" {
+		var clientID string
+		clientID = _clientID
+		request.ClientID = clientID
+	}
+	if _status := ctx.Query("status"); _status != "" {
+		var status string
+		status = _status
+		request.Status = status
+	}
+	if _paymentStatus := ctx.Query("paymentStatus"); _paymentStatus != "" {
+		var paymentStatus string
+		paymentStatus = _paymentStatus
+		request.PaymentStatus = paymentStatus
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -471,6 +471,16 @@ func (http *httpOrdersAPI) serveUpdateOrderStatus(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIUpdateOrderStatus
 
+	if _status := ctx.Query("status"); _status != "" {
+		var status string
+		status = _status
+		request.Status = status
+	}
+	if _paymentStatus := ctx.Query("paymentStatus"); _paymentStatus != "" {
+		var paymentStatus string
+		paymentStatus = _paymentStatus
+		request.PaymentStatus = paymentStatus
+	}
 	if _comment := ctx.Query("comment"); _comment != "" {
 		var comment string
 		comment = _comment
@@ -485,16 +495,6 @@ func (http *httpOrdersAPI) serveUpdateOrderStatus(ctx *fiber.Ctx) (err error) {
 		var orderID uuid.UUID
 		orderID, _ = uuid.Parse(_orderID)
 		request.OrderID = orderID
-	}
-	if _status := ctx.Query("status"); _status != "" {
-		var status string
-		status = _status
-		request.Status = status
-	}
-	if _paymentStatus := ctx.Query("paymentStatus"); _paymentStatus != "" {
-		var paymentStatus string
-		paymentStatus = _paymentStatus
-		request.PaymentStatus = paymentStatus
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -516,6 +516,8 @@ func (http *httpOrdersAPI) getCities(ctx context.Context, request requestOrdersA
 	return
 }
 func (http *httpOrdersAPI) serveGetCities(ctx *fiber.Ctx) (err error) {
+
+	var request requestOrdersAPIGetCities
 
 	return customhandlers.GetCities(ctx, http.svc)
 }

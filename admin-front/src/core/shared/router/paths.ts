@@ -8,6 +8,7 @@ export enum AppPath {
   Legal = '/legal',
   Login = '/login',
   Products = '/products',
+  Promotions = '/promotions',
   SignupRequests = '/signup-requests',
   Support = '/support',
   Users = '/users',

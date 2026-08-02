@@ -72,3 +72,33 @@ type ListBrandsRequest struct {
 	Limit  *int `json:"limit,omitempty"`
 	Offset *int `json:"offset,omitempty"`
 }
+
+type CreatePromotionRequest struct {
+	Name            string             `json:"name"`
+	DiscountPercent float64            `json:"discount_percent"`
+	StartsAt        string             `json:"starts_at"`
+	EndsAt          string             `json:"ends_at"`
+	Products        []PromotionProduct `json:"products"`
+}
+
+type GetPromotionRequest struct {
+	ID string `json:"id"`
+}
+
+type ListPromotionsRequest struct {
+	Limit  *int `json:"limit,omitempty"`
+	Offset *int `json:"offset,omitempty"`
+}
+
+type UpdatePromotionRequest struct {
+	ID              string             `json:"id"`
+	Name            string             `json:"name"`
+	DiscountPercent float64            `json:"discount_percent"`
+	StartsAt        string             `json:"starts_at"`
+	EndsAt          string             `json:"ends_at"`
+	Products        []PromotionProduct `json:"products"`
+}
+
+type DeletePromotionRequest struct {
+	ID string `json:"id"`
+}

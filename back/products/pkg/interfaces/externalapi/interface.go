@@ -111,4 +111,59 @@ type ProductsAPI interface {
 	// @tg summary=`Список брендов`
 	// @tg desc=`Получение списка брендов каталога`
 	ListBrands(ctx context.Context, limit *int, offset *int) (response models.ListBrandsResponse, err error)
+
+	// CreatePromotion ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/promotions
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:CreatePromotion
+	// @tg summary=`Создание акции`
+	// @tg desc=`Создание акции со скидкой на выбранные товары на период, с порогом количества на товар`
+	// @tg uuidPackage=github.com/google/uuid
+	// @tg userID.format=uuid
+	CreatePromotion(ctx context.Context, userID uuid.UUID, name string, discountPercent float64, startsAt string, endsAt string, products []models.PromotionProduct) (response models.CreatePromotionResponse, err error)
+
+	// GetPromotion ...
+	// @tg http-method=GET
+	// @tg http-path=/v1/promotions/:promotionID
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:GetPromotion
+	// @tg summary=`Получение акции`
+	// @tg desc=`Получение акции по идентификатору`
+	// @tg uuidPackage=github.com/google/uuid
+	// @tg promotionID.format=uuid
+	GetPromotion(ctx context.Context, promotionID uuid.UUID) (response models.GetPromotionResponse, err error)
+
+	// ListPromotions ...
+	// @tg http-method=GET
+	// @tg http-path=/v1/promotions
+	// @tg http-args=limit|limit
+	// @tg http-args=offset|offset
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:ListPromotions
+	// @tg summary=`Список акций`
+	// @tg desc=`Получение списка акций с пагинацией`
+	ListPromotions(ctx context.Context, limit *int, offset *int) (response models.ListPromotionsResponse, err error)
+
+	// UpdatePromotion ...
+	// @tg http-method=PATCH
+	// @tg http-path=/v1/promotions/:promotionID
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:UpdatePromotion
+	// @tg summary=`Обновление акции`
+	// @tg desc=`Обновление акции: название, скидка, период, список товаров с порогами (заменяется целиком)`
+	// @tg uuidPackage=github.com/google/uuid
+	// @tg userID.format=uuid
+	// @tg promotionID.format=uuid
+	UpdatePromotion(ctx context.Context, userID uuid.UUID, promotionID uuid.UUID, name string, discountPercent float64, startsAt string, endsAt string, products []models.PromotionProduct) (response models.UpdatePromotionResponse, err error)
+
+	// DeletePromotion ...
+	// @tg http-method=DELETE
+	// @tg http-path=/v1/promotions/:promotionID
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/products/internal/transport/custom-handlers:DeletePromotion
+	// @tg summary=`Удаление акции`
+	// @tg desc=`Удаление акции`
+	// @tg uuidPackage=github.com/google/uuid
+	// @tg userID.format=uuid
+	// @tg promotionID.format=uuid
+	DeletePromotion(ctx context.Context, userID uuid.UUID, promotionID uuid.UUID) (response models.DeletePromotionResponse, err error)
 }

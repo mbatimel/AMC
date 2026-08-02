@@ -13,14 +13,14 @@ paths:
             description: Получение списка брендов каталога
             parameters:
                 - in: query
-                  name: offset
+                  name: limit
                   schema:
                     oneOf:
                         - type: number
                           format: int
                         - nullable: true
                 - in: query
-                  name: limit
+                  name: offset
                   schema:
                     oneOf:
                         - type: number
@@ -407,16 +407,17 @@ paths:
             description: Получение списка товаров с фильтрами, поиском и пагинацией
             parameters:
                 - in: query
-                  name: inStock
-                  schema:
-                    oneOf:
-                        - type: boolean
-                        - nullable: true
-                - in: query
-                  name: categoryID
+                  name: gost
                   schema:
                     oneOf:
                         - type: string
+                        - nullable: true
+                - in: query
+                  name: offset
+                  schema:
+                    oneOf:
+                        - type: number
+                          format: int
                         - nullable: true
                 - in: query
                   name: brandID
@@ -425,20 +426,25 @@ paths:
                         - type: string
                         - nullable: true
                 - in: query
-                  name: gost
+                  name: material
                   schema:
                     oneOf:
                         - type: string
                         - nullable: true
                 - in: query
-                  name: limit
+                  name: size
                   schema:
                     oneOf:
-                        - type: number
-                          format: int
+                        - type: string
                         - nullable: true
                 - in: query
-                  name: offset
+                  name: inStock
+                  schema:
+                    oneOf:
+                        - type: boolean
+                        - nullable: true
+                - in: query
+                  name: limit
                   schema:
                     oneOf:
                         - type: number
@@ -457,13 +463,7 @@ paths:
                         - type: string
                         - nullable: true
                 - in: query
-                  name: material
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: size
+                  name: categoryID
                   schema:
                     oneOf:
                         - type: string
@@ -1419,6 +1419,978 @@ paths:
                                         type: string
                                         example: content.api.errors.products.internalError
                                         description: Заголовок ошибки
+    /api/v1/promotions:
+        get:
+            tags:
+                - ProductsAPI
+            summary: Список акций
+            description: Получение списка акций с пагинацией
+            parameters:
+                - in: query
+                  name: limit
+                  schema:
+                    oneOf:
+                        - type: number
+                          format: int
+                        - nullable: true
+                - in: query
+                  name: offset
+                  schema:
+                    oneOf:
+                        - type: number
+                          format: int
+                        - nullable: true
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.internalError
+                                        description: Заголовок ошибки
+        post:
+            tags:
+                - ProductsAPI
+            summary: Создание акции
+            description: Создание акции со скидкой на выбранные товары на период, с порогом количества на товар
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestProductsAPICreatePromotion'
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.internalError
+                                        description: Заголовок ошибки
+    /api/v1/promotions/{promotionID}:
+        get:
+            tags:
+                - ProductsAPI
+            summary: Получение акции
+            description: Получение акции по идентификатору
+            parameters:
+                - in: path
+                  name: promotionID
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.internalError
+                                        description: Заголовок ошибки
+        patch:
+            tags:
+                - ProductsAPI
+            summary: Обновление акции
+            description: 'Обновление акции: название, скидка, период, список товаров с порогами (заменяется целиком)'
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - in: path
+                  name: promotionID
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestProductsAPIUpdatePromotion'
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.internalError
+                                        description: Заголовок ошибки
+        delete:
+            tags:
+                - ProductsAPI
+            summary: Удаление акции
+            description: Удаление акции
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - in: path
+                  name: promotionID
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.internalError
+                                        description: Заголовок ошибки
 components:
     schemas:
         models.Brand:
@@ -1465,7 +2437,17 @@ components:
             properties:
                 product:
                     $ref: '#/components/schemas/models.Product'
+        models.CreatePromotionResponse:
+            type: object
+            properties:
+                promotion:
+                    $ref: '#/components/schemas/models.Promotion'
         models.DeleteProductResponse:
+            type: object
+            properties:
+                deleted:
+                    type: boolean
+        models.DeletePromotionResponse:
             type: object
             properties:
                 deleted:
@@ -1475,6 +2457,11 @@ components:
             properties:
                 product:
                     $ref: '#/components/schemas/models.Product'
+        models.GetPromotionResponse:
+            type: object
+            properties:
+                promotion:
+                    $ref: '#/components/schemas/models.Promotion'
         models.ListBrandsResponse:
             type: object
             properties:
@@ -1502,6 +2489,16 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/models.ProductListItem'
+                    nullable: true
+                pagination:
+                    $ref: '#/components/schemas/models.Pagination'
+        models.ListPromotionsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/models.Promotion'
                     nullable: true
                 pagination:
                     $ref: '#/components/schemas/models.Pagination'
@@ -1643,11 +2640,53 @@ components:
                 updated_at:
                     type: string
                     format: date-time
+        models.Promotion:
+            type: object
+            properties:
+                created_at:
+                    type: string
+                    format: date-time
+                discount_percent:
+                    type: number
+                    format: float
+                ends_at:
+                    type: string
+                    format: date-time
+                id:
+                    type: string
+                name:
+                    type: string
+                products:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/models.PromotionProduct'
+                    nullable: true
+                starts_at:
+                    type: string
+                    format: date-time
+                status:
+                    type: string
+                updated_at:
+                    type: string
+                    format: date-time
+        models.PromotionProduct:
+            type: object
+            properties:
+                min_qty:
+                    type: number
+                    format: int
+                product_id:
+                    type: string
         models.UpdateProductResponse:
             type: object
             properties:
                 product:
                     $ref: '#/components/schemas/models.Product'
+        models.UpdatePromotionResponse:
+            type: object
+            properties:
+                promotion:
+                    $ref: '#/components/schemas/models.Promotion'
         requestProductsAPICreateProduct:
             type: object
             required:
@@ -1708,15 +2747,45 @@ components:
                     type: number
                     format: int
             description: Создание карточки товара каталога
+        requestProductsAPICreatePromotion:
+            type: object
+            required:
+                - name
+                - discountPercent
+                - startsAt
+                - endsAt
+                - products
+            properties:
+                discountPercent:
+                    type: number
+                    format: float
+                endsAt:
+                    type: string
+                name:
+                    type: string
+                products:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/models.PromotionProduct'
+                    nullable: true
+                startsAt:
+                    type: string
+            description: Создание акции со скидкой на выбранные товары на период, с порогом количества на товар
         requestProductsAPIDeleteProduct:
             type: object
+        requestProductsAPIDeletePromotion:
+            type: object
         requestProductsAPIGetProduct:
+            type: object
+        requestProductsAPIGetPromotion:
             type: object
         requestProductsAPIListBrands:
             type: object
         requestProductsAPIListCategories:
             type: object
         requestProductsAPIListProducts:
+            type: object
+        requestProductsAPIListPromotions:
             type: object
         requestProductsAPIUpdateProduct:
             type: object
@@ -1804,6 +2873,30 @@ components:
                           format: int
                         - nullable: true
             description: Обновление карточки товара каталога
+        requestProductsAPIUpdatePromotion:
+            type: object
+            required:
+                - name
+                - discountPercent
+                - startsAt
+                - endsAt
+                - products
+            properties:
+                discountPercent:
+                    type: number
+                    format: float
+                endsAt:
+                    type: string
+                name:
+                    type: string
+                products:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/models.PromotionProduct'
+                    nullable: true
+                startsAt:
+                    type: string
+            description: 'Обновление акции: название, скидка, период, список товаров с порогами (заменяется целиком)'
         responseProductsAPICreateProduct:
             type: object
             required:
@@ -1812,6 +2905,14 @@ components:
                 response:
                     $ref: '#/components/schemas/models.CreateProductResponse'
             description: Создание карточки товара каталога
+        responseProductsAPICreatePromotion:
+            type: object
+            required:
+                - response
+            properties:
+                response:
+                    $ref: '#/components/schemas/models.CreatePromotionResponse'
+            description: Создание акции со скидкой на выбранные товары на период, с порогом количества на товар
         responseProductsAPIDeleteProduct:
             type: object
             required:
@@ -1820,6 +2921,14 @@ components:
                 response:
                     $ref: '#/components/schemas/models.DeleteProductResponse'
             description: Удаление или скрытие карточки товара
+        responseProductsAPIDeletePromotion:
+            type: object
+            required:
+                - response
+            properties:
+                response:
+                    $ref: '#/components/schemas/models.DeletePromotionResponse'
+            description: Удаление акции
         responseProductsAPIGetProduct:
             type: object
             required:
@@ -1828,6 +2937,14 @@ components:
                 response:
                     $ref: '#/components/schemas/models.GetProductResponse'
             description: Получение карточки товара по идентификатору
+        responseProductsAPIGetPromotion:
+            type: object
+            required:
+                - response
+            properties:
+                response:
+                    $ref: '#/components/schemas/models.GetPromotionResponse'
+            description: Получение акции по идентификатору
         responseProductsAPIListBrands:
             type: object
             required:
@@ -1852,6 +2969,14 @@ components:
                 response:
                     $ref: '#/components/schemas/models.ListProductsResponse'
             description: Получение списка товаров с фильтрами, поиском и пагинацией
+        responseProductsAPIListPromotions:
+            type: object
+            required:
+                - response
+            properties:
+                response:
+                    $ref: '#/components/schemas/models.ListPromotionsResponse'
+            description: Получение списка акций с пагинацией
         responseProductsAPIUpdateProduct:
             type: object
             required:
@@ -1860,3 +2985,11 @@ components:
                 response:
                     $ref: '#/components/schemas/models.UpdateProductResponse'
             description: Обновление карточки товара каталога
+        responseProductsAPIUpdatePromotion:
+            type: object
+            required:
+                - response
+            properties:
+                response:
+                    $ref: '#/components/schemas/models.UpdatePromotionResponse'
+            description: 'Обновление акции: название, скидка, период, список товаров с порогами (заменяется целиком)'
