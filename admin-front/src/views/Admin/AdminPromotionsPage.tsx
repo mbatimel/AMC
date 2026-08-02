@@ -3,541 +3,390 @@
 import { Button } from '@heroui/react';
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
+import type { ProductListItem } from '@/core/shared/api/products';
 import type {
   Promotion,
-  PromotionDiscMode,
-  PromotionSelection,
-  PromotionType,
+  PromotionStatus,
   PromotionWritePayload,
 } from '@/core/shared/api/promotions';
 
+import { $adminUserId } from '@/core/entities/adminSession';
+import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
+import { fetchAllProductsRequest } from '@/core/shared/api/products';
+import {
+  createPromotionRequest,
+  deletePromotionRequest,
+  fetchPromotionsRequest,
+  updatePromotionRequest,
+} from '@/core/shared/api/promotions';
+import { FormSelect } from '@/core/shared/ui/FormSelect';
+
 import styles from './Admin.module.css';
-import promoStyles from './AdminPromotions.module.css';
-import { formatAdminDateTime } from './lib/nav';
-import {
-  buildPromoTree,
-  formatPromotionDiscount,
-  getPromotionStatus,
-  PROMOTION_STATUS_LABELS,
-  PROMOTION_TYPE_LABELS,
-  summarizePromotionSelection,
-  toDatetimeLocalValue,
-} from './lib/promotions';
-import {
-  $isPromoCatalogPending,
-  $isPromotionSaving,
-  $isPromotionsPending,
-  $promoCategories,
-  $promoProducts,
-  $promotions,
-  $promotionsError,
-  adminPromotionsOpened,
-  promotionDeleteRequested,
-  promotionEndRequested,
-  promotionSaveRequested,
-} from './model/promotions';
 import { AdminPageHeader } from './ui/AdminPageHeader';
-import { PromoProductTree } from './ui/PromoProductTree';
 
-type ConfirmState = null | { kind: 'delete'; promo: Promotion } | { kind: 'end'; promo: Promotion };
-
-type EditorDraft = {
-  condition: string;
-  desc: string;
-  discMode: PromotionDiscMode;
-  discValue: string;
-  endAt: string;
-  id: null | string;
-  minQty: string;
+type PromotionDraft = {
+  discountPercent: number;
+  endsAt: string;
+  id: string;
   name: string;
-  sel: PromotionSelection;
-  startAt: string;
-  type: PromotionType;
+  products: { minQty: number; productId: string }[];
+  startsAt: string;
+  status: null | PromotionStatus;
 };
 
-const emptyDraft = (): EditorDraft => ({
-  condition: '',
-  desc: '',
-  discMode: 'percent',
-  discValue: '10',
-  endAt: '',
-  id: null,
-  minQty: '3',
-  name: '',
-  sel: { all: false, nodes: [], products: [] },
-  startAt: '',
-  type: 'date',
+const statusLabel: Record<PromotionStatus, string> = {
+  active: 'Активна',
+  ended: 'Завершена',
+  scheduled: 'Запланирована',
+};
+
+const statusBadgeClass: Record<PromotionStatus, string> = {
+  active: styles.badgeSuccess,
+  ended: styles.badge,
+  scheduled: styles.badgeWarning,
+};
+
+const pad = (value: number): string => String(value).padStart(2, '0');
+
+const toLocalInput = (iso: string): string => {
+  const date = new Date(iso);
+
+  if (!iso || Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+const fromLocalInput = (value: string): string => {
+  const date = new Date(value);
+
+  return value && !Number.isNaN(date.getTime()) ? date.toISOString() : '';
+};
+
+const draftFromPromotion = (promotion: Promotion): PromotionDraft => ({
+  discountPercent: promotion.discount_percent,
+  endsAt: toLocalInput(promotion.ends_at),
+  id: promotion.id,
+  name: promotion.name,
+  products: promotion.products.map((product) => ({
+    minQty: product.min_qty,
+    productId: product.product_id,
+  })),
+  startsAt: toLocalInput(promotion.starts_at),
+  status: promotion.status,
 });
 
-const draftFromPromotion = (promo: Promotion): EditorDraft => ({
-  condition: promo.condition,
-  desc: promo.desc,
-  discMode: promo.discMode,
-  discValue: String(promo.discValue),
-  endAt: toDatetimeLocalValue(promo.endAt),
-  id: promo.id,
-  minQty: String(promo.minQty || 3),
-  name: promo.name,
-  sel: {
-    all: Boolean(promo.sel?.all),
-    nodes: [...(promo.sel?.nodes ?? [])],
-    products: [...(promo.sel?.products ?? [])],
-  },
-  startAt: toDatetimeLocalValue(promo.startAt),
-  type: promo.type,
+const createEmptyDraft = (): PromotionDraft => ({
+  discountPercent: 10,
+  endsAt: '',
+  id: `new-${crypto.randomUUID()}`,
+  name: 'Новая акция',
+  products: [],
+  startsAt: '',
+  status: null,
+});
+
+const draftToPayload = (draft: PromotionDraft): PromotionWritePayload => ({
+  discountPercent: draft.discountPercent,
+  endsAt: fromLocalInput(draft.endsAt),
+  name: draft.name,
+  products: draft.products.map((product) => ({
+    min_qty: product.minQty,
+    product_id: product.productId,
+  })),
+  startsAt: fromLocalInput(draft.startsAt),
 });
 
 export const AdminPromotionsPage = (): JSX.Element => {
-  const [
-    promotions,
-    categories,
-    products,
-    error,
-    isPending,
-    isCatalogPending,
-    isSaving,
-    open,
-    save,
-    endPromo,
-    removePromo,
-  ] = useUnit([
-    $promotions,
-    $promoCategories,
-    $promoProducts,
-    $promotionsError,
-    $isPromotionsPending,
-    $isPromoCatalogPending,
-    $isPromotionSaving,
-    adminPromotionsOpened,
-    promotionSaveRequested,
-    promotionEndRequested,
-    promotionDeleteRequested,
-  ]);
+  const adminUserId = useUnit($adminUserId);
+  const [products, setProducts] = useState<ProductListItem[]>([]);
+  const [drafts, setDrafts] = useState<PromotionDraft[]>([]);
+  const [error, setError] = useState<null | string>(null);
+  const [itemErrors, setItemErrors] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<null | string>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [editor, setEditor] = useState<EditorDraft | null>(null);
-  const [formError, setFormError] = useState<null | string>(null);
-  const [confirm, setConfirm] = useState<ConfirmState>(null);
+  const load = useCallback(async (): Promise<void> => {
+    if (!adminUserId) {
+      return;
+    }
+    try {
+      const [promotions, allProducts] = await Promise.all([
+        fetchPromotionsRequest(adminUserId),
+        fetchAllProductsRequest(),
+      ]);
+
+      setDrafts(promotions.map(draftFromPromotion));
+      setProducts(allProducts);
+      setError(null);
+    } catch (loadError) {
+      setError(toDisplayErrorMessage(loadError, 'Не удалось загрузить акции'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [adminUserId]);
 
   useEffect(() => {
-    open();
-  }, [open]);
+    const timeout = window.setTimeout(() => void load(), 0);
 
-  const roots = useMemo(() => buildPromoTree(categories, products), [categories, products]);
+    return () => window.clearTimeout(timeout);
+  }, [load]);
 
-  const activeCount = promotions.filter((promo) => getPromotionStatus(promo) === 'active').length;
-  const scheduledCount = promotions.filter(
-    (promo) => getPromotionStatus(promo) === 'scheduled',
-  ).length;
-  const endedCount = promotions.length - activeCount - scheduledCount;
+  const productName = (productId: string): string => {
+    const product = products.find((item) => item.id === productId);
 
-  const patchEditor = (patch: Partial<EditorDraft>): void => {
-    setEditor((previous) => (previous ? { ...previous, ...patch } : previous));
+    return product ? `${product.name} (${product.sku})` : productId;
   };
 
-  const submitEditor = (): void => {
-    if (!editor) {
+  const patchDraft = (id: string, patch: Partial<PromotionDraft>): void => {
+    setDrafts((previous) =>
+      previous.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)),
+    );
+  };
+
+  const addProductToDraft = (draftId: string, productId: string): void => {
+    if (!productId) {
       return;
     }
+    setDrafts((previous) =>
+      previous.map((draft) =>
+        draft.id === draftId && !draft.products.some((product) => product.productId === productId)
+          ? { ...draft, products: [...draft.products, { minQty: 1, productId }] }
+          : draft,
+      ),
+    );
+  };
 
-    const name = editor.name.trim();
+  const patchDraftProduct = (draftId: string, productId: string, minQty: number): void => {
+    setDrafts((previous) =>
+      previous.map((draft) =>
+        draft.id === draftId
+          ? {
+              ...draft,
+              products: draft.products.map((product) =>
+                product.productId === productId ? { ...product, minQty } : product,
+              ),
+            }
+          : draft,
+      ),
+    );
+  };
 
-    if (!name) {
-      setFormError('Укажите название акции');
+  const removeProductFromDraft = (draftId: string, productId: string): void => {
+    setDrafts((previous) =>
+      previous.map((draft) =>
+        draft.id === draftId
+          ? {
+              ...draft,
+              products: draft.products.filter((product) => product.productId !== productId),
+            }
+          : draft,
+      ),
+    );
+  };
 
+  const save = async (draft: PromotionDraft): Promise<void> => {
+    if (!adminUserId) {
       return;
     }
+    setItemErrors((previous) => ({ ...previous, [draft.id]: '' }));
+    setSavingId(draft.id);
+    try {
+      const payload = draftToPayload(draft);
+      const isNew = draft.id.startsWith('new-');
 
-    if (!editor.startAt || !editor.endAt) {
-      setFormError('Укажите период действия');
+      if (isNew) {
+        await createPromotionRequest(adminUserId, payload);
+      } else {
+        await updatePromotionRequest(adminUserId, draft.id, payload);
+      }
+      await load();
+    } catch (saveError) {
+      setItemErrors((previous) => ({
+        ...previous,
+        [draft.id]: toDisplayErrorMessage(saveError, 'Не удалось сохранить акцию'),
+      }));
+    } finally {
+      setSavingId(null);
+    }
+  };
 
+  const remove = async (draft: PromotionDraft): Promise<void> => {
+    if (!adminUserId || draft.id.startsWith('new-')) {
+      setDrafts((previous) => previous.filter((item) => item.id !== draft.id));
       return;
     }
-
-    if (new Date(editor.endAt).getTime() <= new Date(editor.startAt).getTime()) {
-      setFormError('Окончание должно быть позже начала');
-
+    if (!window.confirm(`Удалить акцию «${draft.name}»?`)) {
       return;
     }
-
-    const discValue = Number(editor.discValue);
-
-    if (!Number.isFinite(discValue) || discValue <= 0) {
-      setFormError('Укажите размер скидки или цену');
-
-      return;
+    setSavingId(draft.id);
+    try {
+      await deletePromotionRequest(adminUserId, draft.id);
+      await load();
+    } catch (deleteError) {
+      setItemErrors((previous) => ({
+        ...previous,
+        [draft.id]: toDisplayErrorMessage(deleteError, 'Не удалось удалить акцию'),
+      }));
+    } finally {
+      setSavingId(null);
     }
-
-    if (!editor.sel.all && editor.sel.nodes.length === 0 && editor.sel.products.length === 0) {
-      setFormError('Выберите товары акции');
-
-      return;
-    }
-
-    const payload: PromotionWritePayload = {
-      condition: editor.condition.trim(),
-      desc: editor.desc.trim(),
-      discMode: editor.discMode,
-      discValue,
-      endAt: editor.endAt,
-      minQty: editor.type === 'qty' ? Math.max(1, Number(editor.minQty) || 1) : 0,
-      name,
-      sel: editor.sel,
-      startAt: editor.startAt,
-      type: editor.type,
-    };
-
-    setFormError(null);
-    save({ id: editor.id, payload });
-    setEditor(null);
   };
 
   return (
     <>
       <AdminPageHeader
         actions={
-          <Button onPress={() => setEditor(emptyDraft())} variant="primary">
-            Создать акцию
-          </Button>
+          <button
+            className={clsx(styles.smallButton)}
+            onClick={() => setDrafts((previous) => [createEmptyDraft(), ...previous])}
+            type="button"
+          >
+            Добавить акцию
+          </button>
         }
-        subtitle="Скидки на товары по дате или от количества"
+        subtitle="Скидка в процентах на выбранные товары на период, от порога количества"
         title="Акции"
       />
 
       {error ? <p className={clsx(styles.error)}>{error}</p> : null}
+      {isLoading ? <p className={clsx(styles.hint)}>Загружаем акции…</p> : null}
 
-      <div className={clsx(styles.kpiGrid)}>
-        <div className={clsx(styles.kpi)}>
-          <p className={clsx(styles.kpiLabel)}>Всего акций</p>
-          <p className={clsx(styles.kpiValue)}>{promotions.length}</p>
-        </div>
-        <div className={clsx(styles.kpi)}>
-          <p className={clsx(styles.kpiLabel)}>Идут сейчас</p>
-          <p className={clsx(styles.kpiValue, promoStyles.kpiActive)}>{activeCount}</p>
-        </div>
-        <div className={clsx(styles.kpi)}>
-          <p className={clsx(styles.kpiLabel)}>Запланировано</p>
-          <p className={clsx(styles.kpiValue, promoStyles.kpiScheduled)}>{scheduledCount}</p>
-        </div>
-        <div className={clsx(styles.kpi)}>
-          <p className={clsx(styles.kpiLabel)}>Завершены</p>
-          <p className={clsx(styles.kpiValue, promoStyles.kpiEnded)}>{endedCount}</p>
-        </div>
-      </div>
+      <div className={clsx(styles.listEditor)}>
+        {drafts.map((draft) => {
+          const isNew = draft.id.startsWith('new-');
+          const availableProducts = products.filter(
+            (product) => !draft.products.some((item) => item.productId === product.id),
+          );
 
-      <div className={clsx(styles.tableWrap)}>
-        <table className={clsx(styles.table)}>
-          <thead>
-            <tr>
-              <th>Акция</th>
-              <th>Тип</th>
-              <th>Скидка</th>
-              <th>Период</th>
-              <th>Товары</th>
-              <th>Статус</th>
-              <th aria-label="Действия" />
-            </tr>
-          </thead>
-          <tbody>
-            {isPending && promotions.length === 0 ? (
-              <tr>
-                <td className={clsx(styles.empty)} colSpan={7}>
-                  Загружаем акции…
-                </td>
-              </tr>
-            ) : null}
-
-            {!isPending && promotions.length === 0 ? (
-              <tr>
-                <td className={clsx(styles.empty)} colSpan={7}>
-                  Пока нет акций. Создайте первую акцию по дате или от количества.
-                </td>
-              </tr>
-            ) : null}
-
-            {promotions.map((promo) => {
-              const status = getPromotionStatus(promo);
-
-              return (
-                <tr key={promo.id}>
-                  <td>
-                    <strong>{promo.name}</strong>
-                    {promo.desc ? <div className={clsx(styles.hint)}>{promo.desc}</div> : null}
-                  </td>
-                  <td className={clsx(promoStyles.nowrap)}>
-                    {PROMOTION_TYPE_LABELS[promo.type]}
-                    {promo.type === 'qty' ? (
-                      <span className={clsx(styles.hint)}> (от {promo.minQty} шт)</span>
-                    ) : null}
-                  </td>
-                  <td className={clsx(promoStyles.nowrap)}>
-                    <strong>{formatPromotionDiscount(promo)}</strong>
-                  </td>
-                  <td className={clsx(promoStyles.nowrap)}>
-                    {formatAdminDateTime(promo.startAt)}
-                    <br />
-                    {formatAdminDateTime(promo.endAt)}
-                  </td>
-                  <td>
-                    {isCatalogPending ? '…' : summarizePromotionSelection(promo, roots, products)}
-                  </td>
-                  <td>
-                    <span
-                      className={clsx(
-                        styles.badge,
-                        status === 'active' && styles.badgeSuccess,
-                        status === 'scheduled' && styles.badgeWarning,
-                      )}
-                    >
-                      {PROMOTION_STATUS_LABELS[status]}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={clsx(styles.rowActions)}>
-                      <button
-                        className={clsx(styles.smallButton)}
-                        onClick={() => setEditor(draftFromPromotion(promo))}
-                        type="button"
-                      >
-                        Изменить
-                      </button>
-                      {status === 'active' ? (
-                        <button
-                          className={clsx(styles.smallButton, styles.smallButtonDanger)}
-                          onClick={() => setConfirm({ kind: 'end', promo })}
-                          type="button"
-                        >
-                          Завершить
-                        </button>
-                      ) : null}
-                      <button
-                        className={clsx(styles.smallButton, styles.smallButtonDanger)}
-                        onClick={() => setConfirm({ kind: 'delete', promo })}
-                        type="button"
-                      >
-                        Удалить
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {editor ? (
-        <div
-          className={clsx(promoStyles.modalBackdrop)}
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              setEditor(null);
-              setFormError(null);
-            }
-          }}
-          role="presentation"
-        >
-          <div aria-modal="true" className={clsx(promoStyles.modal)} role="dialog">
-            <h2 className={clsx(promoStyles.modalTitle)}>
-              {editor.id ? 'Редактирование акции' : 'Новая акция'}
-            </h2>
-
-            <div className={clsx(styles.form)}>
-              <div className={clsx(styles.formGrid)}>
-                <label className={clsx(styles.field)}>
-                  <span className={clsx(styles.label)}>Название *</span>
-                  <input
-                    className={clsx(styles.input)}
-                    onChange={(event) => patchEditor({ name: event.target.value })}
-                    placeholder="Напр. Скидка на метчики"
-                    value={editor.name}
-                  />
-                </label>
-                <label className={clsx(styles.field)}>
-                  <span className={clsx(styles.label)}>Тип условия *</span>
-                  <select
-                    className={clsx(styles.input)}
-                    onChange={(event) => patchEditor({ type: event.target.value as PromotionType })}
-                    value={editor.type}
+          return (
+            <article className={clsx(styles.card)} key={draft.id}>
+              <div className={clsx(styles.bannerHeader)}>
+                <strong>
+                  {draft.status ? statusLabel[draft.status] : 'Новая акция'}
+                  {draft.status ? (
+                    <span className={clsx(styles.badge, statusBadgeClass[draft.status])}> </span>
+                  ) : null}
+                </strong>
+                <div className={clsx(styles.rowActions)}>
+                  <button
+                    className={clsx(styles.smallButton, styles.smallButtonDanger)}
+                    onClick={() => void remove(draft)}
+                    type="button"
                   >
-                    <option value="date">Без дополнительных условий</option>
-                    <option value="qty">От количества товара</option>
-                  </select>
-                </label>
+                    Удалить
+                  </button>
+                </div>
               </div>
 
-              <label className={clsx(styles.field)}>
-                <span className={clsx(styles.label)}>Описание</span>
-                <textarea
-                  className={clsx(styles.textarea)}
-                  onChange={(event) => patchEditor({ desc: event.target.value })}
-                  placeholder="Краткое описание для клиента"
-                  rows={2}
-                  value={editor.desc}
-                />
-              </label>
+              {itemErrors[draft.id] ? (
+                <p className={clsx(styles.error)}>{itemErrors[draft.id]}</p>
+              ) : null}
 
               <div className={clsx(styles.formGrid)}>
                 <label className={clsx(styles.field)}>
-                  <span className={clsx(styles.label)}>Начало *</span>
+                  Название
                   <input
                     className={clsx(styles.input)}
-                    onChange={(event) => patchEditor({ startAt: event.target.value })}
-                    type="datetime-local"
-                    value={editor.startAt}
+                    onChange={(event) => patchDraft(draft.id, { name: event.target.value })}
+                    value={draft.name}
                   />
                 </label>
                 <label className={clsx(styles.field)}>
-                  <span className={clsx(styles.label)}>Окончание *</span>
+                  Скидка, %
                   <input
                     className={clsx(styles.input)}
-                    onChange={(event) => patchEditor({ endAt: event.target.value })}
-                    type="datetime-local"
-                    value={editor.endAt}
-                  />
-                </label>
-              </div>
-
-              <div className={clsx(styles.formGrid)}>
-                <label className={clsx(styles.field)}>
-                  <span className={clsx(styles.label)}>Тип скидки *</span>
-                  <select
-                    className={clsx(styles.input)}
-                    onChange={(event) =>
-                      patchEditor({ discMode: event.target.value as PromotionDiscMode })
-                    }
-                    value={editor.discMode}
-                  >
-                    <option value="percent">Скидка, %</option>
-                    <option value="price">Акционная цена, ₽</option>
-                  </select>
-                </label>
-                <label className={clsx(styles.field)}>
-                  <span className={clsx(styles.label)}>Значение *</span>
-                  <input
-                    className={clsx(styles.input)}
+                    max={100}
                     min={0}
-                    onChange={(event) => patchEditor({ discValue: event.target.value })}
+                    onChange={(event) =>
+                      patchDraft(draft.id, { discountPercent: Number(event.target.value) || 0 })
+                    }
                     type="number"
-                    value={editor.discValue}
+                    value={draft.discountPercent}
                   />
                 </label>
-                {editor.type === 'qty' ? (
-                  <label className={clsx(styles.field)}>
-                    <span className={clsx(styles.label)}>Мин. количество позиции *</span>
-                    <input
-                      className={clsx(styles.input)}
-                      min={1}
-                      onChange={(event) => patchEditor({ minQty: event.target.value })}
-                      type="number"
-                      value={editor.minQty}
-                    />
-                  </label>
+                <label className={clsx(styles.field)}>
+                  Начало акции
+                  <input
+                    className={clsx(styles.input)}
+                    onChange={(event) => patchDraft(draft.id, { startsAt: event.target.value })}
+                    type="datetime-local"
+                    value={draft.startsAt}
+                  />
+                </label>
+                <label className={clsx(styles.field)}>
+                  Конец акции
+                  <input
+                    className={clsx(styles.input)}
+                    onChange={(event) => patchDraft(draft.id, { endsAt: event.target.value })}
+                    type="datetime-local"
+                    value={draft.endsAt}
+                  />
+                </label>
+              </div>
+
+              <h3 className={clsx(styles.cardTitle)}>Товары акции ({draft.products.length})</h3>
+              <FormSelect
+                ariaLabel="Добавить товар в акцию"
+                onChange={(productId) => addProductToDraft(draft.id, productId)}
+                options={availableProducts.map((product) => ({
+                  label: `${product.name} (${product.sku})`,
+                  value: product.id,
+                }))}
+                placeholder="Добавить товар…"
+                value=""
+              />
+              <div className={clsx(styles.listEditor)}>
+                {draft.products.map((product) => (
+                  <div className={clsx(styles.listRow)} key={product.productId}>
+                    <span>{productName(product.productId)}</span>
+                    <label className={clsx(styles.field)}>
+                      Мин. кол-во
+                      <input
+                        className={clsx(styles.input)}
+                        min={1}
+                        onChange={(event) =>
+                          patchDraftProduct(
+                            draft.id,
+                            product.productId,
+                            Math.max(1, Number(event.target.value) || 1),
+                          )
+                        }
+                        type="number"
+                        value={product.minQty}
+                      />
+                    </label>
+                    <button
+                      className={clsx(styles.smallButton, styles.smallButtonDanger)}
+                      onClick={() => removeProductFromDraft(draft.id, product.productId)}
+                      type="button"
+                    >
+                      Убрать
+                    </button>
+                  </div>
+                ))}
+                {draft.products.length === 0 ? (
+                  <p className={clsx(styles.hint)}>Товары не выбраны</p>
                 ) : null}
               </div>
 
-              <label className={clsx(styles.field)}>
-                <span className={clsx(styles.label)}>Дополнительный текст для клиента</span>
-                <input
-                  className={clsx(styles.input)}
-                  onChange={(event) => patchEditor({ condition: event.target.value })}
-                  placeholder="Доп. пояснение к акции"
-                  value={editor.condition}
-                />
-                <span className={clsx(styles.hint)}>
-                  Основное условие клиенту сформируется автоматически по типу, скидке и количеству.
-                </span>
-              </label>
-
-              <PromoProductTree
-                onChange={(sel) => patchEditor({ sel })}
-                roots={roots}
-                selection={editor.sel}
-              />
-
-              {formError ? <p className={clsx(styles.error)}>{formError}</p> : null}
-            </div>
-
-            <div className={clsx(promoStyles.modalFooter)}>
               <Button
-                onPress={() => {
-                  setEditor(null);
-                  setFormError(null);
-                }}
-                variant="secondary"
+                isDisabled={savingId === draft.id}
+                onPress={() => void save(draft)}
+                variant="primary"
               >
-                Отмена
+                {savingId === draft.id ? 'Сохраняем…' : isNew ? 'Создать' : 'Сохранить'}
               </Button>
-              <Button isDisabled={isSaving} onPress={submitEditor} variant="primary">
-                {isSaving ? 'Сохраняем…' : 'Сохранить'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {confirm ? (
-        <div
-          className={clsx(promoStyles.modalBackdrop)}
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              setConfirm(null);
-            }
-          }}
-          role="presentation"
-        >
-          <div
-            aria-modal="true"
-            className={clsx(promoStyles.modal, promoStyles.confirmBox)}
-            role="dialog"
-          >
-            <h2 className={clsx(promoStyles.modalTitle)}>
-              {confirm.kind === 'end' ? 'Завершить акцию?' : 'Удалить акцию?'}
-            </h2>
-
-            {confirm.kind === 'end' || getPromotionStatus(confirm.promo) === 'active' ? (
-              <p className={clsx(promoStyles.warnBanner)}>
-                {confirm.kind === 'end'
-                  ? `Акция «${confirm.promo.name}» сейчас активна. После завершения скидка перестанет применяться.`
-                  : `Акция «${confirm.promo.name}» активна. После удаления скидка больше не применяется.`}
-              </p>
-            ) : null}
-
-            {confirm.kind === 'delete' && getPromotionStatus(confirm.promo) !== 'active' ? (
-              <p className={clsx(styles.hint)}>
-                Удалить акцию «{confirm.promo.name}»? Действие необратимо.
-              </p>
-            ) : null}
-
-            {confirm.kind === 'delete' && getPromotionStatus(confirm.promo) === 'active' ? (
-              <p className={clsx(styles.hint)}>
-                Удалить акцию «{confirm.promo.name}»? Действие необратимо.
-              </p>
-            ) : null}
-
-            <div className={clsx(promoStyles.modalFooter)}>
-              <Button onPress={() => setConfirm(null)} variant="secondary">
-                Отмена
-              </Button>
-              <Button
-                onPress={() => {
-                  if (confirm.kind === 'end') {
-                    endPromo(confirm.promo.id);
-                  } else {
-                    removePromo(confirm.promo.id);
-                  }
-
-                  setConfirm(null);
-                }}
-                variant="danger"
-              >
-                {confirm.kind === 'end' ? 'Завершить сейчас' : 'Удалить'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+            </article>
+          );
+        })}
+        {!isLoading && drafts.length === 0 ? (
+          <p className={clsx(styles.empty)}>Акций пока нет</p>
+        ) : null}
+      </div>
     </>
   );
 };

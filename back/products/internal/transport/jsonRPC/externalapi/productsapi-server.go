@@ -10,14 +10,19 @@ import (
 )
 
 type serverProductsAPI struct {
-	svc            externalapi.ProductsAPI
-	createProduct  ProductsAPICreateProduct
-	getProduct     ProductsAPIGetProduct
-	listProducts   ProductsAPIListProducts
-	updateProduct  ProductsAPIUpdateProduct
-	deleteProduct  ProductsAPIDeleteProduct
-	listCategories ProductsAPIListCategories
-	listBrands     ProductsAPIListBrands
+	svc             externalapi.ProductsAPI
+	createProduct   ProductsAPICreateProduct
+	getProduct      ProductsAPIGetProduct
+	listProducts    ProductsAPIListProducts
+	updateProduct   ProductsAPIUpdateProduct
+	deleteProduct   ProductsAPIDeleteProduct
+	listCategories  ProductsAPIListCategories
+	listBrands      ProductsAPIListBrands
+	createPromotion ProductsAPICreatePromotion
+	getPromotion    ProductsAPIGetPromotion
+	listPromotions  ProductsAPIListPromotions
+	updatePromotion ProductsAPIUpdatePromotion
+	deletePromotion ProductsAPIDeletePromotion
 }
 
 type MiddlewareSetProductsAPI interface {
@@ -29,6 +34,11 @@ type MiddlewareSetProductsAPI interface {
 	WrapDeleteProduct(m MiddlewareProductsAPIDeleteProduct)
 	WrapListCategories(m MiddlewareProductsAPIListCategories)
 	WrapListBrands(m MiddlewareProductsAPIListBrands)
+	WrapCreatePromotion(m MiddlewareProductsAPICreatePromotion)
+	WrapGetPromotion(m MiddlewareProductsAPIGetPromotion)
+	WrapListPromotions(m MiddlewareProductsAPIListPromotions)
+	WrapUpdatePromotion(m MiddlewareProductsAPIUpdatePromotion)
+	WrapDeletePromotion(m MiddlewareProductsAPIDeletePromotion)
 
 	WithMetrics()
 	WithLog()
@@ -36,14 +46,19 @@ type MiddlewareSetProductsAPI interface {
 
 func newServerProductsAPI(svc externalapi.ProductsAPI) *serverProductsAPI {
 	return &serverProductsAPI{
-		createProduct:  svc.CreateProduct,
-		deleteProduct:  svc.DeleteProduct,
-		getProduct:     svc.GetProduct,
-		listBrands:     svc.ListBrands,
-		listCategories: svc.ListCategories,
-		listProducts:   svc.ListProducts,
-		svc:            svc,
-		updateProduct:  svc.UpdateProduct,
+		createProduct:   svc.CreateProduct,
+		createPromotion: svc.CreatePromotion,
+		deleteProduct:   svc.DeleteProduct,
+		deletePromotion: svc.DeletePromotion,
+		getProduct:      svc.GetProduct,
+		getPromotion:    svc.GetPromotion,
+		listBrands:      svc.ListBrands,
+		listCategories:  svc.ListCategories,
+		listProducts:    svc.ListProducts,
+		listPromotions:  svc.ListPromotions,
+		svc:             svc,
+		updateProduct:   svc.UpdateProduct,
+		updatePromotion: svc.UpdatePromotion,
 	}
 }
 
@@ -56,6 +71,11 @@ func (srv *serverProductsAPI) Wrap(m MiddlewareProductsAPI) {
 	srv.deleteProduct = srv.svc.DeleteProduct
 	srv.listCategories = srv.svc.ListCategories
 	srv.listBrands = srv.svc.ListBrands
+	srv.createPromotion = srv.svc.CreatePromotion
+	srv.getPromotion = srv.svc.GetPromotion
+	srv.listPromotions = srv.svc.ListPromotions
+	srv.updatePromotion = srv.svc.UpdatePromotion
+	srv.deletePromotion = srv.svc.DeletePromotion
 }
 
 func (srv *serverProductsAPI) CreateProduct(ctx context.Context, userID uuid.UUID, sku string, name string, description string, categoryID uuid.UUID, brandID uuid.UUID, gost string, material string, size string, packageQty int, stockQty int, basePrice float64, clientPrice float64, discountPercent float64, images []models.ProductImage, isPublished bool) (response models.CreateProductResponse, err error) {
@@ -86,6 +106,26 @@ func (srv *serverProductsAPI) ListBrands(ctx context.Context, limit *int, offset
 	return srv.listBrands(ctx, limit, offset)
 }
 
+func (srv *serverProductsAPI) CreatePromotion(ctx context.Context, userID uuid.UUID, name string, discountPercent float64, startsAt string, endsAt string, products []models.PromotionProduct) (response models.CreatePromotionResponse, err error) {
+	return srv.createPromotion(ctx, userID, name, discountPercent, startsAt, endsAt, products)
+}
+
+func (srv *serverProductsAPI) GetPromotion(ctx context.Context, promotionID uuid.UUID) (response models.GetPromotionResponse, err error) {
+	return srv.getPromotion(ctx, promotionID)
+}
+
+func (srv *serverProductsAPI) ListPromotions(ctx context.Context, limit *int, offset *int) (response models.ListPromotionsResponse, err error) {
+	return srv.listPromotions(ctx, limit, offset)
+}
+
+func (srv *serverProductsAPI) UpdatePromotion(ctx context.Context, userID uuid.UUID, promotionID uuid.UUID, name string, discountPercent float64, startsAt string, endsAt string, products []models.PromotionProduct) (response models.UpdatePromotionResponse, err error) {
+	return srv.updatePromotion(ctx, userID, promotionID, name, discountPercent, startsAt, endsAt, products)
+}
+
+func (srv *serverProductsAPI) DeletePromotion(ctx context.Context, userID uuid.UUID, promotionID uuid.UUID) (response models.DeletePromotionResponse, err error) {
+	return srv.deletePromotion(ctx, userID, promotionID)
+}
+
 func (srv *serverProductsAPI) WrapCreateProduct(m MiddlewareProductsAPICreateProduct) {
 	srv.createProduct = m(srv.createProduct)
 }
@@ -112,6 +152,26 @@ func (srv *serverProductsAPI) WrapListCategories(m MiddlewareProductsAPIListCate
 
 func (srv *serverProductsAPI) WrapListBrands(m MiddlewareProductsAPIListBrands) {
 	srv.listBrands = m(srv.listBrands)
+}
+
+func (srv *serverProductsAPI) WrapCreatePromotion(m MiddlewareProductsAPICreatePromotion) {
+	srv.createPromotion = m(srv.createPromotion)
+}
+
+func (srv *serverProductsAPI) WrapGetPromotion(m MiddlewareProductsAPIGetPromotion) {
+	srv.getPromotion = m(srv.getPromotion)
+}
+
+func (srv *serverProductsAPI) WrapListPromotions(m MiddlewareProductsAPIListPromotions) {
+	srv.listPromotions = m(srv.listPromotions)
+}
+
+func (srv *serverProductsAPI) WrapUpdatePromotion(m MiddlewareProductsAPIUpdatePromotion) {
+	srv.updatePromotion = m(srv.updatePromotion)
+}
+
+func (srv *serverProductsAPI) WrapDeletePromotion(m MiddlewareProductsAPIDeletePromotion) {
+	srv.deletePromotion = m(srv.deletePromotion)
 }
 
 func (srv *serverProductsAPI) WithMetrics() {

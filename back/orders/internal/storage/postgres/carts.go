@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/google/uuid"
@@ -95,15 +96,93 @@ func (s *Storage) GetCartItems(ctx context.Context, cartID uuid.UUID) ([]CartIte
 	return items, nil
 }
 
-func (s *Storage) ResolveProductPrice(ctx context.Context, productID uuid.UUID, priceGroupID uuid.NullUUID) (float64, error) {
+func round2(v float64) float64 {
+	return math.Round(v*100) / 100
+}
+
+// promo CTE finds the highest discount among promotions currently running
+// for the product where qty meets that promotion's own per-product min_qty
+// threshold (see back/products promotions feature).
+
+func (s *Storage) resolveBasePriceAndDiscount(ctx context.Context, productID uuid.UUID, priceGroupID uuid.NullUUID, qty int) (float64, error) {
 	var price float64
+	var effectiveDiscountPercent float64
 	err := s.pool.QueryRow(ctx, `
-		SELECT price FROM product_prices
-		WHERE product_id = $1
-		  AND (price_group_id = $2 OR ($2::uuid IS NULL AND price_group_id IS NULL))
-		ORDER BY valid_from DESC NULLS LAST
-		LIMIT 1
-	`, productID, priceGroupID).Scan(&price)
+		WITH base AS (
+			SELECT price FROM product_prices
+			WHERE product_id = $1 AND price_type = 'base'
+			  AND (price_group_id = $2 OR ($2::uuid IS NULL AND price_group_id IS NULL))
+			ORDER BY valid_from DESC NULLS LAST, id DESC
+			LIMIT 1
+		),
+		manual AS (
+			SELECT discount_percent FROM product_prices
+			WHERE product_id = $1 AND price_type = 'client'
+			  AND (price_group_id = $2 OR ($2::uuid IS NULL AND price_group_id IS NULL))
+			ORDER BY valid_from DESC NULLS LAST, id DESC
+			LIMIT 1
+		),
+		promo AS (
+			SELECT MAX(pr.discount_percent) AS discount_percent
+			FROM promotion_products pp
+			JOIN promotions pr ON pr.id = pp.promotion_id
+			WHERE pp.product_id = $1
+			  AND pp.min_qty <= $3
+			  AND now() BETWEEN pr.starts_at AND pr.ends_at
+		)
+		SELECT base.price, GREATEST(COALESCE(manual.discount_percent, 0), COALESCE(promo.discount_percent, 0))
+		FROM base
+		LEFT JOIN manual ON TRUE
+		LEFT JOIN promo ON TRUE
+	`, productID, priceGroupID, qty).Scan(&price, &effectiveDiscountPercent)
+	if err != nil {
+		return 0, err
+	}
+	return round2(price * (1 - effectiveDiscountPercent/100)), nil
+}
+
+func (s *Storage) resolveBasePriceAndDiscountAnyGroup(ctx context.Context, productID uuid.UUID, qty int) (float64, error) {
+	var price float64
+	var effectiveDiscountPercent float64
+	err := s.pool.QueryRow(ctx, `
+		WITH base AS (
+			SELECT price FROM product_prices
+			WHERE product_id = $1 AND price_type = 'base'
+			ORDER BY valid_from DESC NULLS LAST, id DESC
+			LIMIT 1
+		),
+		manual AS (
+			SELECT discount_percent FROM product_prices
+			WHERE product_id = $1 AND price_type = 'client'
+			ORDER BY valid_from DESC NULLS LAST, id DESC
+			LIMIT 1
+		),
+		promo AS (
+			SELECT MAX(pr.discount_percent) AS discount_percent
+			FROM promotion_products pp
+			JOIN promotions pr ON pr.id = pp.promotion_id
+			WHERE pp.product_id = $1
+			  AND pp.min_qty <= $2
+			  AND now() BETWEEN pr.starts_at AND pr.ends_at
+		)
+		SELECT base.price, GREATEST(COALESCE(manual.discount_percent, 0), COALESCE(promo.discount_percent, 0))
+		FROM base
+		LEFT JOIN manual ON TRUE
+		LEFT JOIN promo ON TRUE
+	`, productID, qty).Scan(&price, &effectiveDiscountPercent)
+	if err != nil {
+		return 0, err
+	}
+	return round2(price * (1 - effectiveDiscountPercent/100)), nil
+}
+
+// ResolveProductPrice returns the final unit price for qty units of the
+// product, combining the base price, the product's own manual discount and
+// the best currently-active promotion whose min_qty threshold qty satisfies
+// (see calcEffectiveDiscount in orders/internal/service for the equivalent
+// pure-Go rule this SQL mirrors).
+func (s *Storage) ResolveProductPrice(ctx context.Context, productID uuid.UUID, priceGroupID uuid.NullUUID, qty int) (float64, error) {
+	price, err := s.resolveBasePriceAndDiscount(ctx, productID, priceGroupID, qty)
 	if err == nil {
 		return price, nil
 	}
@@ -111,12 +190,7 @@ func (s *Storage) ResolveProductPrice(ctx context.Context, productID uuid.UUID, 
 		return 0, fmt.Errorf("resolve product price by group: %w", err)
 	}
 
-	err = s.pool.QueryRow(ctx, `
-		SELECT price FROM product_prices
-		WHERE product_id = $1
-		ORDER BY valid_from DESC NULLS LAST
-		LIMIT 1
-	`, productID).Scan(&price)
+	price, err = s.resolveBasePriceAndDiscountAnyGroup(ctx, productID, qty)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, ErrProductPriceNotFound

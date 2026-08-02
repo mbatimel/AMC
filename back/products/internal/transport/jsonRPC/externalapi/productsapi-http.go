@@ -50,4 +50,9 @@ func (http *httpProductsAPI) SetRoutes(route *fiber.App) {
 	route.Delete("/api/v1/products/:productID", http.serveDeleteProduct)
 	route.Get("/api/v1/categories", http.serveListCategories)
 	route.Get("/api/v1/brands", http.serveListBrands)
+	route.Post("/api/v1/promotions", http.serveCreatePromotion)
+	route.Get("/api/v1/promotions/:promotionID", http.serveGetPromotion)
+	route.Get("/api/v1/promotions", http.serveListPromotions)
+	route.Patch("/api/v1/promotions/:promotionID", http.serveUpdatePromotion)
+	route.Delete("/api/v1/promotions/:promotionID", http.serveDeletePromotion)
 }

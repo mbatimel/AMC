@@ -73,6 +73,15 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 
 	var request requestProductsAPIListProducts
 
+	if _inStock := ctx.Query("inStock"); _inStock != "" {
+		var inStock bool
+		inStock, err = strconv.ParseBool(_inStock)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.InStock = &inStock
+	}
 	if _limit := ctx.Query("limit"); _limit != "" {
 		var limit int
 		limit, err = strconv.Atoi(_limit)
@@ -81,15 +90,6 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
 		request.Limit = &limit
-	}
-	if _offset := ctx.Query("offset"); _offset != "" {
-		var offset int
-		offset, err = strconv.Atoi(_offset)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Offset = &offset
 	}
 	if _sort := ctx.Query("sort"); _sort != "" {
 		var sort string
@@ -101,6 +101,30 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 		q = _q
 		request.Q = &q
 	}
+	if _categoryID := ctx.Query("categoryID"); _categoryID != "" {
+		var categoryID string
+		categoryID = _categoryID
+		request.CategoryID = &categoryID
+	}
+	if _gost := ctx.Query("gost"); _gost != "" {
+		var gost string
+		gost = _gost
+		request.Gost = &gost
+	}
+	if _offset := ctx.Query("offset"); _offset != "" {
+		var offset int
+		offset, err = strconv.Atoi(_offset)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Offset = &offset
+	}
+	if _brandID := ctx.Query("brandID"); _brandID != "" {
+		var brandID string
+		brandID = _brandID
+		request.BrandID = &brandID
+	}
 	if _material := ctx.Query("material"); _material != "" {
 		var material string
 		material = _material
@@ -110,30 +134,6 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 		var size string
 		size = _size
 		request.Size = &size
-	}
-	if _inStock := ctx.Query("inStock"); _inStock != "" {
-		var inStock bool
-		inStock, err = strconv.ParseBool(_inStock)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.InStock = &inStock
-	}
-	if _categoryID := ctx.Query("categoryID"); _categoryID != "" {
-		var categoryID string
-		categoryID = _categoryID
-		request.CategoryID = &categoryID
-	}
-	if _brandID := ctx.Query("brandID"); _brandID != "" {
-		var brandID string
-		brandID = _brandID
-		request.BrandID = &brandID
-	}
-	if _gost := ctx.Query("gost"); _gost != "" {
-		var gost string
-		gost = _gost
-		request.Gost = &gost
 	}
 
 	return customhandlers.ListProducts(ctx, http.svc, request.Q, request.CategoryID, request.BrandID, request.Material, request.Size, request.Gost, request.InStock, request.Limit, request.Offset, request.Sort)
@@ -268,4 +268,149 @@ func (http *httpProductsAPI) serveListBrands(ctx *fiber.Ctx) (err error) {
 	}
 
 	return customhandlers.ListBrands(ctx, http.svc, request.Limit, request.Offset)
+}
+func (http *httpProductsAPI) createPromotion(ctx context.Context, request requestProductsAPICreatePromotion) (response responseProductsAPICreatePromotion, err error) {
+
+	response.Response, err = http.svc.CreatePromotion(ctx, request.UserID, request.Name, request.DiscountPercent, request.StartsAt, request.EndsAt, request.Products)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpProductsAPI) serveCreatePromotion(ctx *fiber.Ctx) (err error) {
+
+	var request requestProductsAPICreatePromotion
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.CreatePromotion(ctx, http.svc, request.UserID, request.Name, request.DiscountPercent, request.StartsAt, request.EndsAt, request.Products)
+}
+func (http *httpProductsAPI) getPromotion(ctx context.Context, request requestProductsAPIGetPromotion) (response responseProductsAPIGetPromotion, err error) {
+
+	response.Response, err = http.svc.GetPromotion(ctx, request.PromotionID)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpProductsAPI) serveGetPromotion(ctx *fiber.Ctx) (err error) {
+
+	var request requestProductsAPIGetPromotion
+
+	if _promotionID := ctx.Params("promotionID"); _promotionID != "" {
+		var promotionID uuid.UUID
+		promotionID, _ = uuid.Parse(_promotionID)
+		request.PromotionID = promotionID
+	}
+
+	return customhandlers.GetPromotion(ctx, http.svc, request.PromotionID)
+}
+func (http *httpProductsAPI) listPromotions(ctx context.Context, request requestProductsAPIListPromotions) (response responseProductsAPIListPromotions, err error) {
+
+	response.Response, err = http.svc.ListPromotions(ctx, request.Limit, request.Offset)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpProductsAPI) serveListPromotions(ctx *fiber.Ctx) (err error) {
+
+	var request requestProductsAPIListPromotions
+
+	if _limit := ctx.Query("limit"); _limit != "" {
+		var limit int
+		limit, err = strconv.Atoi(_limit)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Limit = &limit
+	}
+	if _offset := ctx.Query("offset"); _offset != "" {
+		var offset int
+		offset, err = strconv.Atoi(_offset)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Offset = &offset
+	}
+
+	return customhandlers.ListPromotions(ctx, http.svc, request.Limit, request.Offset)
+}
+func (http *httpProductsAPI) updatePromotion(ctx context.Context, request requestProductsAPIUpdatePromotion) (response responseProductsAPIUpdatePromotion, err error) {
+
+	response.Response, err = http.svc.UpdatePromotion(ctx, request.UserID, request.PromotionID, request.Name, request.DiscountPercent, request.StartsAt, request.EndsAt, request.Products)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpProductsAPI) serveUpdatePromotion(ctx *fiber.Ctx) (err error) {
+
+	var request requestProductsAPIUpdatePromotion
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
+
+	if _promotionID := ctx.Params("promotionID"); _promotionID != "" {
+		var promotionID uuid.UUID
+		promotionID, _ = uuid.Parse(_promotionID)
+		request.PromotionID = promotionID
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.UpdatePromotion(ctx, http.svc, request.UserID, request.PromotionID, request.Name, request.DiscountPercent, request.StartsAt, request.EndsAt, request.Products)
+}
+func (http *httpProductsAPI) deletePromotion(ctx context.Context, request requestProductsAPIDeletePromotion) (response responseProductsAPIDeletePromotion, err error) {
+
+	response.Response, err = http.svc.DeletePromotion(ctx, request.UserID, request.PromotionID)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpProductsAPI) serveDeletePromotion(ctx *fiber.Ctx) (err error) {
+
+	var request requestProductsAPIDeletePromotion
+
+	if _promotionID := ctx.Params("promotionID"); _promotionID != "" {
+		var promotionID uuid.UUID
+		promotionID, _ = uuid.Parse(_promotionID)
+		request.PromotionID = promotionID
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.DeletePromotion(ctx, http.svc, request.UserID, request.PromotionID)
 }

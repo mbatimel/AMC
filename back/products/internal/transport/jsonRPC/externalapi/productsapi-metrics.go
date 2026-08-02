@@ -180,3 +180,118 @@ func (m metricsProductsAPI) ListBrands(ctx context.Context, limit *int, offset *
 
 	return m.next.ListBrands(ctx, limit, offset)
 }
+
+func (m metricsProductsAPI) CreatePromotion(ctx context.Context, userID uuid.UUID, name string, discountPercent float64, startsAt string, endsAt string, products []models.PromotionProduct) (response models.CreatePromotionResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("productsAPI", "createPromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("productsAPI", "createPromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("productsAPI", "createPromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.CreatePromotion(ctx, userID, name, discountPercent, startsAt, endsAt, products)
+}
+
+func (m metricsProductsAPI) GetPromotion(ctx context.Context, promotionID uuid.UUID) (response models.GetPromotionResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("productsAPI", "getPromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("productsAPI", "getPromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("productsAPI", "getPromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.GetPromotion(ctx, promotionID)
+}
+
+func (m metricsProductsAPI) ListPromotions(ctx context.Context, limit *int, offset *int) (response models.ListPromotionsResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("productsAPI", "listPromotions", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("productsAPI", "listPromotions", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("productsAPI", "listPromotions", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.ListPromotions(ctx, limit, offset)
+}
+
+func (m metricsProductsAPI) UpdatePromotion(ctx context.Context, userID uuid.UUID, promotionID uuid.UUID, name string, discountPercent float64, startsAt string, endsAt string, products []models.PromotionProduct) (response models.UpdatePromotionResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("productsAPI", "updatePromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("productsAPI", "updatePromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("productsAPI", "updatePromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.UpdatePromotion(ctx, userID, promotionID, name, discountPercent, startsAt, endsAt, products)
+}
+
+func (m metricsProductsAPI) DeletePromotion(ctx context.Context, userID uuid.UUID, promotionID uuid.UUID) (response models.DeletePromotionResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("productsAPI", "deletePromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("productsAPI", "deletePromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("productsAPI", "deletePromotion", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.DeletePromotion(ctx, userID, promotionID)
+}

@@ -50,3 +50,24 @@ type ProductImageBatchResult struct {
 type UploadProductImagesBatchResponse struct {
 	Items []ProductImageBatchResult `json:"items"`
 }
+
+type CreatePromotionResponse struct {
+	Promotion Promotion `json:"promotion"`
+}
+
+type GetPromotionResponse struct {
+	Promotion Promotion `json:"promotion"`
+}
+
+type ListPromotionsResponse struct {
+	Items      []Promotion `json:"items"`
+	Pagination Pagination  `json:"pagination"`
+}
+
+type UpdatePromotionResponse struct {
+	Promotion Promotion `json:"promotion"`
+}
+
+type DeletePromotionResponse struct {
+	Deleted bool `json:"deleted"`
+}

@@ -47,3 +47,31 @@ func TestCalcCartTotals_RoundingToTwoDecimals(t *testing.T) {
 		t.Fatalf("Total = %v, want 121.99", totals.Total)
 	}
 }
+
+func TestCalcEffectiveDiscount_NoPromo(t *testing.T) {
+	got := calcEffectiveDiscount(5, 0)
+	if got != 5 {
+		t.Fatalf("calcEffectiveDiscount(5, 0) = %v, want 5", got)
+	}
+}
+
+func TestCalcEffectiveDiscount_PromoHigherThanManual(t *testing.T) {
+	got := calcEffectiveDiscount(5, 20)
+	if got != 20 {
+		t.Fatalf("calcEffectiveDiscount(5, 20) = %v, want 20", got)
+	}
+}
+
+func TestCalcEffectiveDiscount_ManualHigherThanPromo(t *testing.T) {
+	got := calcEffectiveDiscount(30, 10)
+	if got != 30 {
+		t.Fatalf("calcEffectiveDiscount(30, 10) = %v, want 30", got)
+	}
+}
+
+func TestCalcEffectiveDiscount_Equal(t *testing.T) {
+	got := calcEffectiveDiscount(15, 15)
+	if got != 15 {
+		t.Fatalf("calcEffectiveDiscount(15, 15) = %v, want 15", got)
+	}
+}

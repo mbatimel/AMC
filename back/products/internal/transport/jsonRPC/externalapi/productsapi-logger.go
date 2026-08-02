@@ -217,3 +217,124 @@ func (m loggerProductsAPI) ListBrands(ctx context.Context, limit *int, offset *i
 	}(time.Now())
 	return m.next.ListBrands(ctx, limit, offset)
 }
+
+func (m loggerProductsAPI) CreatePromotion(ctx context.Context, userID uuid.UUID, name string, discountPercent float64, startsAt string, endsAt string, products []models.PromotionProduct) (response models.CreatePromotionResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "createPromotion").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "productsAPI.createPromotion",
+				"request": viewer.Sprintf("%+v", requestProductsAPICreatePromotion{
+					DiscountPercent: discountPercent,
+					EndsAt:          endsAt,
+					Name:            name,
+					Products:        products,
+					StartsAt:        startsAt,
+					UserID:          userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseProductsAPICreatePromotion{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call createPromotion")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call createPromotion")
+	}(time.Now())
+	return m.next.CreatePromotion(ctx, userID, name, discountPercent, startsAt, endsAt, products)
+}
+
+func (m loggerProductsAPI) GetPromotion(ctx context.Context, promotionID uuid.UUID) (response models.GetPromotionResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "getPromotion").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method":   "productsAPI.getPromotion",
+				"request":  viewer.Sprintf("%+v", requestProductsAPIGetPromotion{PromotionID: promotionID}),
+				"response": viewer.Sprintf("%+v", responseProductsAPIGetPromotion{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call getPromotion")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call getPromotion")
+	}(time.Now())
+	return m.next.GetPromotion(ctx, promotionID)
+}
+
+func (m loggerProductsAPI) ListPromotions(ctx context.Context, limit *int, offset *int) (response models.ListPromotionsResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "listPromotions").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "productsAPI.listPromotions",
+				"request": viewer.Sprintf("%+v", requestProductsAPIListPromotions{
+					Limit:  limit,
+					Offset: offset,
+				}),
+				"response": viewer.Sprintf("%+v", responseProductsAPIListPromotions{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call listPromotions")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call listPromotions")
+	}(time.Now())
+	return m.next.ListPromotions(ctx, limit, offset)
+}
+
+func (m loggerProductsAPI) UpdatePromotion(ctx context.Context, userID uuid.UUID, promotionID uuid.UUID, name string, discountPercent float64, startsAt string, endsAt string, products []models.PromotionProduct) (response models.UpdatePromotionResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "updatePromotion").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "productsAPI.updatePromotion",
+				"request": viewer.Sprintf("%+v", requestProductsAPIUpdatePromotion{
+					DiscountPercent: discountPercent,
+					EndsAt:          endsAt,
+					Name:            name,
+					Products:        products,
+					PromotionID:     promotionID,
+					StartsAt:        startsAt,
+					UserID:          userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseProductsAPIUpdatePromotion{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call updatePromotion")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call updatePromotion")
+	}(time.Now())
+	return m.next.UpdatePromotion(ctx, userID, promotionID, name, discountPercent, startsAt, endsAt, products)
+}
+
+func (m loggerProductsAPI) DeletePromotion(ctx context.Context, userID uuid.UUID, promotionID uuid.UUID) (response models.DeletePromotionResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "ProductsAPI").Str("method", "deletePromotion").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "productsAPI.deletePromotion",
+				"request": viewer.Sprintf("%+v", requestProductsAPIDeletePromotion{
+					PromotionID: promotionID,
+					UserID:      userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseProductsAPIDeletePromotion{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call deletePromotion")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call deletePromotion")
+	}(time.Now())
+	return m.next.DeletePromotion(ctx, userID, promotionID)
+}

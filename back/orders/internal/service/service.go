@@ -27,7 +27,7 @@ type Storage interface {
 	GetCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID) (uuid.UUID, error)
 	GetOrCreateCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID) (uuid.UUID, error)
 	GetCartItems(ctx context.Context, cartID uuid.UUID) ([]postgres.CartItemRow, error)
-	ResolveProductPrice(ctx context.Context, productID uuid.UUID, priceGroupID uuid.NullUUID) (float64, error)
+	ResolveProductPrice(ctx context.Context, productID uuid.UUID, priceGroupID uuid.NullUUID, qty int) (float64, error)
 	UpsertCartItem(ctx context.Context, cartID uuid.UUID, productID uuid.UUID, qty int, price float64) error
 	SetCartItemQuantity(ctx context.Context, cartItemID uuid.UUID, cartID uuid.UUID, qty int) error
 	DeleteCartItem(ctx context.Context, cartItemID uuid.UUID, cartID uuid.UUID) error
@@ -287,7 +287,7 @@ func (s *service) AddCartItem(ctx context.Context, userID uuid.UUID, clientID st
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
-	price, err := s.storage.ResolveProductPrice(ctx, productUUID, priceGroupID)
+	price, err := s.storage.ResolveProductPrice(ctx, productUUID, priceGroupID, qty)
 	if err != nil {
 		if errors.Is(err, postgres.ErrProductPriceNotFound) {
 			return response, customErrors.NotFoundError().AddCause("field", "productID")
@@ -785,7 +785,7 @@ func (s *service) RepeatOrder(ctx context.Context, orderID uuid.UUID, userID uui
 	}
 
 	for _, item := range itemRows {
-		price, priceErr := s.storage.ResolveProductPrice(ctx, item.ProductID, priceGroupID)
+		price, priceErr := s.storage.ResolveProductPrice(ctx, item.ProductID, priceGroupID, item.Quantity)
 		if priceErr != nil {
 			if errors.Is(priceErr, postgres.ErrProductPriceNotFound) {
 				continue

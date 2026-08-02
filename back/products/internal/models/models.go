@@ -133,3 +133,36 @@ type ProductStock struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+type Promotion struct {
+	ID              uuid.UUID
+	Name            string
+	DiscountPercent float64
+	StartsAt        time.Time
+	EndsAt          time.Time
+	Products        []PromotionProduct
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+type PromotionProduct struct {
+	ProductID uuid.UUID
+	MinQty    int
+}
+
+type CreatePromotionParams struct {
+	Name            string
+	DiscountPercent float64
+	StartsAt        time.Time
+	EndsAt          time.Time
+	Products        []PromotionProduct
+}
+
+type UpdatePromotionParams struct {
+	PromotionID     uuid.UUID
+	Name            string
+	DiscountPercent float64
+	StartsAt        time.Time
+	EndsAt          time.Time
+	Products        []PromotionProduct
+}

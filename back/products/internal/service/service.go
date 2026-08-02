@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
@@ -30,6 +31,7 @@ const (
 	maxImageAltSize       = 500
 	maxProductDescription = 10000
 	maxProductImages      = 50
+	maxPromotionName      = 255
 )
 
 type Storage interface {
@@ -53,6 +55,12 @@ type Storage interface {
 	GetBrandByID(ctx context.Context, brandID uuid.UUID) (internalModels.Brand, error)
 	ListBrands(ctx context.Context, limit int, offset int) ([]internalModels.Brand, error)
 	CountBrands(ctx context.Context) (int, error)
+	CreatePromotion(ctx context.Context, params internalModels.CreatePromotionParams) (internalModels.Promotion, error)
+	GetPromotionByID(ctx context.Context, promotionID uuid.UUID) (internalModels.Promotion, error)
+	ListPromotions(ctx context.Context, limit int, offset int) ([]internalModels.Promotion, error)
+	CountPromotions(ctx context.Context) (int, error)
+	UpdatePromotion(ctx context.Context, params internalModels.UpdatePromotionParams) (internalModels.Promotion, error)
+	DeletePromotion(ctx context.Context, promotionID uuid.UUID) error
 }
 
 type AccessClient interface {
@@ -108,6 +116,8 @@ func mapStorageError(err error) error {
 		return validation("sort")
 	case errors.Is(err, postgres.ErrProductImageNotFound):
 		return customErrors.ErrNotFound.AddCause("entity", "productImage")
+	case errors.Is(err, postgres.ErrPromotionNotFound):
+		return customErrors.ErrNotFound.AddCause("entity", "promotion")
 	default:
 		return customErrors.ErrInternal
 	}
@@ -916,6 +926,237 @@ func (s *Service) ListCategories(
 	response.Pagination = models.Pagination{
 		Limit: resultLimit, Offset: resultOffset, Total: total,
 	}
+	return response, nil
+}
+
+func promotionStatus(startsAt, endsAt time.Time) string {
+	now := time.Now().UTC()
+	switch {
+	case now.Before(startsAt):
+		return "scheduled"
+	case now.After(endsAt):
+		return "ended"
+	default:
+		return "active"
+	}
+}
+
+func modelPromotion(promotion internalModels.Promotion) models.Promotion {
+	products := make([]models.PromotionProduct, 0, len(promotion.Products))
+	for _, product := range promotion.Products {
+		products = append(products, models.PromotionProduct{
+			ProductID: product.ProductID.String(),
+			MinQty:    product.MinQty,
+		})
+	}
+	return models.Promotion{
+		ID:              promotion.ID.String(),
+		Name:            promotion.Name,
+		DiscountPercent: promotion.DiscountPercent,
+		StartsAt:        promotion.StartsAt,
+		EndsAt:          promotion.EndsAt,
+		Status:          promotionStatus(promotion.StartsAt, promotion.EndsAt),
+		Products:        products,
+		CreatedAt:       promotion.CreatedAt,
+		UpdatedAt:       promotion.UpdatedAt,
+	}
+}
+
+func parsePromotionPeriod(startsAt, endsAt string) (time.Time, time.Time, error) {
+	startsAtTime, err := time.Parse(time.RFC3339, strings.TrimSpace(startsAt))
+	if err != nil {
+		return time.Time{}, time.Time{}, validation("startsAt")
+	}
+	endsAtTime, err := time.Parse(time.RFC3339, strings.TrimSpace(endsAt))
+	if err != nil {
+		return time.Time{}, time.Time{}, validation("endsAt")
+	}
+	if !endsAtTime.After(startsAtTime) {
+		return time.Time{}, time.Time{}, validation("endsAt")
+	}
+	return startsAtTime, endsAtTime, nil
+}
+
+func parsePromotionProducts(products []models.PromotionProduct) ([]internalModels.PromotionProduct, error) {
+	if len(products) == 0 {
+		return nil, validation("products")
+	}
+	result := make([]internalModels.PromotionProduct, 0, len(products))
+	seen := make(map[uuid.UUID]struct{}, len(products))
+	for _, product := range products {
+		productID, err := uuid.Parse(strings.TrimSpace(product.ProductID))
+		if err != nil || productID == uuid.Nil {
+			return nil, validation("products.productID")
+		}
+		if _, ok := seen[productID]; ok {
+			return nil, validation("products.productID")
+		}
+		seen[productID] = struct{}{}
+		if product.MinQty < 1 {
+			return nil, validation("products.minQty")
+		}
+		result = append(result, internalModels.PromotionProduct{ProductID: productID, MinQty: product.MinQty})
+	}
+	return result, nil
+}
+
+func (s *Service) checkPromotionProductsExist(ctx context.Context, products []internalModels.PromotionProduct) error {
+	for _, product := range products {
+		if _, err := s.storage.GetProductByID(ctx, product.ProductID); err != nil {
+			return mapStorageError(err)
+		}
+	}
+	return nil
+}
+
+func (s *Service) CreatePromotion(
+	ctx context.Context,
+	userID uuid.UUID,
+	name string,
+	discountPercent float64,
+	startsAt string,
+	endsAt string,
+	products []models.PromotionProduct,
+) (response models.CreatePromotionResponse, err error) {
+	if err = s.checkWriteAccess(ctx, userID); err != nil {
+		return response, err
+	}
+	if name, err = validateRequired("name", name, maxPromotionName); err != nil {
+		return response, err
+	}
+	if err = validateDiscount(discountPercent); err != nil {
+		return response, err
+	}
+	startsAtTime, endsAtTime, err := parsePromotionPeriod(startsAt, endsAt)
+	if err != nil {
+		return response, err
+	}
+	parsedProducts, err := parsePromotionProducts(products)
+	if err != nil {
+		return response, err
+	}
+	if err = s.checkPromotionProductsExist(ctx, parsedProducts); err != nil {
+		return response, err
+	}
+	promotion, err := s.storage.CreatePromotion(ctx, internalModels.CreatePromotionParams{
+		Name:            name,
+		DiscountPercent: discountPercent,
+		StartsAt:        startsAtTime,
+		EndsAt:          endsAtTime,
+		Products:        parsedProducts,
+	})
+	if err != nil {
+		return response, mapStorageError(err)
+	}
+	response.Promotion = modelPromotion(promotion)
+	return response, nil
+}
+
+func (s *Service) GetPromotion(
+	ctx context.Context,
+	promotionID uuid.UUID,
+) (response models.GetPromotionResponse, err error) {
+	if promotionID == uuid.Nil {
+		return response, validation("promotionID")
+	}
+	promotion, err := s.storage.GetPromotionByID(ctx, promotionID)
+	if err != nil {
+		return response, mapStorageError(err)
+	}
+	response.Promotion = modelPromotion(promotion)
+	return response, nil
+}
+
+func (s *Service) ListPromotions(
+	ctx context.Context,
+	limit *int,
+	offset *int,
+) (response models.ListPromotionsResponse, err error) {
+	resultLimit, resultOffset, err := pagination(limit, offset)
+	if err != nil {
+		return response, err
+	}
+	items, err := s.storage.ListPromotions(ctx, resultLimit, resultOffset)
+	if err != nil {
+		return response, mapStorageError(err)
+	}
+	total, err := s.storage.CountPromotions(ctx)
+	if err != nil {
+		return response, mapStorageError(err)
+	}
+	response.Items = make([]models.Promotion, 0, len(items))
+	for _, item := range items {
+		response.Items = append(response.Items, modelPromotion(item))
+	}
+	response.Pagination = models.Pagination{
+		Limit: resultLimit, Offset: resultOffset, Total: total,
+	}
+	return response, nil
+}
+
+func (s *Service) UpdatePromotion(
+	ctx context.Context,
+	userID uuid.UUID,
+	promotionID uuid.UUID,
+	name string,
+	discountPercent float64,
+	startsAt string,
+	endsAt string,
+	products []models.PromotionProduct,
+) (response models.UpdatePromotionResponse, err error) {
+	if promotionID == uuid.Nil {
+		return response, validation("promotionID")
+	}
+	if err = s.checkWriteAccess(ctx, userID); err != nil {
+		return response, err
+	}
+	if name, err = validateRequired("name", name, maxPromotionName); err != nil {
+		return response, err
+	}
+	if err = validateDiscount(discountPercent); err != nil {
+		return response, err
+	}
+	startsAtTime, endsAtTime, err := parsePromotionPeriod(startsAt, endsAt)
+	if err != nil {
+		return response, err
+	}
+	parsedProducts, err := parsePromotionProducts(products)
+	if err != nil {
+		return response, err
+	}
+	if err = s.checkPromotionProductsExist(ctx, parsedProducts); err != nil {
+		return response, err
+	}
+	promotion, err := s.storage.UpdatePromotion(ctx, internalModels.UpdatePromotionParams{
+		PromotionID:     promotionID,
+		Name:            name,
+		DiscountPercent: discountPercent,
+		StartsAt:        startsAtTime,
+		EndsAt:          endsAtTime,
+		Products:        parsedProducts,
+	})
+	if err != nil {
+		return response, mapStorageError(err)
+	}
+	response.Promotion = modelPromotion(promotion)
+	return response, nil
+}
+
+func (s *Service) DeletePromotion(
+	ctx context.Context,
+	userID uuid.UUID,
+	promotionID uuid.UUID,
+) (response models.DeletePromotionResponse, err error) {
+	if promotionID == uuid.Nil {
+		return response, validation("promotionID")
+	}
+	if err = s.checkWriteAccess(ctx, userID); err != nil {
+		return response, err
+	}
+	if err = s.storage.DeletePromotion(ctx, promotionID); err != nil {
+		return response, mapStorageError(err)
+	}
+	response.Deleted = true
 	return response, nil
 }
 

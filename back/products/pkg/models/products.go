@@ -97,3 +97,20 @@ type ProductStock struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type Promotion struct {
+	ID              string             `json:"id"`
+	Name            string             `json:"name"`
+	DiscountPercent float64            `json:"discount_percent"`
+	StartsAt        time.Time          `json:"starts_at"`
+	EndsAt          time.Time          `json:"ends_at"`
+	Status          string             `json:"status"`
+	Products        []PromotionProduct `json:"products"`
+	CreatedAt       time.Time          `json:"created_at"`
+	UpdatedAt       time.Time          `json:"updated_at"`
+}
+
+type PromotionProduct struct {
+	ProductID string `json:"product_id"`
+	MinQty    int    `json:"min_qty"`
+}
