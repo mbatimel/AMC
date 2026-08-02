@@ -4,6 +4,7 @@ WORKDIR /src
 
 COPY back/access ./access
 COPY back/auth ./auth
+COPY back/objectstorage ./objectstorage
 COPY back/admin/go.mod back/admin/go.sum ./admin/
 WORKDIR /src/admin
 RUN go mod download

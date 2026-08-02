@@ -17,11 +17,12 @@ import (
 )
 
 var (
-	ErrProductNotFound  = errors.New("product not found")
-	ErrCategoryNotFound = errors.New("category not found")
-	ErrBrandNotFound    = errors.New("brand not found")
-	ErrSKUTaken         = errors.New("sku already taken")
-	ErrInvalidSort      = errors.New("invalid sort")
+	ErrProductNotFound      = errors.New("product not found")
+	ErrCategoryNotFound     = errors.New("category not found")
+	ErrBrandNotFound        = errors.New("brand not found")
+	ErrSKUTaken             = errors.New("sku already taken")
+	ErrInvalidSort          = errors.New("invalid sort")
+	ErrProductImageNotFound = errors.New("product image not found")
 )
 
 const (
@@ -41,26 +42,29 @@ func query(name string) string {
 }
 
 var (
-	sqlCreateProduct       = query("createProduct.sql")
-	sqlGetProductByID      = query("getProductByID.sql")
-	sqlGetProductBySKU     = query("getProductBySKU.sql")
-	sqlListProducts        = query("listProducts.sql")
-	sqlCountProducts       = query("countProducts.sql")
-	sqlUpdateProduct       = query("updateProduct.sql")
-	sqlDeleteProduct       = query("deleteProduct.sql")
-	sqlListProductImages   = query("listProductImages.sql")
-	sqlAddProductImage     = query("addProductImage.sql")
-	sqlDeleteProductImages = query("deleteProductImages.sql")
-	sqlUpsertProductPrice  = query("upsertProductPrice.sql")
-	sqlReplaceProductStock = query("replaceProductStock.sql")
-	sqlGetProductPrice     = query("getProductPrice.sql")
-	sqlGetProductStock     = query("getProductStock.sql")
-	sqlGetCategoryByID     = query("getCategoryByID.sql")
-	sqlListCategories      = query("listCategories.sql")
-	sqlCountCategories     = query("countCategories.sql")
-	sqlGetBrandByID        = query("getBrandByID.sql")
-	sqlListBrands          = query("listBrands.sql")
-	sqlCountBrands         = query("countBrands.sql")
+	sqlCreateProduct           = query("createProduct.sql")
+	sqlGetProductByID          = query("getProductByID.sql")
+	sqlGetProductBySKU         = query("getProductBySKU.sql")
+	sqlListProducts            = query("listProducts.sql")
+	sqlCountProducts           = query("countProducts.sql")
+	sqlUpdateProduct           = query("updateProduct.sql")
+	sqlDeleteProduct           = query("deleteProduct.sql")
+	sqlListProductImages       = query("listProductImages.sql")
+	sqlAddProductImage         = query("addProductImage.sql")
+	sqlDeleteProductImages     = query("deleteProductImages.sql")
+	sqlAddUploadedProductImage = query("addUploadedProductImage.sql")
+	sqlGetProductImage         = query("getProductImage.sql")
+	sqlDeleteProductImage      = query("deleteProductImage.sql")
+	sqlUpsertProductPrice      = query("upsertProductPrice.sql")
+	sqlReplaceProductStock     = query("replaceProductStock.sql")
+	sqlGetProductPrice         = query("getProductPrice.sql")
+	sqlGetProductStock         = query("getProductStock.sql")
+	sqlGetCategoryByID         = query("getCategoryByID.sql")
+	sqlListCategories          = query("listCategories.sql")
+	sqlCountCategories         = query("countCategories.sql")
+	sqlGetBrandByID            = query("getBrandByID.sql")
+	sqlListBrands              = query("listBrands.sql")
+	sqlCountBrands             = query("countBrands.sql")
 )
 
 type Storage struct {
@@ -538,7 +542,12 @@ func (s *Storage) ListProductImages(
 		if err = rows.Scan(
 			&image.ID,
 			&image.ProductID,
+			&image.FileID,
 			&image.URL,
+			&image.ObjectKey,
+			&image.OriginalName,
+			&image.ContentType,
+			&image.SizeBytes,
 			&image.Alt,
 			&image.SortOrder,
 			&image.IsPrimary,
@@ -553,6 +562,92 @@ func (s *Storage) ListProductImages(
 		return nil, fmt.Errorf("iterate product images: %w", err)
 	}
 	return images, nil
+}
+
+func (s *Storage) AddUploadedProductImage(
+	ctx context.Context,
+	productID uuid.UUID,
+	image internalModels.ProductImage,
+) (internalModels.ProductImage, error) {
+	image.ID = uuid.Nil
+	image.ProductID = productID
+	err := s.pool.QueryRow(
+		ctx,
+		sqlAddUploadedProductImage,
+		productID,
+		image.ObjectKey,
+		image.OriginalName,
+		image.ContentType,
+		image.SizeBytes,
+		image.URL,
+		image.Alt,
+		image.SortOrder,
+		image.IsPrimary,
+	).Scan(&image.ID, &image.FileID, &image.CreatedAt, &image.UpdatedAt)
+	if err != nil {
+		return internalModels.ProductImage{}, classifyWriteError(fmt.Errorf("add uploaded product image: %w", err))
+	}
+	return image, nil
+}
+
+func (s *Storage) GetProductImage(
+	ctx context.Context,
+	productID uuid.UUID,
+	imageID uuid.UUID,
+) (internalModels.ProductImage, error) {
+	var image internalModels.ProductImage
+	err := s.pool.QueryRow(ctx, sqlGetProductImage, productID, imageID).Scan(
+		&image.ID,
+		&image.ProductID,
+		&image.FileID,
+		&image.URL,
+		&image.ObjectKey,
+		&image.OriginalName,
+		&image.ContentType,
+		&image.SizeBytes,
+		&image.Alt,
+		&image.SortOrder,
+		&image.IsPrimary,
+		&image.CreatedAt,
+		&image.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return internalModels.ProductImage{}, ErrProductImageNotFound
+	}
+	if err != nil {
+		return internalModels.ProductImage{}, fmt.Errorf("get product image: %w", err)
+	}
+	return image, nil
+}
+
+func (s *Storage) DeleteProductImage(ctx context.Context, productID uuid.UUID, imageID uuid.UUID) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin delete product image: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	var fileID uuid.NullUUID
+	if err = tx.QueryRow(ctx, `SELECT file_id FROM product_images WHERE product_id = $1 AND id = $2`, productID, imageID).Scan(&fileID); errors.Is(err, pgx.ErrNoRows) {
+		return ErrProductImageNotFound
+	} else if err != nil {
+		return fmt.Errorf("select product image file: %w", err)
+	}
+	tag, err := tx.Exec(ctx, sqlDeleteProductImage, productID, imageID)
+	if err != nil {
+		return fmt.Errorf("delete product image: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrProductImageNotFound
+	}
+	if fileID.Valid {
+		if _, err = tx.Exec(ctx, `DELETE FROM files WHERE id = $1`, fileID.UUID); err != nil {
+			return fmt.Errorf("delete product image file metadata: %w", err)
+		}
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit delete product image: %w", err)
+	}
+	return nil
 }
 
 func (s *Storage) AddProductImages(

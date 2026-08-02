@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	customErrors "github.com/mbatimel/AMC/admin/internal/errors"
 	"github.com/rs/zerolog"
 )
 
@@ -34,8 +35,9 @@ func sendResponse(ctx *fiber.Ctx, log zerolog.Logger, data interface{}, respErro
 	if response.Error {
 		ctx.Response().SetStatusCode(http.StatusInternalServerError)
 		response.ErrorText = errInternal
-		response.AdditionalErrors = map[string]interface{}{
-			"reason": respError.Error(),
+		if customErr, ok := respError.(*customErrors.Error); ok {
+			response.ErrorText = customErr.ErrorText
+			response.AdditionalErrors = customErr.Cause
 		}
 
 		if customErr, ok := respError.(statusCoder); ok && customErr.GetStatusCode() != 0 {

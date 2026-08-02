@@ -15,6 +15,44 @@ services:
       retries: 10
     networks: [amc_net]
 
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    ports:
+      - "127.0.0.1:${MINIO_API_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [amc_net]
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET}
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        mc alias set amc http://minio:9000 "$${S3_ACCESS_KEY}" "$${S3_SECRET_KEY}"
+        mc mb --ignore-existing "amc/$${S3_BUCKET}"
+        mc anonymous set download "amc/$${S3_BUCKET}"
+    networks: [amc_net]
+
   migrations:
     image: ghcr.io/mbatimel/amc-migrations:${IMAGE_TAG}
     restart: "no"
@@ -103,6 +141,14 @@ services:
       BIND_ADDR: ":8084"
       ACCESS_URL: "http://access:8080"
       AUTH_URL: "http://auth:8081"
+      S3_ENDPOINT: "http://minio:9000"
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_REGION: ${S3_REGION}
+      S3_USE_SSL: "false"
+      S3_MAX_FILE_SIZE: ${S3_MAX_FILE_SIZE}
     depends_on:
       migrations:
         condition: service_completed_successfully
@@ -110,6 +156,8 @@ services:
         condition: service_started
       auth:
         condition: service_started
+      minio-init:
+        condition: service_completed_successfully
     networks: [amc_net]
 
   products:
@@ -123,11 +171,21 @@ services:
       PG_PASSWORD: ${PG_PASSWORD}
       BIND_ADDR: ":8085"
       ACCESS_URL: "http://access:8080"
+      S3_ENDPOINT: "http://minio:9000"
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_REGION: ${S3_REGION}
+      S3_USE_SSL: "false"
+      S3_MAX_FILE_SIZE: ${S3_MAX_FILE_SIZE}
     depends_on:
       migrations:
         condition: service_completed_successfully
       access:
         condition: service_started
+      minio-init:
+        condition: service_completed_successfully
     networks: [amc_net]
 
   front:
@@ -206,6 +264,7 @@ services:
 
 volumes:
   postgres_data:
+  minio_data:
   front_portal_data:
 
 networks:

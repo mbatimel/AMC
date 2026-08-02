@@ -31,14 +31,19 @@ type Product struct {
 }
 
 type ProductImage struct {
-	ID        uuid.UUID
-	ProductID uuid.UUID
-	URL       string
-	Alt       string
-	SortOrder int
-	IsPrimary bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID           uuid.UUID
+	ProductID    uuid.UUID
+	FileID       uuid.UUID
+	URL          string
+	ObjectKey    string
+	OriginalName string
+	ContentType  string
+	SizeBytes    int64
+	Alt          string
+	SortOrder    int
+	IsPrimary    bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 type Category struct {

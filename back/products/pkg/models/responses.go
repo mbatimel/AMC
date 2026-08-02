@@ -30,3 +30,23 @@ type ListBrandsResponse struct {
 	Items      []Brand    `json:"items"`
 	Pagination Pagination `json:"pagination"`
 }
+
+type UploadProductImageResponse struct {
+	Image ProductImage `json:"image"`
+}
+
+type DeleteProductImageResponse struct {
+	Deleted bool `json:"deleted"`
+}
+
+type ProductImageBatchResult struct {
+	FileName  string        `json:"fileName"`
+	SKU       string        `json:"sku"`
+	Success   bool          `json:"success"`
+	Image     *ProductImage `json:"image,omitempty"`
+	ErrorText string        `json:"errorText,omitempty"`
+}
+
+type UploadProductImagesBatchResponse struct {
+	Items []ProductImageBatchResult `json:"items"`
+}

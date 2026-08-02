@@ -16,22 +16,26 @@ import (
 )
 
 type fakeStorage struct {
-	createProductFn   func(context.Context, internalModels.CreateProductParams) (internalModels.Product, error)
-	getProductByIDFn  func(context.Context, uuid.UUID) (internalModels.Product, error)
-	getProductBySKUFn func(context.Context, string) (internalModels.Product, error)
-	listProductsFn    func(context.Context, internalModels.ListProductsParams) ([]internalModels.Product, error)
-	countProductsFn   func(context.Context, internalModels.ListProductsParams) (int, error)
-	updateProductFn   func(context.Context, internalModels.UpdateProductParams) (internalModels.Product, error)
-	deleteProductFn   func(context.Context, uuid.UUID) error
-	getCategoryByIDFn func(context.Context, uuid.UUID) (internalModels.Category, error)
-	listCategoriesFn  func(context.Context, int, int) ([]internalModels.Category, error)
-	countCategoriesFn func(context.Context) (int, error)
-	getBrandByIDFn    func(context.Context, uuid.UUID) (internalModels.Brand, error)
-	listBrandsFn      func(context.Context, int, int) ([]internalModels.Brand, error)
-	countBrandsFn     func(context.Context) (int, error)
-	lastCreateParams  internalModels.CreateProductParams
-	lastListParams    internalModels.ListProductsParams
-	lastUpdateParams  internalModels.UpdateProductParams
+	createProductFn           func(context.Context, internalModels.CreateProductParams) (internalModels.Product, error)
+	getProductByIDFn          func(context.Context, uuid.UUID) (internalModels.Product, error)
+	getProductBySKUFn         func(context.Context, string) (internalModels.Product, error)
+	listProductsFn            func(context.Context, internalModels.ListProductsParams) ([]internalModels.Product, error)
+	countProductsFn           func(context.Context, internalModels.ListProductsParams) (int, error)
+	updateProductFn           func(context.Context, internalModels.UpdateProductParams) (internalModels.Product, error)
+	deleteProductFn           func(context.Context, uuid.UUID) error
+	getCategoryByIDFn         func(context.Context, uuid.UUID) (internalModels.Category, error)
+	listCategoriesFn          func(context.Context, int, int) ([]internalModels.Category, error)
+	countCategoriesFn         func(context.Context) (int, error)
+	getBrandByIDFn            func(context.Context, uuid.UUID) (internalModels.Brand, error)
+	listBrandsFn              func(context.Context, int, int) ([]internalModels.Brand, error)
+	countBrandsFn             func(context.Context) (int, error)
+	listProductImagesFn       func(context.Context, uuid.UUID) ([]internalModels.ProductImage, error)
+	addUploadedProductImageFn func(context.Context, uuid.UUID, internalModels.ProductImage) (internalModels.ProductImage, error)
+	getProductImageFn         func(context.Context, uuid.UUID, uuid.UUID) (internalModels.ProductImage, error)
+	deleteProductImageFn      func(context.Context, uuid.UUID, uuid.UUID) error
+	lastCreateParams          internalModels.CreateProductParams
+	lastListParams            internalModels.ListProductsParams
+	lastUpdateParams          internalModels.UpdateProductParams
 }
 
 func (f *fakeStorage) CreateProduct(ctx context.Context, params internalModels.CreateProductParams) (internalModels.Product, error) {
@@ -96,8 +100,34 @@ func (f *fakeStorage) DeleteProduct(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (f *fakeStorage) ListProductImages(context.Context, uuid.UUID) ([]internalModels.ProductImage, error) {
+func (f *fakeStorage) ListProductImages(ctx context.Context, productID uuid.UUID) ([]internalModels.ProductImage, error) {
+	if f.listProductImagesFn != nil {
+		return f.listProductImagesFn(ctx, productID)
+	}
 	return nil, nil
+}
+
+func (f *fakeStorage) AddUploadedProductImage(ctx context.Context, productID uuid.UUID, image internalModels.ProductImage) (internalModels.ProductImage, error) {
+	if f.addUploadedProductImageFn != nil {
+		return f.addUploadedProductImageFn(ctx, productID, image)
+	}
+	image.ID = uuid.New()
+	image.ProductID = productID
+	return image, nil
+}
+
+func (f *fakeStorage) GetProductImage(ctx context.Context, productID uuid.UUID, imageID uuid.UUID) (internalModels.ProductImage, error) {
+	if f.getProductImageFn != nil {
+		return f.getProductImageFn(ctx, productID, imageID)
+	}
+	return internalModels.ProductImage{ID: imageID, ProductID: productID}, nil
+}
+
+func (f *fakeStorage) DeleteProductImage(ctx context.Context, productID uuid.UUID, imageID uuid.UUID) error {
+	if f.deleteProductImageFn != nil {
+		return f.deleteProductImageFn(ctx, productID, imageID)
+	}
+	return nil
 }
 
 func (f *fakeStorage) AddProductImages(context.Context, uuid.UUID, []internalModels.ProductImage) ([]internalModels.ProductImage, error) {

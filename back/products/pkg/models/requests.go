@@ -1,5 +1,10 @@
 package models
 
+type ImageFile struct {
+	FileName string `json:"fileName"`
+	Content  []byte `json:"-"`
+}
+
 type CreateProductRequest struct {
 	SKU             string         `json:"sku"`
 	Name            string         `json:"name"`

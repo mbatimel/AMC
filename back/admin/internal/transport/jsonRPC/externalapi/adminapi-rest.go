@@ -24,15 +24,15 @@ func (http *httpAdminAPI) serveLogin(ctx *fiber.Ctx) (err error) {
 
 	var request requestAdminAPILogin
 
-	if _email := ctx.Query("email"); _email != "" {
-		var email string
-		email = _email
-		request.Email = email
-	}
 	if _password := ctx.Query("password"); _password != "" {
 		var password string
 		password = _password
 		request.Password = password
+	}
+	if _email := ctx.Query("email"); _email != "" {
+		var email string
+		email = _email
+		request.Email = email
 	}
 
 	return customhandlers.Login(ctx, http.svc, request.Email, request.Password)
