@@ -24,11 +24,13 @@ func sendResponse(ctx *fiber.Ctx, log zerolog.Logger, data interface{}, respErro
 	ctx.Status(http.StatusOK)
 
 	response := &RestResponse{
-		Data:  data,
-		Error: respError != nil,
+		Data:             data,
+		Error:            respError != nil,
+		AdditionalErrors: make(map[string]interface{}),
 	}
 
 	if response.Error {
+		response.AdditionalErrors = nil
 		ctx.Response().SetStatusCode(http.StatusInternalServerError)
 		response.ErrorText = errInternal
 
