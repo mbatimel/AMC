@@ -18,8 +18,21 @@
   gap: 16px;
 }
 
+.cardThumb {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #f3f6fa;
+  block-size: 72px;
+  inline-size: 72px;
+}
+
 .cardMain {
   min-inline-size: 0;
+  flex: 1;
 }
 
 .cardSku {

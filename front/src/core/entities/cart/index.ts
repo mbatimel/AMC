@@ -13,3 +13,6 @@ export {
   deleteCartItemFx,
   fetchCartFx,
 } from './model';
+
+// Догрузка фото позиций корзины по product_id.
+import '@/core/entities/productImages';

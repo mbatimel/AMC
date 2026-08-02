@@ -12,6 +12,7 @@ import {
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
 export type AddToCartPayload = {
+  imageUrl?: string;
   name?: string;
   productID: string;
   qty: number;

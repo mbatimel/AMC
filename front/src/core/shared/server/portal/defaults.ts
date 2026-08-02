@@ -1,6 +1,53 @@
-import type { PortalState } from './types';
+import type { PortalState, Promotion } from './types';
 
 const nowIso = (): string => new Date().toISOString();
+
+const pad = (value: number): string => String(value).padStart(2, '0');
+
+/** Формат для `<input type="datetime-local">`: YYYY-MM-DDTHH:mm */
+const toDateTimeLocal = (date: Date): string =>
+  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+const daysFromNow = (days: number): Date => {
+  const date = new Date();
+
+  date.setDate(date.getDate() + days);
+
+  return date;
+};
+
+const seedPromotions = (): Promotion[] => [
+  {
+    condition: 'Скидка действует на выбранные товары в течение периода',
+    createdAt: nowIso(),
+    desc: 'Сниженная цена на все метчики в течение двух недель.',
+    discMode: 'percent',
+    discValue: 15,
+    endAt: toDateTimeLocal(daysFromNow(14)),
+    endedManually: false,
+    id: 'promo-metchiki',
+    minQty: 0,
+    name: 'Скидка на метчики',
+    sel: { all: false, nodes: [], products: [] },
+    startAt: toDateTimeLocal(daysFromNow(-1)),
+    type: 'date',
+  },
+  {
+    condition: 'Скидка 10% при покупке от 3 шт выбранного товара',
+    createdAt: nowIso(),
+    desc: 'Скидка при заказе от 3 единиц одного наименования.',
+    discMode: 'percent',
+    discValue: 10,
+    endAt: toDateTimeLocal(daysFromNow(30)),
+    endedManually: false,
+    id: 'promo-sverla-qty',
+    minQty: 3,
+    name: 'Свёрла оптом — выгоднее',
+    sel: { all: false, nodes: [], products: [] },
+    startAt: toDateTimeLocal(daysFromNow(-2)),
+    type: 'qty',
+  },
+];
 
 export const createDefaultPortalState = (): PortalState => ({
   audit_log: [
@@ -155,7 +202,12 @@ export const createDefaultPortalState = (): PortalState => ({
       name: 'Договор оферты',
       updated_at: nowIso(),
       versions: [
-        { author: 'Админ портала', date: '15.01.2026', summary: 'Первая версия оферты', version: '1.0' },
+        {
+          author: 'Админ портала',
+          date: '15.01.2026',
+          summary: 'Первая версия оферты',
+          version: '1.0',
+        },
       ],
     },
     {
@@ -190,6 +242,7 @@ export const createDefaultPortalState = (): PortalState => ({
     },
   ],
   portal_users: [],
+  promotions: seedPromotions(),
   signup_requests: [],
   support_requests: [],
 });

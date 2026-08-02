@@ -23,22 +23,24 @@ Go-сервиса**: контент публичных страниц, банн�
 
 ## Эндпоинты
 
-| Метод | Путь | Назначение |
-| --- | --- | --- |
-| GET | `/portal-api/content` | Контент всех публичных страниц |
-| GET/PUT | `/portal-api/content/:key` | Чтение и правка страницы (`home`, `about`, `terms`, `promo`, `certificates`, `contacts`) |
-| GET/PUT | `/portal-api/banners` | Баннеры главной + интервал смены |
-| GET | `/portal-api/legal` | Список юридических документов |
-| GET/PUT | `/portal-api/legal/:id` | Документ и публикация новой версии |
-| GET/POST | `/portal-api/signup-requests` | Заявки на регистрацию |
-| PATCH | `/portal-api/signup-requests/:id` | Одобрение / отклонение заявки |
-| GET/POST | `/portal-api/support` | Обращения в поддержку |
-| PATCH | `/portal-api/support/:id` | Статус и ответ по обращению |
-| GET/POST | `/portal-api/feedback` | Отзывы по заказам |
-| GET/POST | `/portal-api/portal-users` | Пользователи портала и приглашения |
-| PATCH | `/portal-api/portal-users/:id` | Блокировка / сброс пароля |
-| GET/POST | `/portal-api/audit-log` | Локальный журнал действий |
-| POST | `/portal-api/assistant` | ИИ-помощник по подбору инструмента (DeepSeek + поиск по каталогу) |
+| Метод            | Путь                              | Назначение                                                                               |
+| ---------------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
+| GET              | `/portal-api/content`             | Контент всех публичных страниц                                                           |
+| GET/PUT          | `/portal-api/content/:key`        | Чтение и правка страницы (`home`, `about`, `terms`, `promo`, `certificates`, `contacts`) |
+| GET/PUT          | `/portal-api/banners`             | Баннеры главной + интервал смены                                                         |
+| GET              | `/portal-api/legal`               | Список юридических документов                                                            |
+| GET/PUT          | `/portal-api/legal/:id`           | Документ и публикация новой версии                                                       |
+| GET/POST         | `/portal-api/signup-requests`     | Заявки на регистрацию                                                                    |
+| PATCH            | `/portal-api/signup-requests/:id` | Одобрение / отклонение заявки                                                            |
+| GET/POST         | `/portal-api/support`             | Обращения в поддержку                                                                    |
+| PATCH            | `/portal-api/support/:id`         | Статус и ответ по обращению                                                              |
+| GET/POST         | `/portal-api/feedback`            | Отзывы по заказам                                                                        |
+| GET/POST         | `/portal-api/promotions`          | Акции (промо-скидки): список и создание                                                  |
+| GET/PATCH/DELETE | `/portal-api/promotions/:id`      | Чтение, правка, досрочное завершение, удаление                                           |
+| GET/POST         | `/portal-api/portal-users`        | Пользователи портала и приглашения                                                       |
+| PATCH            | `/portal-api/portal-users/:id`    | Блокировка / сброс пароля                                                                |
+| GET/POST         | `/portal-api/audit-log`           | Локальный журнал действий                                                                |
+| POST             | `/portal-api/assistant`           | ИИ-помощник по подбору инструмента (DeepSeek + поиск по каталогу)                        |
 
 ## ИИ-помощник
 
@@ -64,14 +66,14 @@ DeepSeek. Ключ читается из `DEEPSEEK_API_KEY` **только на 
 переходит на встроенную логику (поиск по каталогу + сценарии из
 `core/entities/assistant/lib/scripts.ts`). Чат не ломается.
 
-| Переменная | По умолчанию | Назначение |
-| --- | --- | --- |
-| `DEEPSEEK_API_KEY` | — | Ключ. Пусто — ИИ выключен |
-| `DEEPSEEK_MODEL` | `deepseek-v4-flash` | `deepseek-chat` устарел 24.07.2026 |
-| `DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | Можно указать другой OpenAI-совместимый провайдер |
-| `DEEPSEEK_TIMEOUT_MS` | `25000` | Таймаут запроса к модели |
-| `ASSISTANT_MAX_HISTORY` | `8` | Сколько сообщений диалога уходит в промпт |
-| `ASSISTANT_MAX_PRODUCTS` | `3` | Сколько карточек показывать в ответе |
+| Переменная               | По умолчанию               | Назначение                                        |
+| ------------------------ | -------------------------- | ------------------------------------------------- |
+| `DEEPSEEK_API_KEY`       | —                          | Ключ. Пусто — ИИ выключен                         |
+| `DEEPSEEK_MODEL`         | `deepseek-v4-flash`        | `deepseek-chat` устарел 24.07.2026                |
+| `DEEPSEEK_BASE_URL`      | `https://api.deepseek.com` | Можно указать другой OpenAI-совместимый провайдер |
+| `DEEPSEEK_TIMEOUT_MS`    | `25000`                    | Таймаут запроса к модели                          |
+| `ASSISTANT_MAX_HISTORY`  | `8`                        | Сколько сообщений диалога уходит в промпт         |
+| `ASSISTANT_MAX_PRODUCTS` | `3`                        | Сколько карточек показывать в ответе              |
 
 > Персональные данные: в промпт уходит только текст переписки. Клиент может
 > написать туда номер заказа или название компании — если это критично для

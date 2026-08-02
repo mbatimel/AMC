@@ -17,6 +17,7 @@ import {
   IconTruck,
 } from '@/core/shared/icons';
 import { formatPrice, normalizeQtyToPackage } from '@/core/shared/lib/formatPrice';
+import { getPrimaryProductImageUrl } from '@/core/shared/lib/productImage';
 import { getStockLevel } from '@/core/shared/lib/stock';
 import { AppPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
@@ -91,6 +92,7 @@ export const ProductPage = (): JSX.Element => {
     }
 
     addToCart({
+      imageUrl: getPrimaryProductImageUrl(product.images) ?? undefined,
       name: product.name,
       productID: product.id,
       qty: normalizeQtyToPackage(qty, product.package_qty),
@@ -355,6 +357,7 @@ export const ProductPage = (): JSX.Element => {
                         key={item.id}
                         onAddToCart={() =>
                           addToCart({
+                            imageUrl: getPrimaryProductImageUrl(item.images) ?? undefined,
                             name: item.name,
                             productID: item.id,
                             qty: item.package_qty,

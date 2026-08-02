@@ -246,6 +246,36 @@
   font-size: 14px;
 }
 
+.productThumbCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.productThumb {
+  flex-shrink: 0;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--palette-ulight);
+  block-size: 40px;
+  inline-size: 40px;
+}
+
+.productThumbEmpty {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--palette-ulight);
+  color: var(--palette-dark);
+  block-size: 40px;
+  inline-size: 40px;
+  font-size: 12px;
+}
+
 .filters {
   display: grid;
   margin-block-end: 16px;

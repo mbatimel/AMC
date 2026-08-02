@@ -2,12 +2,15 @@
 
 import { Button } from '@heroui/react';
 import clsx from 'clsx';
+import { useUnit } from 'effector-react';
 import Link from 'next/link';
 
 import type { Cart } from '@/core/shared/api/cart';
 
+import { $productImageById } from '@/core/entities/productImages';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
 import { AppPath, getProductPath } from '@/core/shared/router/paths';
+import { ProductThumb } from '@/core/shared/ui/ProductThumb';
 
 import styles from '../Checkout.module.css';
 import { CHECKOUT_FORM_ID } from './CheckoutForm';
@@ -18,6 +21,7 @@ type CheckoutSummaryProps = {
 };
 
 export const CheckoutSummary = ({ cart, isPending }: CheckoutSummaryProps): JSX.Element => {
+  const productImages = useUnit($productImageById);
   const subtotal = cart.subtotal || cart.total;
   const discountPercent =
     cart.discount_total > 0 && subtotal > 0
@@ -31,6 +35,9 @@ export const CheckoutSummary = ({ cart, isPending }: CheckoutSummaryProps): JSX.
       <ul className={clsx(styles.items)}>
         {cart.items.map((item) => (
           <li className={clsx(styles.item)} key={item.id}>
+            <div className={clsx(styles.itemThumb)}>
+              <ProductThumb alt={item.product_name} src={productImages[item.product_id]} />
+            </div>
             <div className={clsx(styles.itemMain)}>
               <Link className={clsx(styles.itemName)} href={getProductPath(item.product_id)}>
                 {item.product_name}

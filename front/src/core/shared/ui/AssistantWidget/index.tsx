@@ -10,7 +10,9 @@ import { useCart } from '@/core/entities/cart';
 import { useSession } from '@/core/entities/session';
 import { IconClose, IconSearch, IconSupport } from '@/core/shared/icons';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
+import { getPrimaryProductImageUrl } from '@/core/shared/lib/productImage';
 import { getProductPath } from '@/core/shared/router/paths';
+import { ProductThumb } from '@/core/shared/ui/ProductThumb';
 
 import styles from './AssistantWidget.module.css';
 
@@ -118,40 +120,52 @@ export const AssistantWidget = (): JSX.Element => {
                   <ul className={clsx(styles.products)}>
                     {message.products.map((product) => (
                       <li className={clsx(styles.product)} key={product.id}>
-                        <p className={clsx(styles.productSku)}>
-                          {product.sku}
-                          {product.gost ? ` · ${product.gost}` : ''}
-                        </p>
-                        <p className={clsx(styles.productName)}>{product.name}</p>
-                        <p className={clsx(styles.productPrice)}>
-                          {formatPrice(product.client_price || product.base_price)}
-                          {product.stock_qty > 0 ? ` · в наличии ${product.stock_qty}` : ' · под заказ'}
-                        </p>
-                        <div className={clsx(styles.productActions)}>
-                          <button
-                            className={clsx(styles.productButton)}
-                            onClick={() => {
-                              close();
-                              router.push(getProductPath(product.id));
-                            }}
-                            type="button"
-                          >
-                            Открыть
-                          </button>
-                          <button
-                            className={clsx(styles.productButton, styles.productButtonPrimary)}
-                            disabled={product.stock_qty <= 0}
-                            onClick={() =>
-                              addToCart({
-                                name: product.name,
-                                productID: product.id,
-                                qty: product.package_qty,
-                              })
-                            }
-                            type="button"
-                          >
-                            В корзину
-                          </button>
+                        <div className={clsx(styles.productThumb)}>
+                          <ProductThumb
+                            alt={product.name}
+                            categoryName={product.category_name}
+                            images={product.images}
+                          />
+                        </div>
+                        <div className={clsx(styles.productBody)}>
+                          <p className={clsx(styles.productSku)}>
+                            {product.sku}
+                            {product.gost ? ` · ${product.gost}` : ''}
+                          </p>
+                          <p className={clsx(styles.productName)}>{product.name}</p>
+                          <p className={clsx(styles.productPrice)}>
+                            {formatPrice(product.client_price || product.base_price)}
+                            {product.stock_qty > 0
+                              ? ` · в наличии ${product.stock_qty}`
+                              : ' · под заказ'}
+                          </p>
+                          <div className={clsx(styles.productActions)}>
+                            <button
+                              className={clsx(styles.productButton)}
+                              onClick={() => {
+                                close();
+                                router.push(getProductPath(product.id));
+                              }}
+                              type="button"
+                            >
+                              Открыть
+                            </button>
+                            <button
+                              className={clsx(styles.productButton, styles.productButtonPrimary)}
+                              disabled={product.stock_qty <= 0}
+                              onClick={() =>
+                                addToCart({
+                                  imageUrl: getPrimaryProductImageUrl(product.images) ?? undefined,
+                                  name: product.name,
+                                  productID: product.id,
+                                  qty: product.package_qty,
+                                })
+                              }
+                              type="button"
+                            >
+                              В корзину
+                            </button>
+                          </div>
                         </div>
                       </li>
                     ))}
@@ -207,7 +221,11 @@ export const AssistantWidget = (): JSX.Element => {
             placeholder="Артикул, ГОСТ, размер или задача"
             value={draft}
           />
-          <Button isDisabled={isPending || draft.trim().length === 0} type="submit" variant="primary">
+          <Button
+            isDisabled={isPending || draft.trim().length === 0}
+            type="submit"
+            variant="primary"
+          >
             Отправить
           </Button>
         </form>

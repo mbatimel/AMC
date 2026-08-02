@@ -9,7 +9,9 @@ import { useEffect } from 'react';
 import { useCart } from '@/core/entities/cart';
 import { useFavorites } from '@/core/entities/favorites';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
+import { getPrimaryProductImageUrl } from '@/core/shared/lib/productImage';
 import { AppPath, getProductPath } from '@/core/shared/router/paths';
+import { ProductThumb } from '@/core/shared/ui/ProductThumb';
 
 import styles from '../Cabinet.module.css';
 import extraStyles from '../CabinetExtras.module.css';
@@ -76,6 +78,13 @@ export const CabinetFavorites = (): JSX.Element => {
         <ul className={clsx(extraStyles.cards)}>
           {products.map((product) => (
             <li className={clsx(extraStyles.card)} key={product.id}>
+              <div className={clsx(extraStyles.cardThumb)}>
+                <ProductThumb
+                  alt={product.name}
+                  categoryName={product.category_name}
+                  images={product.images}
+                />
+              </div>
               <div className={clsx(extraStyles.cardMain)}>
                 <p className={clsx(extraStyles.cardSku)}>
                   {product.sku}
@@ -93,16 +102,14 @@ export const CabinetFavorites = (): JSX.Element => {
                   {formatPrice(product.client_price || product.base_price)}
                 </span>
                 <div className={clsx(extraStyles.cardActions)}>
-                  <Button
-                    onPress={() => router.push(getProductPath(product.id))}
-                    variant="outline"
-                  >
+                  <Button onPress={() => router.push(getProductPath(product.id))} variant="outline">
                     Открыть
                   </Button>
                   <Button
                     isDisabled={product.stock_qty <= 0}
                     onPress={() =>
                       addToCart({
+                        imageUrl: getPrimaryProductImageUrl(product.images) ?? undefined,
                         name: product.name,
                         productID: product.id,
                         qty: product.package_qty,

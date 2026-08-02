@@ -345,9 +345,16 @@ export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Elem
           <div className={clsx(styles.listEditor)}>
             {(product?.images ?? []).map((image) => (
               <div className={clsx(styles.bannerHeader)} key={image.id}>
-                <a href={image.url} rel="noreferrer" target="_blank">
-                  {image.is_primary ? 'Главное фото' : 'Фото товара'}
-                </a>
+                <div className={clsx(styles.productThumbCell)}>
+                  <img
+                    alt={image.is_primary ? 'Главное фото' : 'Фото товара'}
+                    className={clsx(styles.productThumb)}
+                    src={image.url}
+                  />
+                  <a href={image.url} rel="noreferrer" target="_blank">
+                    {image.is_primary ? 'Главное фото' : 'Фото товара'}
+                  </a>
+                </div>
                 <button
                   className={clsx(styles.smallButton, styles.smallButtonDanger)}
                   onClick={() => void removeImage(image.id)}

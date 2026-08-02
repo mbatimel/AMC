@@ -3,3 +3,4 @@ deploy/nginx/htpasswd
 .claude/
 .husky/
 .vscode/
+vi-portal

@@ -9,6 +9,7 @@ import type { ProductListItem } from '@/core/shared/api/products';
 
 import { IconPlus, IconPriceTag } from '@/core/shared/icons';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
+import { getPrimaryProductImage } from '@/core/shared/lib/productImage';
 import { getStockLevel } from '@/core/shared/lib/stock';
 import { getProductPath } from '@/core/shared/router/paths';
 import { ProductImageFallback } from '@/core/shared/ui/ProductImageFallback';
@@ -46,7 +47,7 @@ const formatCompactMeta = (product: ProductListItem): string => {
 };
 
 const ProductThumb = ({ product }: { product: ProductListItem }): JSX.Element => {
-  const image = product.images?.find((item) => item.is_primary) ?? product.images?.[0];
+  const image = getPrimaryProductImage(product.images);
   const [failed, setFailed] = useState(false);
 
   if (!image || failed) {

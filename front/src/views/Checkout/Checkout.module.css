@@ -217,8 +217,21 @@
   gap: 12px;
 }
 
+.itemThumb {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #eef3f8;
+  block-size: 44px;
+  inline-size: 44px;
+}
+
 .itemMain {
   display: flex;
+  flex: 1;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 6px 10px;

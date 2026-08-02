@@ -9,13 +9,14 @@ import { useEffect } from 'react';
 
 import { useCart } from '@/core/entities/cart';
 import { useCity } from '@/core/entities/city';
+import { $productImageById } from '@/core/entities/productImages';
 import { useSession } from '@/core/entities/session';
 import { IconClose } from '@/core/shared/icons/IconClose';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
 import { formatPositionsCount } from '@/core/shared/lib/pluralize';
 import { AppPath, getProductPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
-import { ProductImageFallback } from '@/core/shared/ui/ProductImageFallback';
+import { ProductThumb } from '@/core/shared/ui/ProductThumb';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
 import styles from './Cart.module.css';
@@ -87,6 +88,7 @@ export const CartPage = (): JSX.Element => {
   const { isAuthenticated, isHydrated } = useSession();
   const { selectedCityName } = useCity();
   const { cart, cartCount, clear, isCartPending, removeItem } = useCart();
+  const productImages = useUnit($productImageById);
 
   useEffect(() => {
     if (!isHydrated) {
@@ -196,9 +198,10 @@ export const CartPage = (): JSX.Element => {
                         <td>
                           <div className={clsx(styles.productCell)}>
                             <div className={clsx(styles.thumb)}>
-                              <ProductImageFallback
-                                className={clsx(styles.thumbFallback)}
-                                label=""
+                              <ProductThumb
+                                alt={item.product_name}
+                                fallbackClassName={clsx(styles.thumbFallback)}
+                                src={productImages[item.product_id]}
                               />
                             </div>
                             <div className={clsx(styles.productInfo)}>
