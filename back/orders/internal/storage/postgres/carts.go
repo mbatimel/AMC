@@ -16,6 +16,7 @@ const foreignKeyViolationCode = "23503"
 var (
 	ErrProductPriceNotFound = errors.New("product price not found")
 	ErrCartItemNotFound     = errors.New("cart item not found")
+	ErrCartNotFound         = errors.New("cart not found")
 	ErrCounterpartyNotFound = errors.New("counterparty not found")
 )
 
@@ -28,16 +29,27 @@ type CartItemRow struct {
 	Price       float64
 }
 
-func (s *Storage) GetOrCreateCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (uuid.UUID, error) {
+func (s *Storage) GetCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (uuid.UUID, error) {
 	var cartID uuid.UUID
 	err := s.pool.QueryRow(ctx, `
 		SELECT id FROM carts WHERE user_id = $1 AND counterparty_id = $2
 	`, userID, counterpartyID).Scan(&cartID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return uuid.Nil, ErrCartNotFound
+	}
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("get cart: %w", err)
+	}
+	return cartID, nil
+}
+
+func (s *Storage) GetOrCreateCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (uuid.UUID, error) {
+	cartID, err := s.GetCart(ctx, userID, counterpartyID)
 	if err == nil {
 		return cartID, nil
 	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return uuid.Nil, fmt.Errorf("get cart: %w", err)
+	if !errors.Is(err, ErrCartNotFound) {
+		return uuid.Nil, err
 	}
 
 	err = s.pool.QueryRow(ctx, `

@@ -24,6 +24,7 @@ type Storage interface {
 	InsertDeliveryAddress(ctx context.Context, counterpartyID uuid.UUID, addrType string, address string) (uuid.UUID, error)
 	InsertContact(ctx context.Context, counterpartyID uuid.UUID, fullName string, phone string, email string) (uuid.UUID, error)
 
+	GetCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (uuid.UUID, error)
 	GetOrCreateCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (uuid.UUID, error)
 	GetCartItems(ctx context.Context, cartID uuid.UUID) ([]postgres.CartItemRow, error)
 	ResolveProductPrice(ctx context.Context, productID uuid.UUID, priceGroupID uuid.NullUUID) (float64, error)
@@ -43,6 +44,8 @@ type Storage interface {
 	CancelOrder(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.UUID, changedBy uuid.UUID, comment string) (postgres.OrderDetailRow, error)
 	UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy uuid.UUID) (postgres.OrderDetailRow, error)
 }
+
+const defaultOrdersLimit = 20
 
 // AccessClient is implemented by internal/access.Client.
 type AccessClient interface {
@@ -136,18 +139,18 @@ func emptyCart(userID uuid.UUID, counterpartyID uuid.UUID) models.Cart {
 	}
 }
 
-func (s *service) buildCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID, allowMissingCounterparty bool) (models.Cart, error) {
+func (s *service) buildCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (models.Cart, error) {
 	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
 	if err != nil {
-		if allowMissingCounterparty && errors.Is(err, postgres.ErrCounterpartyNotFound) {
-			return emptyCart(userID, counterpartyID), nil
-		}
 		if errors.Is(err, postgres.ErrCounterpartyNotFound) {
 			return models.Cart{}, customErrors.NotFoundError().AddCause("field", "clientID")
 		}
 		return models.Cart{}, customErrors.InternalServerError().SetOuterError(err)
 	}
+	return s.buildExistingCart(ctx, userID, counterpartyID, cartID)
+}
 
+func (s *service) buildExistingCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID, cartID uuid.UUID) (models.Cart, error) {
 	rows, err := s.storage.GetCartItems(ctx, cartID)
 	if err != nil {
 		return models.Cart{}, customErrors.InternalServerError().SetOuterError(err)
@@ -224,7 +227,15 @@ func (s *service) GetCart(ctx context.Context, userID uuid.UUID, clientID string
 		return response, err
 	}
 
-	cart, err := s.buildCart(ctx, userID, counterpartyID, true)
+	cartID, err := s.storage.GetCart(ctx, userID, counterpartyID)
+	if errors.Is(err, postgres.ErrCartNotFound) {
+		return models.GetCartResponse{Cart: emptyCart(userID, counterpartyID)}, nil
+	}
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	cart, err := s.buildExistingCart(ctx, userID, counterpartyID, cartID)
 	if err != nil {
 		return response, err
 	}
@@ -275,7 +286,7 @@ func (s *service) AddCartItem(ctx context.Context, userID uuid.UUID, clientID st
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
-	cart, err := s.buildCart(ctx, userID, counterpartyID, false)
+	cart, err := s.buildCart(ctx, userID, counterpartyID)
 	if err != nil {
 		return response, err
 	}
@@ -316,7 +327,7 @@ func (s *service) UpdateCartItem(ctx context.Context, userID uuid.UUID, clientID
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
-	cart, err := s.buildCart(ctx, userID, counterpartyID, false)
+	cart, err := s.buildCart(ctx, userID, counterpartyID)
 	if err != nil {
 		return response, err
 	}
@@ -354,7 +365,7 @@ func (s *service) DeleteCartItem(ctx context.Context, userID uuid.UUID, clientID
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
-	cart, err := s.buildCart(ctx, userID, counterpartyID, false)
+	cart, err := s.buildCart(ctx, userID, counterpartyID)
 	if err != nil {
 		return response, err
 	}
@@ -384,7 +395,7 @@ func (s *service) ClearCart(ctx context.Context, userID uuid.UUID, clientID stri
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
-	cart, err := s.buildCart(ctx, userID, counterpartyID, false)
+	cart, err := s.buildCart(ctx, userID, counterpartyID)
 	if err != nil {
 		return response, err
 	}
@@ -616,6 +627,9 @@ func (s *service) ListOrders(ctx context.Context, userID uuid.UUID, clientID str
 	if err != nil {
 		return response, err
 	}
+	if limit <= 0 {
+		limit = defaultOrdersLimit
+	}
 
 	rows, total, err := s.storage.ListOrders(ctx, postgres.ListOrdersParams{
 		CounterpartyID: counterpartyID,
@@ -769,7 +783,7 @@ func (s *service) RepeatOrder(ctx context.Context, orderID uuid.UUID, userID uui
 		}
 	}
 
-	cart, err := s.buildCart(ctx, userID, counterpartyID, false)
+	cart, err := s.buildCart(ctx, userID, counterpartyID)
 	if err != nil {
 		return response, err
 	}

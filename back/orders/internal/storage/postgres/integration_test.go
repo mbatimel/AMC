@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 
@@ -79,9 +80,17 @@ func TestCartRoundTrip(t *testing.T) {
 		t.Fatalf("expected price 500, got %v", price)
 	}
 
+	if _, err = storage.GetCart(ctx, userID, counterpartyID); !errors.Is(err, ErrCartNotFound) {
+		t.Fatalf("GetCart before creation error = %v, want ErrCartNotFound", err)
+	}
+
 	cartID, err := storage.GetOrCreateCart(ctx, userID, counterpartyID)
 	if err != nil {
 		t.Fatalf("GetOrCreateCart: %v", err)
+	}
+	resolvedCartID, err := storage.GetCart(ctx, userID, counterpartyID)
+	if err != nil || resolvedCartID != cartID {
+		t.Fatalf("GetCart after creation = %s, %v; want %s", resolvedCartID, err, cartID)
 	}
 
 	if err = storage.UpsertCartItem(ctx, cartID, productID, 2, price); err != nil {
@@ -171,6 +180,17 @@ func TestCreateOrderAndListOrders(t *testing.T) {
 		pool.Exec(ctx, `DELETE FROM counterparties WHERE id = $1`, counterpartyID)
 		pool.Exec(ctx, `DELETE FROM price_groups WHERE id = $1`, priceGroupID)
 	})
+
+	emptyRows, emptyTotal, err := storage.ListOrders(ctx, ListOrdersParams{
+		CounterpartyID: counterpartyID,
+		Limit:          20,
+	})
+	if err != nil {
+		t.Fatalf("ListOrders before first order: %v", err)
+	}
+	if emptyRows == nil || len(emptyRows) != 0 || emptyTotal != 0 {
+		t.Fatalf("empty ListOrders = rows:%#v total:%d", emptyRows, emptyTotal)
+	}
 
 	discountPercent, err := storage.GetVolumeDiscountPercent(ctx, counterpartyID, uuid.NullUUID{UUID: priceGroupID, Valid: true}, 2000)
 	if err != nil {
