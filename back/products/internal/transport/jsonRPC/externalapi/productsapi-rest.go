@@ -73,6 +73,15 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 
 	var request requestProductsAPIListProducts
 
+	if _limit := ctx.Query("limit"); _limit != "" {
+		var limit int
+		limit, err = strconv.Atoi(_limit)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Limit = &limit
+	}
 	if _offset := ctx.Query("offset"); _offset != "" {
 		var offset int
 		offset, err = strconv.Atoi(_offset)
@@ -92,25 +101,6 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 		q = _q
 		request.Q = &q
 	}
-	if _brandID := ctx.Query("brandID"); _brandID != "" {
-		var brandID string
-		brandID = _brandID
-		request.BrandID = &brandID
-	}
-	if _limit := ctx.Query("limit"); _limit != "" {
-		var limit int
-		limit, err = strconv.Atoi(_limit)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Limit = &limit
-	}
-	if _categoryID := ctx.Query("categoryID"); _categoryID != "" {
-		var categoryID string
-		categoryID = _categoryID
-		request.CategoryID = &categoryID
-	}
 	if _material := ctx.Query("material"); _material != "" {
 		var material string
 		material = _material
@@ -121,11 +111,6 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 		size = _size
 		request.Size = &size
 	}
-	if _gost := ctx.Query("gost"); _gost != "" {
-		var gost string
-		gost = _gost
-		request.Gost = &gost
-	}
 	if _inStock := ctx.Query("inStock"); _inStock != "" {
 		var inStock bool
 		inStock, err = strconv.ParseBool(_inStock)
@@ -134,6 +119,21 @@ func (http *httpProductsAPI) serveListProducts(ctx *fiber.Ctx) (err error) {
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
 		request.InStock = &inStock
+	}
+	if _categoryID := ctx.Query("categoryID"); _categoryID != "" {
+		var categoryID string
+		categoryID = _categoryID
+		request.CategoryID = &categoryID
+	}
+	if _brandID := ctx.Query("brandID"); _brandID != "" {
+		var brandID string
+		brandID = _brandID
+		request.BrandID = &brandID
+	}
+	if _gost := ctx.Query("gost"); _gost != "" {
+		var gost string
+		gost = _gost
+		request.Gost = &gost
 	}
 
 	return customhandlers.ListProducts(ctx, http.svc, request.Q, request.CategoryID, request.BrandID, request.Material, request.Size, request.Gost, request.InStock, request.Limit, request.Offset, request.Sort)

@@ -13,14 +13,14 @@ paths:
             description: Получение списка брендов каталога
             parameters:
                 - in: query
-                  name: limit
+                  name: offset
                   schema:
                     oneOf:
                         - type: number
                           format: int
                         - nullable: true
                 - in: query
-                  name: offset
+                  name: limit
                   schema:
                     oneOf:
                         - type: number
@@ -407,13 +407,25 @@ paths:
             description: Получение списка товаров с фильтрами, поиском и пагинацией
             parameters:
                 - in: query
-                  name: q
+                  name: inStock
+                  schema:
+                    oneOf:
+                        - type: boolean
+                        - nullable: true
+                - in: query
+                  name: categoryID
                   schema:
                     oneOf:
                         - type: string
                         - nullable: true
                 - in: query
                   name: brandID
+                  schema:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                - in: query
+                  name: gost
                   schema:
                     oneOf:
                         - type: string
@@ -426,7 +438,20 @@ paths:
                           format: int
                         - nullable: true
                 - in: query
-                  name: categoryID
+                  name: offset
+                  schema:
+                    oneOf:
+                        - type: number
+                          format: int
+                        - nullable: true
+                - in: query
+                  name: sort
+                  schema:
+                    oneOf:
+                        - type: string
+                        - nullable: true
+                - in: query
+                  name: q
                   schema:
                     oneOf:
                         - type: string
@@ -439,31 +464,6 @@ paths:
                         - nullable: true
                 - in: query
                   name: size
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: gost
-                  schema:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                - in: query
-                  name: inStock
-                  schema:
-                    oneOf:
-                        - type: boolean
-                        - nullable: true
-                - in: query
-                  name: offset
-                  schema:
-                    oneOf:
-                        - type: number
-                          format: int
-                        - nullable: true
-                - in: query
-                  name: sort
                   schema:
                     oneOf:
                         - type: string

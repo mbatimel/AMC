@@ -1,9 +1,14 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"unicode/utf8"
 
@@ -39,6 +44,9 @@ type Storage interface {
 	AddProductImages(ctx context.Context, productID uuid.UUID, images []internalModels.ProductImage) ([]internalModels.ProductImage, error)
 	ReplaceProductImages(ctx context.Context, productID uuid.UUID, images []internalModels.ProductImage) ([]internalModels.ProductImage, error)
 	DeleteProductImages(ctx context.Context, productID uuid.UUID) error
+	AddUploadedProductImage(ctx context.Context, productID uuid.UUID, image internalModels.ProductImage) (internalModels.ProductImage, error)
+	GetProductImage(ctx context.Context, productID uuid.UUID, imageID uuid.UUID) (internalModels.ProductImage, error)
+	DeleteProductImage(ctx context.Context, productID uuid.UUID, imageID uuid.UUID) error
 	GetCategoryByID(ctx context.Context, categoryID uuid.UUID) (internalModels.Category, error)
 	ListCategories(ctx context.Context, limit int, offset int) ([]internalModels.Category, error)
 	CountCategories(ctx context.Context) (int, error)
@@ -51,14 +59,35 @@ type AccessClient interface {
 	CheckAccess(ctx context.Context, userID uuid.UUID, role int) (bool, error)
 }
 
-type Service struct {
-	logger       zerolog.Logger
-	storage      Storage
-	accessClient AccessClient
+type ObjectStorage interface {
+	Upload(ctx context.Context, objectKey string, body io.Reader, size int64, contentType string) error
+	Delete(ctx context.Context, objectKey string) error
+	URL(objectKey string) string
 }
 
-func New(logger zerolog.Logger, storage Storage, accessClient AccessClient) *Service {
-	return &Service{logger: logger, storage: storage, accessClient: accessClient}
+type Option func(*Service)
+
+func WithObjectStorage(storage ObjectStorage, maxFileSize int64) Option {
+	return func(s *Service) {
+		s.objectStorage = storage
+		s.maxFileSize = maxFileSize
+	}
+}
+
+type Service struct {
+	logger        zerolog.Logger
+	storage       Storage
+	accessClient  AccessClient
+	objectStorage ObjectStorage
+	maxFileSize   int64
+}
+
+func New(logger zerolog.Logger, storage Storage, accessClient AccessClient, options ...Option) *Service {
+	result := &Service{logger: logger, storage: storage, accessClient: accessClient}
+	for _, option := range options {
+		option(result)
+	}
+	return result
 }
 
 func validation(field string) error {
@@ -77,9 +106,191 @@ func mapStorageError(err error) error {
 		return customErrors.ErrConflict.AddCause("field", "sku")
 	case errors.Is(err, postgres.ErrInvalidSort):
 		return validation("sort")
+	case errors.Is(err, postgres.ErrProductImageNotFound):
+		return customErrors.ErrNotFound.AddCause("entity", "productImage")
 	default:
 		return customErrors.ErrInternal
 	}
+}
+
+func (s *Service) checkAdminAccess(ctx context.Context, userID uuid.UUID) error {
+	if userID == uuid.Nil {
+		return validation("X-User-Id")
+	}
+	if s.accessClient == nil {
+		return customErrors.ErrInternal
+	}
+	allowed, err := s.accessClient.CheckAccess(ctx, userID, roleCodeAdmin)
+	if err != nil {
+		return customErrors.ErrInternal
+	}
+	if !allowed {
+		return customErrors.ErrForbidden
+	}
+	return nil
+}
+
+var imageTypes = map[string]string{
+	"image/jpeg": ".jpg",
+	"image/png":  ".png",
+	"image/webp": ".webp",
+}
+
+func validateImageFile(file models.ImageFile, maxFileSize int64) (string, string, error) {
+	name := strings.TrimSpace(file.FileName)
+	if name == "" || filepath.Base(name) != name || strings.Contains(name, "..") {
+		return "", "", validation("fileName")
+	}
+	if len(file.Content) == 0 {
+		return "", "", validation("file")
+	}
+	if maxFileSize <= 0 || int64(len(file.Content)) > maxFileSize {
+		return "", "", validation("fileSize")
+	}
+	contentType := http.DetectContentType(file.Content[:min(len(file.Content), 512)])
+	extension, ok := imageTypes[contentType]
+	if !ok {
+		return "", "", validation("contentType")
+	}
+	suppliedExtension := strings.ToLower(filepath.Ext(name))
+	validExtension := suppliedExtension == extension || contentType == "image/jpeg" && suppliedExtension == ".jpeg"
+	if !validExtension {
+		return "", "", validation("fileName")
+	}
+	return contentType, extension, nil
+}
+
+func (s *Service) uploadProductImage(
+	ctx context.Context,
+	productID uuid.UUID,
+	file models.ImageFile,
+) (models.ProductImage, error) {
+	if s.objectStorage == nil {
+		return models.ProductImage{}, customErrors.ErrInternal
+	}
+	if productID == uuid.Nil {
+		return models.ProductImage{}, validation("productID")
+	}
+	if _, err := s.storage.GetProductByID(ctx, productID); err != nil {
+		return models.ProductImage{}, mapStorageError(err)
+	}
+	contentType, extension, err := validateImageFile(file, s.maxFileSize)
+	if err != nil {
+		return models.ProductImage{}, err
+	}
+	images, err := s.storage.ListProductImages(ctx, productID)
+	if err != nil {
+		return models.ProductImage{}, mapStorageError(err)
+	}
+	objectKey := fmt.Sprintf("products/%s/%s%s", productID, uuid.NewString(), extension)
+	if err = s.objectStorage.Upload(ctx, objectKey, bytes.NewReader(file.Content), int64(len(file.Content)), contentType); err != nil {
+		return models.ProductImage{}, customErrors.ErrInternal
+	}
+	image, err := s.storage.AddUploadedProductImage(ctx, productID, internalModels.ProductImage{
+		ProductID:    productID,
+		URL:          s.objectStorage.URL(objectKey),
+		ObjectKey:    objectKey,
+		OriginalName: file.FileName,
+		ContentType:  contentType,
+		SizeBytes:    int64(len(file.Content)),
+		SortOrder:    len(images),
+		IsPrimary:    len(images) == 0,
+	})
+	if err != nil {
+		if cleanupErr := s.objectStorage.Delete(ctx, objectKey); cleanupErr != nil {
+			s.logger.Error().Err(cleanupErr).Str("objectKey", objectKey).Msg("failed to compensate product image upload")
+		}
+		return models.ProductImage{}, mapStorageError(err)
+	}
+	return modelImage(image), nil
+}
+
+func (s *Service) UploadProductImage(ctx context.Context, userID uuid.UUID, productID uuid.UUID, file models.ImageFile) (models.UploadProductImageResponse, error) {
+	if err := s.checkAdminAccess(ctx, userID); err != nil {
+		return models.UploadProductImageResponse{}, err
+	}
+	image, err := s.uploadProductImage(ctx, productID, file)
+	if err != nil {
+		return models.UploadProductImageResponse{}, err
+	}
+	return models.UploadProductImageResponse{Image: image}, nil
+}
+
+func batchErrorText(err error) string {
+	var customErr *customErrors.Error
+	if errors.As(err, &customErr) {
+		return customErr.ErrorText
+	}
+	return customErrors.ErrInternal.ErrorText
+}
+
+func skuFromFileName(fileName string) (string, error) {
+	name := strings.TrimSpace(fileName)
+	if name == "" || filepath.Base(name) != name || strings.Contains(name, "..") {
+		return "", validation("fileName")
+	}
+	extension := filepath.Ext(name)
+	if extension == "" {
+		return "", validation("fileName")
+	}
+	sku := strings.TrimSuffix(name, extension)
+	if sku == "" {
+		return "", validation("fileName")
+	}
+	return sku, nil
+}
+
+func (s *Service) UploadProductImagesBatch(ctx context.Context, userID uuid.UUID, files []models.ImageFile) (models.UploadProductImagesBatchResponse, error) {
+	if err := s.checkAdminAccess(ctx, userID); err != nil {
+		return models.UploadProductImagesBatchResponse{}, err
+	}
+	response := models.UploadProductImagesBatchResponse{Items: make([]models.ProductImageBatchResult, 0, len(files))}
+	for _, file := range files {
+		item := models.ProductImageBatchResult{FileName: file.FileName}
+		sku, err := skuFromFileName(file.FileName)
+		item.SKU = sku
+		if err == nil {
+			var product internalModels.Product
+			product, err = s.storage.GetProductBySKU(ctx, sku)
+			if err == nil {
+				var image models.ProductImage
+				image, err = s.uploadProductImage(ctx, product.ID, file)
+				if err == nil {
+					item.Success = true
+					item.Image = &image
+				}
+			} else {
+				err = mapStorageError(err)
+			}
+		}
+		if err != nil {
+			item.ErrorText = batchErrorText(err)
+		}
+		response.Items = append(response.Items, item)
+	}
+	return response, nil
+}
+
+func (s *Service) DeleteProductImage(ctx context.Context, userID uuid.UUID, productID uuid.UUID, imageID uuid.UUID) (models.DeleteProductImageResponse, error) {
+	if err := s.checkAdminAccess(ctx, userID); err != nil {
+		return models.DeleteProductImageResponse{}, err
+	}
+	if productID == uuid.Nil || imageID == uuid.Nil {
+		return models.DeleteProductImageResponse{}, validation("productImageID")
+	}
+	image, err := s.storage.GetProductImage(ctx, productID, imageID)
+	if err != nil {
+		return models.DeleteProductImageResponse{}, mapStorageError(err)
+	}
+	if image.ObjectKey != "" {
+		if err = s.objectStorage.Delete(ctx, image.ObjectKey); err != nil {
+			return models.DeleteProductImageResponse{}, customErrors.ErrInternal
+		}
+	}
+	if err = s.storage.DeleteProductImage(ctx, productID, imageID); err != nil {
+		return models.DeleteProductImageResponse{}, mapStorageError(err)
+	}
+	return models.DeleteProductImageResponse{Deleted: true}, nil
 }
 
 func validateLength(field, value string, maxLength int) error {

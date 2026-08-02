@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/mbatimel/AMC/objectstorage"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp"
@@ -13,6 +14,7 @@ import (
 	"github.com/mbatimel/AMC/products/internal/config"
 	productsService "github.com/mbatimel/AMC/products/internal/service"
 	postgres "github.com/mbatimel/AMC/products/internal/storage/postgres"
+	customHandlers "github.com/mbatimel/AMC/products/internal/transport/custom-handlers"
 	transportHTTP "github.com/mbatimel/AMC/products/internal/transport/http"
 	"github.com/mbatimel/AMC/products/internal/transport/jsonRPC/externalapi"
 )
@@ -35,9 +37,23 @@ func main() {
 
 	postgresStorage := postgres.New(pool)
 	accessClient := clients.NewAccessClient(cfg.AccessURL)
-	svc := productsService.New(log.Logger, postgresStorage, accessClient)
+	s3Client, err := objectstorage.New(objectstorage.Config{
+		Endpoint: cfg.S3Endpoint, PublicEndpoint: cfg.S3PublicEndpoint,
+		AccessKey: cfg.S3AccessKey, SecretKey: cfg.S3SecretKey,
+		Bucket: cfg.S3Bucket, Region: cfg.S3Region, UseSSL: cfg.S3UseSSL,
+	})
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create S3 client")
+	}
+	svc := productsService.New(log.Logger, postgresStorage, accessClient, productsService.WithObjectStorage(s3Client, cfg.S3MaxFileSize))
 
-	app := externalapi.New(log.Logger, externalapi.ProductsAPI(externalapi.NewProductsAPI(svc))).WithLog().WithMetrics()
+	imageRoutes := customHandlers.NewProductImageRoutes(log.Logger, svc, cfg.S3MaxFileSize)
+	app := externalapi.New(
+		log.Logger,
+		externalapi.MaxBodySize(int(cfg.S3MaxFileSize*customHandlers.MaxBatchImageFiles)),
+		externalapi.ProductsAPI(externalapi.NewProductsAPI(svc)),
+		externalapi.Service(imageRoutes),
+	).WithLog().WithMetrics()
 	server := &fasthttp.Server{Handler: app.Fiber().Handler()}
 	healthServer := transportHTTP.NewHealthServer()
 
