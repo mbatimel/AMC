@@ -517,7 +517,5 @@ func (http *httpOrdersAPI) getCities(ctx context.Context, request requestOrdersA
 }
 func (http *httpOrdersAPI) serveGetCities(ctx *fiber.Ctx) (err error) {
 
-	var request requestOrdersAPIGetCities
-
 	return customhandlers.GetCities(ctx, http.svc)
 }
