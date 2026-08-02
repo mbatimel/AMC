@@ -35,3 +35,5 @@ export const getCatalogBrandPath = (brandId: string, brandName: string): string 
 
 export const getSupportPath = (orderId?: string): string =>
   orderId ? `${AppPath.Support}?order=${encodeURIComponent(orderId)}` : AppPath.Support;
+
+export { resolveSafeNextPath } from './resolveSafeNextPath';

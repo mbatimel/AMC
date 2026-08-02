@@ -1,0 +1,132 @@
+.gate {
+  display: flex;
+  min-block-size: 60vh;
+  align-items: center;
+  justify-content: center;
+  color: var(--palette-dark);
+}
+
+.shell {
+  display: flex;
+  min-block-size: 100vh;
+  flex-direction: column;
+  background: var(--palette-ulight);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 12px;
+  padding-inline: 20px;
+  background: var(--header-topbar-bg);
+  color: var(--palette-white);
+  gap: 16px;
+}
+
+.brand {
+  color: var(--palette-white);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.topbarActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbarLink {
+  color: rgb(255 255 255 / 75%);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.topbarLink:hover {
+  color: var(--palette-white);
+}
+
+.topbarButton {
+  padding-block: 6px;
+  padding-inline: 12px;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--palette-white);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.topbarButton:hover {
+  background: rgb(255 255 255 / 12%);
+}
+
+.body {
+  display: grid;
+  flex: 1;
+  align-items: start;
+  gap: 20px;
+  grid-template-columns: 240px minmax(0, 1fr);
+  padding: 20px;
+}
+
+.sidebar {
+  position: sticky;
+  inset-block-start: 20px;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--palette-white);
+  gap: 14px;
+}
+
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navTitle {
+  margin: 0 0 4px;
+  padding-inline: 10px;
+  color: var(--palette-dark);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.navLink {
+  padding-block: 8px;
+  padding-inline: 10px;
+  border-radius: 8px;
+  color: var(--palette-black);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  background: var(--palette-ulight);
+}
+
+.navLinkActive {
+  background: var(--palette-ulight);
+  color: var(--header-brand);
+  font-weight: 600;
+}
+
+.content {
+  min-inline-size: 0;
+}
+
+@media (width <= 1074px) {
+  .body {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+}

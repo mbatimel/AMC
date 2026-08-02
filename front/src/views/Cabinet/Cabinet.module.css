@@ -169,6 +169,49 @@
   background: #fff;
 }
 
+.ordersCards {
+  display: none;
+  flex-direction: column;
+  margin: 0;
+  padding: 12px;
+  gap: 12px;
+  list-style: none;
+}
+
+.orderCard {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid #eef1f6;
+  border-radius: 12px;
+  background: #fff;
+  gap: 12px;
+}
+
+.orderCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.orderCardBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.orderCardMeta {
+  margin: 0;
+  color: #5b6478;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.orderCardOpen {
+  inline-size: 100%;
+}
+
 .profilePanel {
   padding: 22px 24px 28px;
 }
@@ -641,5 +684,17 @@
   .requisites,
   .conditionsGrid {
     grid-template-columns: 1fr;
+  }
+
+  .newOrderButton {
+    inline-size: 100%;
+  }
+
+  .ordersTable {
+    display: none;
+  }
+
+  .ordersCards {
+    display: flex;
   }
 }

@@ -10,6 +10,7 @@ import type { Category } from '@/core/shared/api/products';
 import { PUBLIC_CATALOG_URL } from '@/core/shared/router/paths';
 
 import styles from './Admin.module.css';
+import treeStyles from './AdminCategories.module.css';
 import { $adminBrands, $adminCategories, adminCatalogOpened } from './model/catalog';
 import { AdminPageHeader } from './ui/AdminPageHeader';
 
@@ -38,14 +39,14 @@ const buildTree = (categories: Category[]): CategoryNode[] => {
 };
 
 const CategoryTree = ({ nodes }: { nodes: CategoryNode[] }): JSX.Element => (
-  <ul className={clsx(styles.tree)}>
+  <ul className={clsx(treeStyles.tree)}>
     {nodes.map((node) => (
       <li key={node.id}>
-        <div className={clsx(styles.treeNode)}>
+        <div className={clsx(treeStyles.treeNode)}>
           <Link href={`${PUBLIC_CATALOG_URL}?categoryID=${node.id}`}>{node.name}</Link>
         </div>
         {node.children.length > 0 ? (
-          <div className={clsx(styles.treeChildren)}>
+          <div className={clsx(treeStyles.treeChildren)}>
             <CategoryTree nodes={node.children} />
           </div>
         ) : null}
@@ -55,11 +56,7 @@ const CategoryTree = ({ nodes }: { nodes: CategoryNode[] }): JSX.Element => (
 );
 
 export const AdminCategoriesPage = (): JSX.Element => {
-  const [categories, brands, open] = useUnit([
-    $adminCategories,
-    $adminBrands,
-    adminCatalogOpened,
-  ]);
+  const [categories, brands, open] = useUnit([$adminCategories, $adminBrands, adminCatalogOpened]);
 
   useEffect(() => {
     open();
@@ -93,9 +90,9 @@ export const AdminCategoriesPage = (): JSX.Element => {
           {brands.length === 0 ? (
             <p className={clsx(styles.hint)}>Бренды не загружены</p>
           ) : (
-            <ul className={clsx(styles.tree)}>
+            <ul className={clsx(treeStyles.tree)}>
               {brands.map((brand) => (
-                <li className={clsx(styles.treeNode)} key={brand.id}>
+                <li className={clsx(treeStyles.treeNode)} key={brand.id}>
                   {brand.name}
                 </li>
               ))}

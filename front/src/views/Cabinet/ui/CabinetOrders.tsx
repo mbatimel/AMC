@@ -169,6 +169,47 @@ export const CabinetOrders = (): JSX.Element => {
             </tbody>
           </table>
 
+          <ul className={clsx(styles.ordersCards)}>
+            {orders.map((order) => (
+              <li className={clsx(styles.orderCard)} key={order.id}>
+                <div className={clsx(styles.orderCardHeader)}>
+                  <div>
+                    <p className={clsx(styles.orderNumber)}>
+                      {order.number || order.id.slice(0, 8)}
+                    </p>
+                    <p className={clsx(styles.orderMeta)}>{formatOrderDate(order.created_at)}</p>
+                  </div>
+                  <p className={clsx(styles.orderTotal)}>{formatPrice(order.total)}</p>
+                </div>
+
+                <div className={clsx(styles.orderCardBadges)}>
+                  <span className={clsx(styles.statusBadge, statusClassName(order.status))}>
+                    {formatOrderStatus(order.status)}
+                  </span>
+                  <span
+                    className={clsx(styles.statusBadge, paymentClassName(order.payment_status))}
+                  >
+                    {formatPaymentStatus(order.payment_status)}
+                  </span>
+                </div>
+
+                <p className={clsx(styles.orderCardMeta)}>
+                  {order.items.length} поз. · {formatDeliveryType(order.delivery_type)}
+                  {order.documents.length > 0 ? ` · док.: ${order.documents.length}` : ''}
+                </p>
+
+                <Button
+                  className={clsx(styles.openButton, styles.orderCardOpen)}
+                  onPress={() => router.push(getCabinetOrderPath(order.id))}
+                  size="sm"
+                  variant="outline"
+                >
+                  Открыть
+                </Button>
+              </li>
+            ))}
+          </ul>
+
           {hasMore ? (
             <div className={clsx(styles.loadMore)}>
               <Button isDisabled={pending} onPress={() => loadMore()} variant="secondary">

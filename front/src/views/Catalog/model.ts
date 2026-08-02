@@ -49,7 +49,11 @@ export const $categories = createStore<Category[]>([]).on(
   (_, categories) => categories,
 );
 
-export const $isCatalogPending = fetchCatalogProductsFx.pending;
+/** До первого запроса — true, чтобы не мелькал empty state до useEffect. */
+export const $isCatalogPending = createStore(true).on(
+  fetchCatalogProductsFx.pending,
+  (_, pending) => pending,
+);
 
 export const $catalogError = createStore<null | string>(null)
   .on(fetchCatalogProductsFx, () => null)

@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 
-import styles from '../Admin.module.css';
+import styles from './AdminPageHeader.module.css';
 
 type AdminPageHeaderProps = {
   actions?: React.ReactNode;

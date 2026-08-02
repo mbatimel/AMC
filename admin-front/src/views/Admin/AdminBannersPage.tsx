@@ -18,6 +18,7 @@ import {
 import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
 
 import styles from './Admin.module.css';
+import bannerStyles from './AdminBanners.module.css';
 import { AdminPageHeader } from './ui/AdminPageHeader';
 
 const createBanner = (): BannerItem => ({
@@ -175,8 +176,9 @@ export const AdminBannersPage = (): JSX.Element => {
         <h2 className={clsx(styles.cardTitle)}>Список баннеров ({draft.items.length})</h2>
         <div className={clsx(styles.listEditor)}>
           {draft.items.map((item, index) => (
-            <article className={clsx(styles.bannerItem)} key={item.id}>
+            <article className={clsx(bannerStyles.bannerItem)} key={item.id}>
               <div className={clsx(styles.bannerHeader)}>
+                {' '}
                 <strong>#{index + 1}</strong>
                 <div className={clsx(styles.rowActions)}>
                   <button

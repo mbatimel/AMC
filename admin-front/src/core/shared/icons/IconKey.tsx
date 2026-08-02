@@ -3,45 +3,24 @@ import type { IconProps } from './types';
 export const IconKey = ({
   className,
   currentColor = 'currentColor',
-  height = 16,
-  width = 16,
+  height = 22,
+  width = 22,
 }: IconProps): JSX.Element => {
   return (
     <svg
       className={className}
       fill="none"
       height={height}
-      viewBox="0 0 16 16"
+      viewBox="0 0 22 22"
       width={width}
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M10.6667 5.33337C11.7712 5.33337 12.6667 6.2288 12.6667 7.33337C12.6667 8.43794 11.7712 9.33337 10.6667 9.33337C9.56209 9.33337 8.66666 8.43794 8.66666 7.33337C8.66666 6.2288 9.56209 5.33337 10.6667 5.33337Z"
+        d="M18.3333 11.9168C18.3333 16.5001 15.125 18.7918 11.3116 20.1209C11.1119 20.1886 10.895 20.1853 10.6975 20.1118C6.87496 18.7918 3.66663 16.5001 3.66663 11.9168V5.50009C3.66663 5.25697 3.7632 5.02381 3.93511 4.85191C4.10702 4.68 4.34018 4.58342 4.58329 4.58342C6.41663 4.58342 8.70829 3.48342 10.3033 2.09009C10.4975 1.92417 10.7445 1.83301 11 1.83301C11.2554 1.83301 11.5024 1.92417 11.6966 2.09009C13.3008 3.49259 15.5833 4.58342 17.4166 4.58342C17.6597 4.58342 17.8929 4.68 18.0648 4.85191C18.2367 5.02381 18.3333 5.25697 18.3333 5.50009V11.9168Z"
         stroke={currentColor}
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="1.33333"
-      />
-      <path
-        d="M10.6667 9.33337V14"
-        stroke={currentColor}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.33333"
-      />
-      <path
-        d="M8.66666 12H12.6667"
-        stroke={currentColor}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.33333"
-      />
-      <path
-        d="M2 7.33337C2 4.38785 4.38781 2 7.33333 2C9.02266 2 10.5307 2.78385 11.5 4"
-        stroke={currentColor}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.33333"
+        strokeWidth="1.83333"
       />
     </svg>
   );

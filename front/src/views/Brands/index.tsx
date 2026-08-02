@@ -5,8 +5,8 @@ import { useUnit } from 'effector-react';
 import Link from 'next/link';
 import { useEffect } from 'react';
 
+import { AppPath } from '@/core/shared/router/paths';
 import { FOOTER_BRANDS } from '@/core/shared/ui/Footer/constants';
-import { getCatalogBrandPath } from '@/core/shared/router/paths';
 import { InfoCard, InfoPage, InfoPageSkeleton } from '@/core/shared/ui/InfoPage';
 import { Page } from '@/core/shared/ui/Page';
 
@@ -42,11 +42,8 @@ export const Brands = (): JSX.Element => {
             <ul className={clsx(styles.grid)}>
               {brands.map((brand) => (
                 <li key={brand.id}>
-                  <Link
-                    className={clsx(styles.card)}
-                    href={getCatalogBrandPath(brand.id, brand.name)}
-                  >
-                    <span className={clsx(styles.logo)} aria-hidden>
+                  <Link className={clsx(styles.card)} href={AppPath.Catalog}>
+                    <span aria-hidden className={clsx(styles.logo)}>
                       {brand.name.slice(0, 2).toUpperCase()}
                     </span>
                     <span className={clsx(styles.name)}>{brand.name}</span>
@@ -61,11 +58,8 @@ export const Brands = (): JSX.Element => {
             <ul className={clsx(styles.grid)}>
               {FOOTER_BRANDS.map((brandName) => (
                 <li key={brandName}>
-                  <Link
-                    className={clsx(styles.card)}
-                    href={`/catalog?q=${encodeURIComponent(brandName)}`}
-                  >
-                    <span className={clsx(styles.logo)} aria-hidden>
+                  <Link className={clsx(styles.card)} href={AppPath.Catalog}>
+                    <span aria-hidden className={clsx(styles.logo)}>
                       {brandName.slice(0, 2).toUpperCase()}
                     </span>
                     <span className={clsx(styles.name)}>{brandName}</span>

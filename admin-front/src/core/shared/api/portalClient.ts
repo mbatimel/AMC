@@ -5,8 +5,15 @@ import { assertApiSuccess, fetchWithNetworkFallback, parseApiErrorMessage } from
  * Когда появится реальный backend — достаточно поменять `PORTAL_API_PREFIX`
  * на `/api/v1` и удалить route-handlers из `src/app/portal-api`.
  */
-export const PORTAL_API_PREFIX =
-  process.env.NEXT_PUBLIC_PORTAL_API_PREFIX ?? '/portal-api';
+export const PORTAL_API_PREFIX = process.env.NEXT_PUBLIC_PORTAL_API_PREFIX ?? '/portal-api';
+
+type PortalRequestOptions = {
+  body?: unknown;
+  fallback: string;
+  method?: 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT';
+  path: string;
+  signal?: AbortSignal;
+};
 
 export class PortalApiError extends Error {
   readonly status: number;
@@ -17,14 +24,6 @@ export class PortalApiError extends Error {
     this.status = status;
   }
 }
-
-type PortalRequestOptions = {
-  body?: unknown;
-  fallback: string;
-  method?: 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT';
-  path: string;
-  signal?: AbortSignal;
-};
 
 export const portalRequest = async <T>({
   body,

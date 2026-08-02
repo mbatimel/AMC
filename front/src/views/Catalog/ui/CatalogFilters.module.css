@@ -186,8 +186,23 @@
   line-height: 1.4;
 }
 
-@media (width < 900px) {
+@media (width < 980px) {
+  .root {
+    box-shadow: none;
+    margin-block-end: 16px;
+    padding: 14px;
+  }
+
+  .header {
+    margin-block-end: 14px;
+  }
+
   .grid {
     grid-template-columns: 1fr;
+    margin-block-end: 12px;
+  }
+
+  .profile {
+    padding: 12px;
   }
 }

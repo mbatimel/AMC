@@ -25,7 +25,6 @@ import {
   $isProductSaving,
   adminCatalogOpened,
   adminProductOpened,
-  adminProductSaved,
   saveProductFx,
 } from './model/catalog';
 import { AdminPageHeader } from './ui/AdminPageHeader';
@@ -54,18 +53,27 @@ const emptyProduct = (): ProductWritePayload => ({
 export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Element => {
   const router = useRouter();
   const isNew = productId === 'new';
-  const [product, categories, brands, isPending, isSaving, error, openCatalog, openProduct, save] =
-    useUnit([
-      $adminProduct,
-      $adminCategories,
-      $adminBrands,
-      $isAdminProductPending,
-      $isProductSaving,
-      $adminCatalogError,
-      adminCatalogOpened,
-      adminProductOpened,
-      adminProductSaved,
-    ]);
+  const [
+    product,
+    categories,
+    brands,
+    isPending,
+    isSaving,
+    error,
+    openCatalog,
+    openProduct,
+    saveFx,
+  ] = useUnit([
+    $adminProduct,
+    $adminCategories,
+    $adminBrands,
+    $isAdminProductPending,
+    $isProductSaving,
+    $adminCatalogError,
+    adminCatalogOpened,
+    adminProductOpened,
+    saveProductFx,
+  ]);
   const [draft, setDraft] = useState<ProductWritePayload>(emptyProduct);
   const adminUserId = useUnit($adminUserId);
   const [imageError, setImageError] = useState<null | string>(null);
@@ -104,9 +112,16 @@ export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Elem
   const finalPrice = draft.basePrice * (1 - draft.discountPercent / 100);
 
   const submit = (): void => {
-    save({
+    if (!adminUserId) {
+      return;
+    }
+
+    void saveFx({
       payload: draft,
       productId: isNew ? null : productId,
+      userId: adminUserId,
+    }).then(() => {
+      router.push(AppPath.Products);
     });
   };
 
@@ -138,16 +153,6 @@ export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Elem
       setImageError(toDisplayErrorMessage(deleteError, 'Не удалось удалить изображение'));
     }
   };
-
-  useEffect(() => {
-    const unsubscribe = saveProductFx.done.watch(() => {
-      router.push(AppPath.Products);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [router]);
 
   return (
     <>

@@ -3,8 +3,7 @@
 import { Button, FieldError, Form, Input, Label, TextField } from '@heroui/react';
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
 import {
@@ -16,13 +15,13 @@ import {
 } from '@/core/entities/adminSession';
 import { IconKey } from '@/core/shared/icons/IconKey';
 import { readFormString } from '@/core/shared/lib/readFormString';
-import { AppPath } from '@/core/shared/router/paths';
+import { resolveSafeNextPath } from '@/core/shared/router/resolveSafeNextPath';
 import { AuthShell } from '@/core/shared/ui/AuthShell';
 import { AuthCardHeader } from '@/core/shared/ui/AuthShell/AuthCardHeader';
 import formStyles from '@/core/shared/ui/AuthShell/AuthForm.module.css';
 
 export const AdminLoginPage = (): JSX.Element => {
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const [authError, isPending, adminUserId, login, hydrate] = useUnit([
     $adminAuthError,
     $isAdminAuthPending,
@@ -36,22 +35,27 @@ export const AdminLoginPage = (): JSX.Element => {
   }, [hydrate]);
 
   useEffect(() => {
-    if (adminUserId) {
-      router.replace(AppPath.Home);
+    if (!adminUserId) {
+      return;
     }
-  }, [adminUserId, router]);
+
+    // Уже есть сессия (hydrate / cookie) — hard nav, чтобы proxy увидел cookie.
+    window.location.assign(resolveSafeNextPath(searchParams.get('next')));
+  }, [adminUserId, searchParams]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
+    const nextPath = resolveSafeNextPath(searchParams.get('next'));
 
     void login({
       email: readFormString(formData, 'email').trim(),
       password: readFormString(formData, 'password'),
     })
       .then(() => {
-        router.replace(AppPath.Home);
+        // Soft router.replace ломается: proxy не успевает / не видит cookie.
+        window.location.assign(nextPath);
       })
       .catch(() => {
         // текст ошибки — в $adminAuthError
@@ -88,9 +92,6 @@ export const AdminLoginPage = (): JSX.Element => {
           >
             {isPending ? 'Вход…' : 'Войти'}
           </Button>
-          <Link className={clsx(formStyles.secondaryLink)} href={AppPath.Home}>
-            ← На сайт
-          </Link>
         </div>
       </Form>
     </AuthShell>

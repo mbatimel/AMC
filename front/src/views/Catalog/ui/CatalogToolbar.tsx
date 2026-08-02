@@ -10,6 +10,7 @@ import styles from './CatalogToolbar.module.css';
 
 type CatalogToolbarProps = {
   canExport: boolean;
+  hideViewToggle?: boolean;
   onExportXls: () => void;
   onPrint: () => void;
   onViewChange: (view: CatalogViewMode) => void;
@@ -65,6 +66,7 @@ const IconPrint = (): JSX.Element => (
 
 export const CatalogToolbar = ({
   canExport,
+  hideViewToggle = false,
   onExportXls,
   onPrint,
   onViewChange,
@@ -78,26 +80,28 @@ export const CatalogToolbar = ({
       <div className={clsx(styles.controls)}>
         <span className={clsx(styles.count)}>{formatPositionsCount(total)}</span>
 
-        <div aria-label="Вид каталога" className={clsx(styles.viewToggle)} role="group">
-          <button
-            aria-pressed={view === 'table'}
-            className={clsx(styles.viewButton, view === 'table' && styles.viewButtonActive)}
-            onClick={() => onViewChange('table')}
-            type="button"
-          >
-            <IconTable />
-            B2B-таблица
-          </button>
-          <button
-            aria-pressed={view === 'cards'}
-            className={clsx(styles.viewButton, view === 'cards' && styles.viewButtonActive)}
-            onClick={() => onViewChange('cards')}
-            type="button"
-          >
-            <IconCards />
-            Карточки
-          </button>
-        </div>
+        {hideViewToggle ? null : (
+          <div aria-label="Вид каталога" className={clsx(styles.viewToggle)} role="group">
+            <button
+              aria-pressed={view === 'table'}
+              className={clsx(styles.viewButton, view === 'table' && styles.viewButtonActive)}
+              onClick={() => onViewChange('table')}
+              type="button"
+            >
+              <IconTable />
+              B2B-таблица
+            </button>
+            <button
+              aria-pressed={view === 'cards'}
+              className={clsx(styles.viewButton, view === 'cards' && styles.viewButtonActive)}
+              onClick={() => onViewChange('cards')}
+              type="button"
+            >
+              <IconCards />
+              Карточки
+            </button>
+          </div>
+        )}
 
         <button
           className={clsx(styles.actionButton)}

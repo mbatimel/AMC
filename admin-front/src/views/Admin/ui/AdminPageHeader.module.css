@@ -1,0 +1,24 @@
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-block-end: 16px;
+  gap: 16px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+}
+
+.pageSubtitle {
+  margin: 4px 0 0;
+  color: var(--palette-dark);
+  font-size: 14px;
+}
+
+.pageActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

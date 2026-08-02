@@ -55,8 +55,6 @@ export const $contentSaveError = createStore<null | string>(null)
     toDisplayErrorMessage(error, 'Не удалось сохранить изменения'),
   );
 
-/* eslint-disable perfectionist/sort-objects -- effector sample: clock -> fn -> target */
-
 sample({
   clock: contentSaveRequested,
   target: saveContentFx,
@@ -82,5 +80,3 @@ sample({
   clock: [saveContentFx.done, saveBannersFx.done, saveLegalFx.done],
   target: contentInvalidated,
 });
-
-/* eslint-enable perfectionist/sort-objects */

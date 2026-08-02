@@ -2,13 +2,12 @@
 
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
-import Link from 'next/link';
 import { useEffect } from 'react';
 
 import { adminAuthErrorCleared } from '@/core/entities/adminSession';
 import logoImage from '@/core/shared/assets/logo.png';
 import logoImage2x from '@/core/shared/assets/logo@2x.png';
-import { AppPath } from '@/core/shared/router/paths';
+import { PUBLIC_SITE_ORIGIN } from '@/core/shared/router/paths';
 
 import styles from './AuthShell.module.css';
 
@@ -27,7 +26,7 @@ export const AuthShell = ({ children, wide = false }: AuthShellProps): JSX.Eleme
   return (
     <div className={clsx(styles.root)}>
       <div className={clsx(styles.inner, wide && styles.innerWide)}>
-        <Link className={clsx(styles.logoLink)} href={AppPath.Home}>
+        <a className={clsx(styles.logoLink)} href={PUBLIC_SITE_ORIGIN}>
           <img
             alt="Волжский инструмент"
             className={clsx(styles.logoImage)}
@@ -37,11 +36,11 @@ export const AuthShell = ({ children, wide = false }: AuthShellProps): JSX.Eleme
             srcSet={`${logoImage.src} 1x, ${logoImage2x.src} 2x`}
             width={logoImage.width}
           />
-        </Link>
+        </a>
         <div className={clsx(styles.card)}>{children}</div>
-        <Link className={clsx(styles.backLink)} href={AppPath.Home}>
+        <a className={clsx(styles.backLink)} href={PUBLIC_SITE_ORIGIN}>
           ← На сайт
-        </Link>
+        </a>
       </div>
     </div>
   );

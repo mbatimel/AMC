@@ -5,19 +5,20 @@ import {
   fetchWithNetworkFallback,
   omitEmptyParams,
   parseApiErrorMessage,
+  toDisplayErrorMessage,
 } from './parseApiError';
 import { portalRequest } from './portalClient';
-
-export type AdminAuditLogResult = {
-  items: AdminAuditLogEntry[];
-  total: number;
-};
 
 export type AdminAuditLogEntry = {
   action: string;
   actorLabel: string;
   createdAt: string;
   id: string;
+};
+
+export type AdminAuditLogResult = {
+  items: AdminAuditLogEntry[];
+  total: number;
 };
 
 export type AdminSessionResponse = {
@@ -58,6 +59,24 @@ const parseSession = (data: unknown, fallback: string): AdminSessionResponse => 
   return { role: asString(source.role, 'admin'), userID };
 };
 
+const localizeAdminAuthError = (status: number, message: string, fallback: string): string => {
+  const normalized = message.trim().toLowerCase();
+
+  if (
+    status === 401 ||
+    status === 403 ||
+    normalized.includes('invalid email or password') ||
+    normalized === 'unauthorized' ||
+    normalized === 'unauthorised' ||
+    normalized.includes('forbidden') ||
+    normalized.includes('access denied')
+  ) {
+    return 'Неверный e-mail или пароль, либо нет прав администратора';
+  }
+
+  return message.trim().length > 0 ? message : fallback;
+};
+
 /** Вход сотрудника портала. Бэк проверяет роль `admin` в access-сервисе. */
 export const adminLoginRequest = async (credentials: {
   email: string;
@@ -75,14 +94,11 @@ export const adminLoginRequest = async (credentials: {
   );
 
   if (!response.ok) {
+    const raw = await parseApiErrorMessage(response, fallback);
+
     throw new AdminApiError(
       response.status,
-      await parseApiErrorMessage(
-        response,
-        response.status === 401 || response.status === 403
-          ? 'Неверный e-mail или пароль, либо нет прав администратора'
-          : fallback,
-      ),
+      localizeAdminAuthError(response.status, raw, fallback),
     );
   }
 
@@ -98,7 +114,9 @@ export const adminSessionRequest = async (userId: string): Promise<AdminSessionR
   );
 
   if (!response.ok) {
-    throw new AdminApiError(response.status, await parseApiErrorMessage(response, fallback));
+    const raw = await parseApiErrorMessage(response, fallback);
+
+    throw new AdminApiError(response.status, toDisplayErrorMessage(new Error(raw), fallback));
   }
 
   return parseSession(await response.json(), fallback);

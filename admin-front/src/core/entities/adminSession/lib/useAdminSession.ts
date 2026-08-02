@@ -3,19 +3,24 @@
 import { useUnit } from 'effector-react';
 import { useEffect } from 'react';
 
-import { $adminUserId, $isAdminSessionHydrated, adminSessionEnded, adminSessionHydrated } from '../model';
+import {
+  $adminUserId,
+  $isAdminSessionHydrated,
+  adminLogoutFx,
+  adminSessionHydrated,
+} from '../model';
 
 export const useAdminSession = (): {
   adminUserId: null | string;
   isAuthenticated: boolean;
   isHydrated: boolean;
-  logout: () => void;
+  logout: () => Promise<void>;
 } => {
-  const [adminUserId, isHydrated, hydrate, logout] = useUnit([
+  const [adminUserId, isHydrated, hydrate, logoutFx] = useUnit([
     $adminUserId,
     $isAdminSessionHydrated,
     adminSessionHydrated,
-    adminSessionEnded,
+    adminLogoutFx,
   ]);
 
   useEffect(() => {
@@ -26,6 +31,8 @@ export const useAdminSession = (): {
     adminUserId,
     isAuthenticated: adminUserId !== null,
     isHydrated,
-    logout,
+    logout: async () => {
+      await logoutFx(adminUserId);
+    },
   };
 };

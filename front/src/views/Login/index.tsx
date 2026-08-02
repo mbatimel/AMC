@@ -12,6 +12,7 @@ import { IconLogin } from '@/core/shared/icons/IconLogin';
 import { readFormString } from '@/core/shared/lib/readFormString';
 import { validateEmail } from '@/core/shared/lib/validateContact';
 import { AppPath } from '@/core/shared/router/paths';
+import { resolveSafeNextPath } from '@/core/shared/router/resolveSafeNextPath';
 import { AuthShell } from '@/core/shared/ui/AuthShell';
 import { AuthCardHeader } from '@/core/shared/ui/AuthShell/AuthCardHeader';
 import formStyles from '@/core/shared/ui/AuthShell/AuthForm.module.css';
@@ -47,8 +48,7 @@ export const Login = (): JSX.Element => {
 
     void login({ email, password })
       .then(() => {
-        const nextPath = searchParams.get('next');
-        router.replace(nextPath && nextPath.startsWith('/') ? nextPath : AppPath.Home);
+        router.replace(resolveSafeNextPath(searchParams.get('next')));
       })
       .catch(() => {
         // error in $authError

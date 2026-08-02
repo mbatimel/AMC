@@ -5,6 +5,7 @@ import { useUnit } from 'effector-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
+import { useMediaQuery } from '@/core/shared/lib/useMediaQuery';
 import { AppPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
 import { toastShown } from '@/core/shared/ui/Toast/model';
@@ -26,8 +27,12 @@ const is1cUnavailable =
   process.env.NEXT_PUBLIC_CATALOG_1C_UNAVAILABLE === 'true' ||
   process.env.NEXT_PUBLIC_CATALOG_1C_UNAVAILABLE === '1';
 
+/** Совпадает с breakpoint сайдбара каталога (`Catalog.module.css`). */
+const CATALOG_COMPACT_QUERY = '(width < 980px)';
+
 const CatalogContent = (): JSX.Element => {
   const showToast = useUnit(toastShown);
+  const isCompactLayout = useMediaQuery(CATALOG_COMPACT_QUERY);
   const {
     activeFilterCount,
     categories,
@@ -46,6 +51,8 @@ const CatalogContent = (): JSX.Element => {
 
   const hasQuery = Boolean(filters.q);
   const showEmpty = !isPending && !error && products.length === 0;
+  /** На узких экранах — компактный B2B-список, а не тяжёлые карточки. */
+  const effectiveView = isCompactLayout ? 'table' : filters.view;
 
   const onExportXls = async (): Promise<void> => {
     try {
@@ -78,6 +85,7 @@ const CatalogContent = (): JSX.Element => {
 
         <CatalogToolbar
           canExport={total > 0}
+          hideViewToggle={isCompactLayout}
           onExportXls={() => {
             void onExportXls();
           }}
@@ -112,7 +120,7 @@ const CatalogContent = (): JSX.Element => {
               onReset={resetFilters}
             />
 
-            {isPending ? <CatalogSkeleton view={filters.view} /> : null}
+            {isPending ? <CatalogSkeleton view={effectiveView} /> : null}
             {error ? <p className={clsx(styles.error)}>{error}</p> : null}
 
             {showEmpty ? <CatalogEmptyState onReset={resetAll} /> : null}
@@ -133,9 +141,9 @@ const CatalogContent = (): JSX.Element => {
                   onToggleFavorite={favorites.toggleFavorite}
                   products={products}
                   total={total}
-                  view={filters.view}
+                  view={effectiveView}
                 />
-              ) : filters.view === 'table' ? (
+              ) : effectiveView === 'table' ? (
                 <CatalogB2BTable onAddToCart={handleAddToCart} products={products} />
               ) : (
                 <CatalogCardsGrid

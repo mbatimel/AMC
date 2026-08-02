@@ -37,18 +37,28 @@ export const CatalogSkeleton = ({ view }: CatalogSkeletonProps): JSX.Element => 
   return (
     <div aria-busy aria-label="Загрузка каталога" className={clsx(styles.tableWrap)} role="status">
       <div className={clsx(styles.tableHead)}>
-        {Array.from({ length: 8 }, (_, index) => (
-          <div className={clsx(styles.bone, styles.headCell)} key={index} />
-        ))}
+        <div className={clsx(styles.headThumb)} />
+        <div className={clsx(styles.bone, styles.headCell)} />
+        <div className={clsx(styles.bone, styles.headCell, styles.headSpec)} />
+        <div className={clsx(styles.bone, styles.headCell, styles.headSpec)} />
+        <div className={clsx(styles.bone, styles.headCell, styles.headSpec)} />
+        <div className={clsx(styles.bone, styles.headCell, styles.headSpec)} />
+        <div className={clsx(styles.bone, styles.headCell, styles.headSpec)} />
+        <div className={clsx(styles.bone, styles.headCell, styles.headPrice)} />
+        <div className={clsx(styles.bone, styles.headCell, styles.headActions)} />
       </div>
       {Array.from({ length: TABLE_ROWS }, (_, row) => (
         <div className={clsx(styles.tableRow)} key={row}>
           <div className={clsx(styles.bone, styles.thumb)} />
-          <div className={clsx(styles.bone, styles.cellSm)} />
-          <div className={clsx(styles.bone, styles.cellLg)} />
-          <div className={clsx(styles.bone, styles.cellSm)} />
-          <div className={clsx(styles.bone, styles.cellSm)} />
-          <div className={clsx(styles.bone, styles.cellSm)} />
+          <div className={clsx(styles.info)}>
+            <div className={clsx(styles.bone, styles.lineSm)} />
+            <div className={clsx(styles.bone, styles.lineLg)} />
+          </div>
+          <div className={clsx(styles.bone, styles.spec)} />
+          <div className={clsx(styles.bone, styles.spec)} />
+          <div className={clsx(styles.bone, styles.spec)} />
+          <div className={clsx(styles.bone, styles.spec)} />
+          <div className={clsx(styles.bone, styles.spec)} />
           <div className={clsx(styles.bone, styles.cellPrice)} />
           <div className={clsx(styles.bone, styles.cellAction)} />
         </div>

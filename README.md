@@ -37,6 +37,23 @@
 `admin-front/` — отдельное Next.js-приложение (тот же стек: App Router, FSD,
 Effector, HeroUI), деплоится и запускается независимо от `front/`.
 
+### Локальный запуск витрины и админки вместе
+
+Порты разные, чтобы не конфликтовали: витрина **3000**, админка **3001**.
+Админка ходит в `portal-api` витрины — для локальной разработки укажите это в
+`admin-front/.env.local`.
+
+```bash
+cp front/.env.example front/.env.local
+cp admin-front/.env.example admin-front/.env.local
+
+# терминал 1
+cd front && yarn install && yarn dev          # http://localhost:3000
+
+# терминал 2
+cd admin-front && yarn install && yarn dev    # http://localhost:3001
+```
+
 | Раздел | Маршруты |
 | --- | --- |
 | Админ-панель | `/`, `/login`, `/content/:pageKey`, `/banners`, `/products`, `/products/:id`, `/categories`, `/legal`, `/users`, `/signup-requests`, `/feedback`, `/support`, `/audit-log` |

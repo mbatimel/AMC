@@ -3,7 +3,7 @@
 import { Button } from '@heroui/react';
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import type {
   ContactsPageContent,
@@ -36,12 +36,12 @@ export const AdminContentPage = ({ pageKey }: AdminContentPageProps): JSX.Elemen
     contentSaveRequested,
   ]);
   const [draft, setDraft] = useState<null | Record<string, unknown>>(null);
+  const [draftKey, setDraftKey] = useState<ContentPageKey | null>(null);
 
-  useEffect(() => {
-    if (content) {
-      setDraft({ ...content[pageKey] } as Record<string, unknown>);
-    }
-  }, [content, pageKey]);
+  if (content && (draft === null || draftKey !== pageKey)) {
+    setDraftKey(pageKey);
+    setDraft({ ...content[pageKey] });
+  }
 
   if (!draft) {
     return (

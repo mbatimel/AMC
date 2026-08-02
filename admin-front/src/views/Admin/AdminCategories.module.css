@@ -1,0 +1,25 @@
+.tree {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  gap: 4px;
+  list-style: none;
+}
+
+.treeNode {
+  padding-block: 6px;
+  padding-inline: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.treeNode:hover {
+  background: var(--palette-ulight);
+}
+
+.treeChildren {
+  margin: 0;
+  padding-inline-start: 18px;
+  list-style: none;
+}

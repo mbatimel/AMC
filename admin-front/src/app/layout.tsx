@@ -16,7 +16,7 @@ type RootLayoutProps = {
 const RootLayout = ({ children }: RootLayoutProps): JSX.Element => {
   return (
     <html lang="ru">
-      <ReactScan />
+      {process.env.NODE_ENV === 'development' ? <ReactScan /> : null}
       <body>
         <AdminShell>{children}</AdminShell>
         <ToastViewport />

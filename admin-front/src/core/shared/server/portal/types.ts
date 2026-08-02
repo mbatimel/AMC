@@ -31,6 +31,16 @@ export type BannersSettings = {
   items: BannerItem[];
 };
 
+export type ContactsPageContent = {
+  address: string;
+  email: string;
+  managers: { email: string; name: string; phone: string; role: string }[];
+  phone: string;
+  requisites: string;
+  title: string;
+  work_hours: string;
+};
+
 export type ContentPageKey = 'about' | 'certificates' | 'contacts' | 'home' | 'promo' | 'terms';
 
 export type ContentPages = {
@@ -40,16 +50,6 @@ export type ContentPages = {
   home: HomePageContent;
   promo: ListPageContent;
   terms: TextPageContent;
-};
-
-export type ContactsPageContent = {
-  address: string;
-  email: string;
-  managers: { email: string; name: string; phone: string; role: string }[];
-  phone: string;
-  requisites: string;
-  title: string;
-  work_hours: string;
 };
 
 export type HomePageContent = {
@@ -93,6 +93,17 @@ export type OrderFeedback = {
   rating: number;
   text: string;
   user_id: string;
+};
+
+export type PortalState = {
+  audit_log: AuditLogEntry[];
+  banners: BannersSettings;
+  content: ContentPages;
+  feedback: OrderFeedback[];
+  legal_docs: LegalDoc[];
+  portal_users: PortalUser[];
+  signup_requests: SignupRequest[];
+  support_requests: SupportRequest[];
 };
 
 export type PortalUser = {
@@ -144,15 +155,4 @@ export type SupportRequestStatus = 'closed' | 'in_progress' | 'new';
 export type TextPageContent = {
   text: string;
   title: string;
-};
-
-export type PortalState = {
-  audit_log: AuditLogEntry[];
-  banners: BannersSettings;
-  content: ContentPages;
-  feedback: OrderFeedback[];
-  legal_docs: LegalDoc[];
-  portal_users: PortalUser[];
-  signup_requests: SignupRequest[];
-  support_requests: SupportRequest[];
 };

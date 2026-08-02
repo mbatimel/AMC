@@ -21,11 +21,29 @@ type CatalogB2BTableProps = {
   products: ProductListItem[];
 };
 
+const EMPTY = '—';
+
 const formatPlainNumber = (value: number): string =>
   new Intl.NumberFormat('ru-RU', {
     maximumFractionDigits: 0,
     minimumFractionDigits: 0,
   }).format(Math.round(value));
+
+const displayValue = (value: null | string | undefined): string => {
+  const trimmed = value?.trim();
+
+  return trimmed ? trimmed : EMPTY;
+};
+
+const formatCompactMeta = (product: ProductListItem): string => {
+  const parts = [product.gost, product.material, product.size]
+    .map((value) => value?.trim())
+    .filter(Boolean) as string[];
+
+  parts.push(`уп. ${product.package_qty} шт`);
+
+  return parts.join(' · ');
+};
 
 const ProductThumb = ({ product }: { product: ProductListItem }): JSX.Element => {
   const image = product.images?.find((item) => item.is_primary) ?? product.images?.[0];
@@ -55,22 +73,20 @@ export const CatalogB2BTable = ({ onAddToCart, products }: CatalogB2BTableProps)
   const [qtyById, setQtyById] = useState<Record<string, number>>({});
 
   return (
-    <div className={clsx(styles.scroll)}>
-      <table className={clsx(styles.table)}>
-        <thead>
-          <tr>
-            <th aria-label="Изображение" />
-            <th>Артикул</th>
-            <th>Наименование</th>
-            <th>ГОСТ</th>
-            <th>Материал</th>
-            <th>Размер</th>
-            <th>Уп.</th>
-            <th>Цена</th>
-            <th aria-label="Действия" />
-          </tr>
-        </thead>
-        <tbody>
+    <div className={clsx(styles.root)}>
+      <div className={clsx(styles.grid)}>
+        <div aria-hidden className={clsx(styles.head)}>
+          <span className={clsx(styles.headProduct)}>Товар</span>
+          <span className={clsx(styles.headSpec)}>ГОСТ</span>
+          <span className={clsx(styles.headSpec)}>Материал</span>
+          <span className={clsx(styles.headSpec)}>Размер</span>
+          <span className={clsx(styles.headSpec)}>Уп.</span>
+          <span className={clsx(styles.headSpec)}>Остаток</span>
+          <span className={clsx(styles.headPrice)}>Цена</span>
+          <span className={clsx(styles.headActions)}>Кол-во</span>
+        </div>
+
+        <ul className={clsx(styles.list)}>
           {products.map((product) => {
             const stockLevel = getStockLevel(product.stock_qty);
             const isOut = stockLevel === 'out';
@@ -80,71 +96,93 @@ export const CatalogB2BTable = ({ onAddToCart, products }: CatalogB2BTableProps)
               (product.base_price > 0 && product.base_price > product.client_price);
 
             return (
-              <tr key={product.id}>
-                <td>
+              <li className={clsx(styles.row)} key={product.id}>
+                <div className={clsx(styles.product)}>
                   <div className={clsx(styles.thumb)}>
                     <ProductThumb product={product} />
                   </div>
-                </td>
-                <td className={clsx(styles.muted)}>{product.sku || '—'}</td>
-                <td className={clsx(styles.nameCell)}>
-                  <Link className={clsx(styles.nameLink)} href={getProductPath(product.id)}>
-                    {product.name}
-                  </Link>
-                </td>
-                <td className={clsx(styles.muted)}>{product.gost || '—'}</td>
-                <td className={clsx(styles.muted)}>{product.material || '—'}</td>
-                <td className={clsx(styles.muted)}>{product.size || '—'}</td>
-                <td className={clsx(styles.muted)}>{product.package_qty} шт</td>
-                <td>
+                  <div className={clsx(styles.info)}>
+                    {product.sku ? <p className={clsx(styles.sku)}>{product.sku}</p> : null}
+                    <Link className={clsx(styles.nameLink)} href={getProductPath(product.id)}>
+                      {product.name}
+                    </Link>
+                    <p className={clsx(styles.compactMeta)}>{formatCompactMeta(product)}</p>
+                    <span
+                      className={clsx(
+                        styles.stockBadge,
+                        stockLevel === 'out' && styles.stockOut,
+                        stockLevel === 'low' && styles.stockLow,
+                      )}
+                    >
+                      {isOut ? 'Нет в наличии' : `В наличии: ${product.stock_qty}`}
+                    </span>
+                  </div>
+                </div>
+
+                <span className={clsx(styles.spec, styles.gost)}>{displayValue(product.gost)}</span>
+                <span className={clsx(styles.spec, styles.material)}>
+                  {displayValue(product.material)}
+                </span>
+                <span className={clsx(styles.spec, styles.size)}>{displayValue(product.size)}</span>
+                <span className={clsx(styles.spec, styles.pack)}>{product.package_qty} шт</span>
+                <span
+                  className={clsx(
+                    styles.spec,
+                    styles.stock,
+                    stockLevel === 'out' && styles.stockOut,
+                    stockLevel === 'low' && styles.stockLow,
+                  )}
+                >
+                  {isOut ? '0' : product.stock_qty}
+                </span>
+
+                <div className={clsx(styles.priceBlock)}>
                   {showDiscount ? (
-                    <div className={clsx(styles.priceCell)}>
+                    <>
                       <span className={clsx(styles.basePrice)}>
-                        {formatPlainNumber(product.base_price)}
+                        {formatPlainNumber(product.base_price)} ₽
                       </span>
                       <span className={clsx(styles.priceBadge)}>
                         <IconPriceTag currentColor="currentColor" height={12} width={12} />
                         {formatPrice(product.client_price)}
                       </span>
-                    </div>
+                    </>
                   ) : (
                     <span className={clsx(styles.price)}>{formatPrice(product.client_price)}</span>
                   )}
-                </td>
-                <td>
-                  <div className={clsx(styles.actions)}>
-                    <QuantityStepper
-                      className={clsx(styles.stepper)}
-                      disabled={isOut}
-                      onChange={(value) =>
-                        setQtyById((current) => ({ ...current, [product.id]: value }))
-                      }
-                      step={product.package_qty}
-                      value={qty}
-                    />
-                    <Button
-                      className={clsx(styles.cartButton)}
-                      isDisabled={isOut}
-                      onPress={() =>
-                        onAddToCart(product.id, product.name, qty, product.package_qty)
-                      }
-                      size="sm"
-                    >
-                      {isOut ? (
-                        'Нет'
-                      ) : (
-                        <>
-                          <IconPlus currentColor="currentColor" height={14} width={14} />В корзину
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </td>
-              </tr>
+                </div>
+
+                <div className={clsx(styles.actions)}>
+                  <QuantityStepper
+                    className={clsx(styles.stepper)}
+                    disabled={isOut}
+                    onChange={(value) =>
+                      setQtyById((current) => ({ ...current, [product.id]: value }))
+                    }
+                    step={product.package_qty}
+                    value={qty}
+                  />
+                  <Button
+                    className={clsx(styles.cartButton)}
+                    isDisabled={isOut}
+                    onPress={() => onAddToCart(product.id, product.name, qty, product.package_qty)}
+                    size="sm"
+                  >
+                    {isOut ? (
+                      'Нет'
+                    ) : (
+                      <>
+                        <IconPlus currentColor="currentColor" height={14} width={14} />
+                        <span className={clsx(styles.cartButtonLabel)}>В корзину</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </li>
             );
           })}
-        </tbody>
-      </table>
+        </ul>
+      </div>
     </div>
   );
 };

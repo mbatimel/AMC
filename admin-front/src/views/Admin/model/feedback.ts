@@ -35,15 +35,8 @@ export const fetchAdminFeedbackFx = createEffect(() => listOrderFeedback());
 export const fetchAdminSupportFx = createEffect(() => listSupportRequests());
 
 export const updateSupportFx = createEffect(
-  async ({
-    answer,
-    id,
-    status,
-  }: {
-    answer?: string;
-    id: string;
-    status: SupportRequestStatus;
-  }) => patchSupportRequest(id, { answer, status }),
+  async ({ answer, id, status }: { answer?: string; id: string; status: SupportRequestStatus }) =>
+    patchSupportRequest(id, { answer, status }),
 );
 
 export const $adminFeedback = createStore<OrderFeedback[]>([]).on(
@@ -71,8 +64,6 @@ export const $adminFeedbackError = createStore<null | string>(null)
     toDisplayErrorMessage(error, 'Не удалось загрузить данные'),
   );
 
-/* eslint-disable perfectionist/sort-objects -- effector sample: clock -> fn -> target */
-
 sample({
   clock: adminFeedbackOpened,
   target: fetchAdminFeedbackFx,
@@ -93,5 +84,3 @@ sample({
   fn: () => ({ message: 'Обращение обновлено', tone: 'success' as const }),
   target: toastShown,
 });
-
-/* eslint-enable perfectionist/sort-objects */

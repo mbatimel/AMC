@@ -3,7 +3,7 @@
 import { Button } from '@heroui/react';
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { useContent } from '@/core/entities/content';
 
@@ -19,27 +19,22 @@ type LegalDraft = {
 
 export const AdminLegalPage = (): JSX.Element => {
   const { legalDocs } = useContent();
-  const [isSaving, error, save] = useUnit([
-    $isLegalSaving,
-    $contentSaveError,
-    legalSaveRequested,
-  ]);
+  const [isSaving, error, save] = useUnit([$isLegalSaving, $contentSaveError, legalSaveRequested]);
   const [activeId, setActiveId] = useState('');
+  const [draftSourceId, setDraftSourceId] = useState('');
   const [draft, setDraft] = useState<LegalDraft>({ body: '', summary: '', version: '' });
 
-  useEffect(() => {
-    if (!activeId && legalDocs.length > 0) {
-      setActiveId(legalDocs[0].id);
-    }
-  }, [activeId, legalDocs]);
+  if (!activeId && legalDocs.length > 0) {
+    setActiveId(legalDocs[0].id);
+  }
 
-  const active = legalDocs.find((doc) => doc.id === activeId);
+  const resolvedActiveId = activeId || legalDocs[0]?.id || '';
+  const active = legalDocs.find((doc) => doc.id === resolvedActiveId);
 
-  useEffect(() => {
-    if (active) {
-      setDraft({ body: active.body, summary: '', version: active.current_version });
-    }
-  }, [active]);
+  if (active && draftSourceId !== active.id) {
+    setDraftSourceId(active.id);
+    setDraft({ body: active.body, summary: '', version: active.current_version });
+  }
 
   return (
     <>
@@ -72,7 +67,10 @@ export const AdminLegalPage = (): JSX.Element => {
         <div className={clsx(styles.actionsRow)}>
           {legalDocs.map((doc) => (
             <button
-              className={clsx(styles.smallButton, doc.id === activeId && styles.smallButtonPrimary)}
+              className={clsx(
+                styles.smallButton,
+                doc.id === resolvedActiveId && styles.smallButtonPrimary,
+              )}
               key={doc.id}
               onClick={() => setActiveId(doc.id)}
               type="button"
