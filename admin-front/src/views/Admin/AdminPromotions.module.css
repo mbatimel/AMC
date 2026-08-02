@@ -1,0 +1,101 @@
+.promoTree {
+  max-block-size: 320px;
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--palette-ulight);
+}
+
+.promoTreeDisabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.treeNode {
+  display: flex;
+  flex-direction: column;
+}
+
+.treeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-block: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.treeProd {
+  color: var(--palette-dark);
+}
+
+.treeSku {
+  color: var(--palette-dark);
+  font-size: 12px;
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px;
+  overflow: auto;
+  background: rgb(0 0 0 / 45%);
+}
+
+.modal {
+  inline-size: min(840px, 100%);
+  margin-block: auto;
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--palette-white);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 18%);
+}
+
+.modalTitle {
+  margin: 0 0 16px;
+  font-size: 20px;
+}
+
+.modalFooter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-block-start: 18px;
+  gap: 8px;
+}
+
+.confirmBox {
+  inline-size: min(440px, 100%);
+}
+
+.warnBanner {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--alert-alt);
+  border-radius: 10px;
+  background: var(--alert-bg);
+  color: var(--alert);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.kpiActive {
+  color: var(--success);
+}
+
+.kpiScheduled {
+  color: #2563eb;
+}
+
+.kpiEnded {
+  color: var(--palette-dark);
+}
+
+.nowrap {
+  white-space: nowrap;
+}

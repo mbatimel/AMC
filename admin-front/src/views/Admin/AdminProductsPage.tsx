@@ -11,6 +11,7 @@ import { $adminUserId } from '@/core/entities/adminSession';
 import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
 import { uploadProductImagesBatchRequest } from '@/core/shared/api/products';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
+import { getPrimaryProductImageUrl } from '@/core/shared/lib/productImage';
 import { getProductPath } from '@/core/shared/router/paths';
 
 import styles from './Admin.module.css';
@@ -151,45 +152,62 @@ export const AdminProductsPage = (): JSX.Element => {
               </tr>
             ) : null}
 
-            {products.map((product) => (
-              <tr key={product.id}>
-                <td>{product.sku}</td>
-                <td>
-                  <Link href={getProductPath(product.id)}>{product.name}</Link>
-                </td>
-                <td>{product.gost || '—'}</td>
-                <td>{product.stock_qty}</td>
-                <td>{formatPrice(product.base_price)}</td>
-                <td>
-                  {(product.images ?? []).length > 0 ? (
-                    <span className={clsx(styles.badge, styles.badgeSuccess)}>есть</span>
-                  ) : (
-                    <span className={clsx(styles.badge, styles.badgeWarning)}>нет</span>
-                  )}
-                </td>
-                <td>
-                  {product.is_published === false ? (
-                    <span className={clsx(styles.badge)}>Скрыт</span>
-                  ) : (
-                    <span className={clsx(styles.badge, styles.badgeSuccess)}>Опубликован</span>
-                  )}
-                </td>
-                <td>
-                  <div className={clsx(styles.rowActions)}>
-                    <Link className={clsx(styles.smallButton)} href={getProductPath(product.id)}>
-                      Изменить
-                    </Link>
-                    <button
-                      className={clsx(styles.smallButton, styles.smallButtonDanger)}
-                      onClick={() => remove(product.id)}
-                      type="button"
-                    >
-                      Удалить
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {products.map((product) => {
+              const imageUrl = getPrimaryProductImageUrl(product.images);
+
+              return (
+                <tr key={product.id}>
+                  <td>
+                    <div className={clsx(styles.productThumbCell)}>
+                      {imageUrl ? (
+                        <img
+                          alt={product.name}
+                          className={clsx(styles.productThumb)}
+                          src={imageUrl}
+                        />
+                      ) : (
+                        <span className={clsx(styles.productThumbEmpty)}>—</span>
+                      )}
+                      <span>{product.sku}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <Link href={getProductPath(product.id)}>{product.name}</Link>
+                  </td>
+                  <td>{product.gost || '—'}</td>
+                  <td>{product.stock_qty}</td>
+                  <td>{formatPrice(product.base_price)}</td>
+                  <td>
+                    {(product.images ?? []).length > 0 ? (
+                      <span className={clsx(styles.badge, styles.badgeSuccess)}>есть</span>
+                    ) : (
+                      <span className={clsx(styles.badge, styles.badgeWarning)}>нет</span>
+                    )}
+                  </td>
+                  <td>
+                    {product.is_published === false ? (
+                      <span className={clsx(styles.badge)}>Скрыт</span>
+                    ) : (
+                      <span className={clsx(styles.badge, styles.badgeSuccess)}>Опубликован</span>
+                    )}
+                  </td>
+                  <td>
+                    <div className={clsx(styles.rowActions)}>
+                      <Link className={clsx(styles.smallButton)} href={getProductPath(product.id)}>
+                        Изменить
+                      </Link>
+                      <button
+                        className={clsx(styles.smallButton, styles.smallButtonDanger)}
+                        onClick={() => remove(product.id)}
+                        type="button"
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

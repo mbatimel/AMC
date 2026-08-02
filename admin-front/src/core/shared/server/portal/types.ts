@@ -102,6 +102,7 @@ export type PortalState = {
   feedback: OrderFeedback[];
   legal_docs: LegalDoc[];
   portal_users: PortalUser[];
+  promotions: Promotion[];
   signup_requests: SignupRequest[];
   support_requests: SupportRequest[];
 };
@@ -117,6 +118,32 @@ export type PortalUser = {
   phone: string;
   role: 'admin' | 'client';
 };
+
+export type Promotion = {
+  condition: string;
+  createdAt: string;
+  desc: string;
+  discMode: PromotionDiscMode;
+  discValue: number;
+  endAt: string;
+  endedManually: boolean;
+  id: string;
+  minQty: number;
+  name: string;
+  sel: PromotionSelection;
+  startAt: string;
+  type: PromotionType;
+};
+
+export type PromotionDiscMode = 'percent' | 'price';
+
+export type PromotionSelection = {
+  all: boolean;
+  nodes: string[];
+  products: string[];
+};
+
+export type PromotionType = 'date' | 'qty';
 
 export type SignupRequest = {
   company: string;

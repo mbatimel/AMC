@@ -16,7 +16,9 @@
   font-size: 14px;
   font-weight: 600;
   gap: 8px;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .floatButton:hover {
@@ -45,7 +47,9 @@
   opacity: 0;
   pointer-events: none;
   transform: translateY(12px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 
 .panelOpen {
@@ -159,10 +163,29 @@
 }
 
 .product {
+  display: flex;
+  gap: 10px;
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--palette-white);
+}
+
+.productThumb {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f3f6fa;
+  block-size: 56px;
+  inline-size: 56px;
+}
+
+.productBody {
+  min-inline-size: 0;
+  flex: 1;
 }
 
 .productSku {

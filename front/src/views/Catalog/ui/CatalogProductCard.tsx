@@ -9,6 +9,7 @@ import type { ProductListItem } from '@/core/shared/api/products';
 
 import { IconCart, IconPriceTag } from '@/core/shared/icons';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
+import { getPrimaryProductImage } from '@/core/shared/lib/productImage';
 import { getStockLevel } from '@/core/shared/lib/stock';
 import { getProductPath } from '@/core/shared/router/paths';
 import { ProductImageFallback } from '@/core/shared/ui/ProductImageFallback';
@@ -28,7 +29,7 @@ export const CatalogProductCard = ({
   onToggleFavorite,
   product,
 }: CatalogProductCardProps): JSX.Element => {
-  const image = product.images?.find((item) => item.is_primary) ?? product.images?.[0];
+  const image = getPrimaryProductImage(product.images);
   const [failed, setFailed] = useState(false);
   const stockLevel = getStockLevel(product.stock_qty);
   const isOut = stockLevel === 'out';

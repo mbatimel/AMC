@@ -8,6 +8,7 @@ export { AdminLegalPage } from './AdminLegalPage';
 export { AdminLoginPage } from './AdminLoginPage';
 export { AdminProductPage } from './AdminProductPage';
 export { AdminProductsPage } from './AdminProductsPage';
+export { AdminPromotionsPage } from './AdminPromotionsPage';
 export { AdminSignupRequestsPage } from './AdminSignupRequestsPage';
 export { AdminSupportPage } from './AdminSupportPage';
 export { AdminUserDetailPage } from './AdminUserDetailPage';

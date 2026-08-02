@@ -1,0 +1,21 @@
+.image {
+  display: block;
+  block-size: 100%;
+  inline-size: 100%;
+  object-fit: contain;
+}
+
+.fallback {
+  gap: 0;
+  block-size: 100%;
+  inline-size: 100%;
+}
+
+.fallback :global(svg) {
+  block-size: 60%;
+  inline-size: 60%;
+}
+
+.fallback :global(span) {
+  display: none;
+}

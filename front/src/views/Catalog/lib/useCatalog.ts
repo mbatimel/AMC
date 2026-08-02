@@ -7,6 +7,7 @@ import { useEffect, useMemo } from 'react';
 import { useCart } from '@/core/entities/cart';
 import { useFavorites } from '@/core/entities/favorites';
 import { normalizeQtyToPackage } from '@/core/shared/lib/formatPrice';
+import { getPrimaryProductImageUrl } from '@/core/shared/lib/productImage';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
 import type { CatalogFilters, CatalogViewMode } from './filters';
@@ -103,8 +104,14 @@ export const useCatalog = () => {
     }
 
     const normalizedQty = normalizeQtyToPackage(qty, packageQty);
+    const product = products.find((item) => item.id === productID);
 
-    addToCart({ name, productID, qty: normalizedQty });
+    addToCart({
+      imageUrl: getPrimaryProductImageUrl(product?.images) ?? undefined,
+      name,
+      productID,
+      qty: normalizedQty,
+    });
   };
 
   return {

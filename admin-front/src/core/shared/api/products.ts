@@ -43,9 +43,12 @@ export type Product = ProductListItem & {
 
 export type ProductImage = {
   alt?: string;
+  created_at?: string;
   id: string;
   is_primary?: boolean;
+  product_id?: string;
   sort_order?: number;
+  updated_at?: string;
   url: string;
 };
 
