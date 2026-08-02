@@ -24,6 +24,7 @@ type Error struct {
 	Cause      map[string]interface{}
 	statusCode int
 	errorCode  *int
+	trKey      string
 
 	internalError error
 }
@@ -64,9 +65,9 @@ func HasCause(e error, cause string) bool {
 
 func New(msg string, statusCode int, outerError string) *Error {
 	return &Error{
-		ErrorText:     msg,
-		statusCode:    statusCode,
-		internalError: errors.New(outerError),
+		ErrorText:  msg,
+		statusCode: statusCode,
+		trKey:      outerError,
 	}
 }
 
@@ -107,12 +108,20 @@ func (e *Error) GetStatusCode() int {
 	return e.statusCode
 }
 
-func (e *Error) SetOuterError(err interface{}) *Error {
-	e.internalError = fmt.Errorf("%v", err)
+func (e *Error) SetOuterError(err error) *Error {
+	e.internalError = err
 	return e
 }
 
 func (e *Error) GetOuterError() error {
+	return e.internalError
+}
+
+func (e *Error) GetTranslationKey() string {
+	return e.trKey
+}
+
+func (e *Error) Unwrap() error {
 	return e.internalError
 }
 

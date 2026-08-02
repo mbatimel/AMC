@@ -2,9 +2,11 @@ package custom_handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	customErrors "github.com/mbatimel/AMC/orders/internal/errors"
 	"github.com/rs/zerolog"
 )
 
@@ -15,10 +17,6 @@ type RestResponse struct {
 	Error            bool                   `json:"error"`
 	ErrorText        string                 `json:"errorText"`
 	AdditionalErrors map[string]interface{} `json:"additionalErrors"`
-}
-
-type statusCoder interface {
-	GetStatusCode() int
 }
 
 func sendResponse(ctx *fiber.Ctx, log zerolog.Logger, data interface{}, respError error) {
@@ -33,12 +31,21 @@ func sendResponse(ctx *fiber.Ctx, log zerolog.Logger, data interface{}, respErro
 	if response.Error {
 		ctx.Response().SetStatusCode(http.StatusInternalServerError)
 		response.ErrorText = errInternal
-		response.AdditionalErrors = map[string]interface{}{
-			"reason": respError.Error(),
-		}
 
-		if customErr, ok := respError.(statusCoder); ok && customErr.GetStatusCode() != 0 {
-			ctx.Response().SetStatusCode(customErr.GetStatusCode())
+		var customErr *customErrors.Error
+		if errors.As(respError, &customErr) {
+			statusCode := customErr.GetStatusCode()
+			if statusCode != 0 {
+				ctx.Response().SetStatusCode(statusCode)
+			}
+			if statusCode < http.StatusInternalServerError {
+				response.ErrorText = customErr.GetTranslationKey()
+				response.AdditionalErrors = customErr.Cause
+			}
+
+			if outerErr := customErr.GetOuterError(); outerErr != nil {
+				log.Error().Err(outerErr).Msg("orders request failed")
+			}
 		}
 	}
 
