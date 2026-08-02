@@ -2,11 +2,26 @@ import { createEffect, createEvent, createStore, sample } from 'effector';
 
 import type { PortalUser } from '@/core/shared/api/portalUsers';
 import type { SignupRequest, SignupRequestStatus } from '@/core/shared/api/signupRequests';
+import type { RealUser } from '@/core/shared/api/users';
 
 import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
-import { invitePortalUser, listPortalUsers, patchPortalUser } from '@/core/shared/api/portalUsers';
+import { invitePortalUser, patchPortalUser } from '@/core/shared/api/portalUsers';
 import { decideSignupRequest, listSignupRequests } from '@/core/shared/api/signupRequests';
+import { listUsersRequest, setUserActiveRequest } from '@/core/shared/api/users';
 import { toastShown } from '@/core/shared/ui/Toast/model';
+
+/** Приводим пользователя реального сервиса `users` к виду, который уже умеет рисовать UI. */
+export const toPortalUser = (user: RealUser): PortalUser => ({
+  company: user.company_name,
+  contact: [user.last_name, user.first_name, user.middle_name].filter(Boolean).join(' '),
+  created_at: user.created_at,
+  email: user.email,
+  id: user.id,
+  inn: user.inn,
+  is_active: user.is_active,
+  phone: user.phone,
+  role: user.role === 'admin' ? 'admin' : 'client',
+});
 
 export const adminUsersOpened = createEvent();
 export const portalUserInvited = createEvent<{ company: string; email: string }>();
@@ -18,15 +33,24 @@ export const signupDecided = createEvent<{
   status: SignupRequestStatus;
 }>();
 
-export const fetchPortalUsersFx = createEffect(() => listPortalUsers());
+export const fetchPortalUsersFx = createEffect(async () => {
+  const { items } = await listUsersRequest();
+
+  return items.map(toPortalUser);
+});
 export const fetchSignupRequestsFx = createEffect(() => listSignupRequests());
 
-export const inviteUserFx = createEffect(async ({ company, email }: { company: string; email: string }) =>
-  invitePortalUser({ company, email, role: 'admin' }),
+export const inviteUserFx = createEffect(
+  async ({ company, email }: { company: string; email: string }) =>
+    invitePortalUser({ company, email, role: 'admin' }),
 );
 
-export const toggleUserFx = createEffect(async ({ id, isActive }: { id: string; isActive: boolean }) =>
-  patchPortalUser(id, { isActive }),
+export const toggleUserFx = createEffect(
+  async ({ id, isActive }: { id: string; isActive: boolean }) => {
+    const user = await setUserActiveRequest(id, isActive);
+
+    return toPortalUser(user);
+  },
 );
 
 export const resetUserPasswordFx = createEffect(async (id: string) =>
@@ -73,8 +97,6 @@ export const $usersError = createStore<null | string>(null)
     (_, error) => toDisplayErrorMessage(error, 'Не удалось выполнить операцию'),
   );
 
-/* eslint-disable perfectionist/sort-objects -- effector sample: clock -> fn -> target */
-
 sample({
   clock: adminUsersOpened,
   target: [fetchPortalUsersFx, fetchSignupRequestsFx],
@@ -116,5 +138,3 @@ sample({
   fn: () => ({ message: 'Ссылка для сброса пароля отправлена', tone: 'success' as const }),
   target: toastShown,
 });
-
-/* eslint-enable perfectionist/sort-objects */

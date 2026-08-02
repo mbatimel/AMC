@@ -1,8 +1,7 @@
 import type { NextConfig } from 'next';
 
 const apiProxyTarget = process.env.API_PROXY_TARGET ?? 'https://wk.amctechgroup.ru';
-const portalApiProxyTarget =
-  process.env.PORTAL_API_PROXY_TARGET ?? 'https://wk.amctechgroup.ru';
+const portalApiProxyTarget = process.env.PORTAL_API_PROXY_TARGET ?? 'https://wk.amctechgroup.ru';
 
 const nextConfig: NextConfig = {
   async rewrites() {
@@ -10,6 +9,11 @@ const nextConfig: NextConfig = {
       {
         destination: `${apiProxyTarget}/api/v1/orders/`,
         source: '/api/v1/orders',
+      },
+      {
+        // nginx отдаёт этот путь только с завершающим слэшем (см. правило выше для orders).
+        destination: `${apiProxyTarget}/api/v1/users/`,
+        source: '/api/v1/users',
       },
       {
         destination: `${apiProxyTarget}/api/:path*`,

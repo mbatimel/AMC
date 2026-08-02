@@ -3,7 +3,10 @@
 import { Button } from '@heroui/react';
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
+
+import { getUserDetailPath } from '@/core/shared/router/paths';
 
 import styles from './Admin.module.css';
 import { formatAdminDateTime } from './lib/nav';
@@ -110,7 +113,12 @@ export const AdminUsersPage = (): JSX.Element => {
         <section className={clsx(styles.card)}>
           <h2 className={clsx(styles.cardTitle)}>Администраторы</h2>
           <p className={clsx(styles.hint)}>
-            {admins.map((admin) => admin.email).join(', ')}
+            {admins.map((admin, index) => (
+              <span key={admin.id}>
+                {index > 0 ? ', ' : ''}
+                <Link href={getUserDetailPath(admin.id)}>{admin.email}</Link>
+              </span>
+            ))}
           </p>
         </section>
       ) : null}
@@ -154,6 +162,9 @@ export const AdminUsersPage = (): JSX.Element => {
                 <td>{formatAdminDateTime(user.created_at)}</td>
                 <td>
                   <div className={clsx(styles.rowActions)}>
+                    <Link className={clsx(styles.smallButton)} href={getUserDetailPath(user.id)}>
+                      Профиль
+                    </Link>
                     <button
                       className={clsx(styles.smallButton)}
                       onClick={() => resetPassword(user.id)}

@@ -10,5 +10,6 @@ export { AdminProductPage } from './AdminProductPage';
 export { AdminProductsPage } from './AdminProductsPage';
 export { AdminSignupRequestsPage } from './AdminSignupRequestsPage';
 export { AdminSupportPage } from './AdminSupportPage';
+export { AdminUserDetailPage } from './AdminUserDetailPage';
 export { AdminUsersPage } from './AdminUsersPage';
 export { AdminShell } from './ui/AdminShell';
