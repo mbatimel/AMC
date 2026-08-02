@@ -146,3 +146,58 @@ func TestStorageUserClientsAndFavoritesIntegration(t *testing.T) {
 		t.Fatalf("unexpected filtered users=%+v total=%d", users, total)
 	}
 }
+
+func TestStorageCreateUserWithoutCompanyGetsPersonalActiveClientIntegration(t *testing.T) {
+	dsn := os.Getenv("USERS_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("USERS_TEST_DATABASE_URL is not set")
+	}
+
+	ctx := context.Background()
+	pool, err := pgxpool.Connect(ctx, dsn)
+	if err != nil {
+		t.Fatalf("connect test database: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	storage := New(pool)
+	email := "integration-personal-" + uuid.NewString() + "@example.com"
+
+	var userID uuid.UUID
+	t.Cleanup(func() {
+		_, _ = pool.Exec(ctx, `DELETE FROM user_clients WHERE user_id = $1`, userID)
+		var personalClientID uuid.UUID
+		_ = pool.QueryRow(ctx, `SELECT active_client_id FROM users WHERE id = $1`, userID).Scan(&personalClientID)
+		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, userID)
+		_, _ = pool.Exec(ctx, `DELETE FROM counterparties WHERE id = $1`, personalClientID)
+	})
+
+	created, err := storage.CreateUser(ctx, internalModels.CreateUserParams{
+		Email: email, FirstName: "Personal", LastName: "Signup",
+		Status: "active", IsActive: true,
+	})
+	if err != nil {
+		t.Fatalf("CreateUser() error = %v", err)
+	}
+	userID = created.ID
+
+	if !created.ActiveClientID.Valid {
+		t.Fatal("expected a personal client to be created and set as active")
+	}
+
+	activeClientID, err := storage.GetActiveClient(ctx, userID)
+	if err != nil {
+		t.Fatalf("GetActiveClient() error = %v", err)
+	}
+	if activeClientID != created.ActiveClientID.UUID {
+		t.Fatalf("GetActiveClient() = %s, want %s", activeClientID, created.ActiveClientID.UUID)
+	}
+
+	var exists bool
+	if err = pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM counterparties WHERE id = $1)`, activeClientID).Scan(&exists); err != nil {
+		t.Fatalf("check counterparty existence: %v", err)
+	}
+	if !exists {
+		t.Fatal("expected personal client to exist in counterparties")
+	}
+}

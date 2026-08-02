@@ -20,12 +20,12 @@ type Storage interface {
 	GetActiveClient(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
 	CounterpartyExists(ctx context.Context, clientID uuid.UUID) (bool, error)
 	UserHasClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (bool, error)
-	GetCounterpartyPriceGroupID(ctx context.Context, counterpartyID uuid.UUID) (uuid.NullUUID, error)
-	InsertDeliveryAddress(ctx context.Context, counterpartyID uuid.UUID, addrType string, address string) (uuid.UUID, error)
-	InsertContact(ctx context.Context, counterpartyID uuid.UUID, fullName string, phone string, email string) (uuid.UUID, error)
+	GetCounterpartyPriceGroupID(ctx context.Context, counterpartyID uuid.NullUUID) (uuid.NullUUID, error)
+	InsertDeliveryAddress(ctx context.Context, counterpartyID uuid.NullUUID, addrType string, address string) (uuid.UUID, error)
+	InsertContact(ctx context.Context, counterpartyID uuid.NullUUID, fullName string, phone string, email string) (uuid.UUID, error)
 
-	GetCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (uuid.UUID, error)
-	GetOrCreateCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (uuid.UUID, error)
+	GetCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID) (uuid.UUID, error)
+	GetOrCreateCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID) (uuid.UUID, error)
 	GetCartItems(ctx context.Context, cartID uuid.UUID) ([]postgres.CartItemRow, error)
 	ResolveProductPrice(ctx context.Context, productID uuid.UUID, priceGroupID uuid.NullUUID) (float64, error)
 	UpsertCartItem(ctx context.Context, cartID uuid.UUID, productID uuid.UUID, qty int, price float64) error
@@ -33,15 +33,15 @@ type Storage interface {
 	DeleteCartItem(ctx context.Context, cartItemID uuid.UUID, cartID uuid.UUID) error
 	ClearCartItems(ctx context.Context, cartID uuid.UUID) error
 
-	GetVolumeDiscountPercent(ctx context.Context, counterpartyID uuid.UUID, priceGroupID uuid.NullUUID, subtotal float64) (float64, error)
+	GetVolumeDiscountPercent(ctx context.Context, counterpartyID uuid.NullUUID, priceGroupID uuid.NullUUID, subtotal float64) (float64, error)
 
 	CreateOrder(ctx context.Context, params postgres.CreateOrderParams) (postgres.CreatedOrder, error)
 	ListOrders(ctx context.Context, params postgres.ListOrdersParams) ([]postgres.OrderRow, int, error)
-	GetOrderByID(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.UUID) (postgres.OrderDetailRow, error)
+	GetOrderByID(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, counterpartyID uuid.NullUUID) (postgres.OrderDetailRow, error)
 	GetOrderItems(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderItemRow, error)
 	GetOrderDocumentsByOrderID(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderDocumentRow, error)
 	GetOrderHistory(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderHistoryRow, error)
-	CancelOrder(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.UUID, changedBy uuid.UUID, comment string) (postgres.OrderDetailRow, error)
+	CancelOrder(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.NullUUID, changedBy uuid.UUID, comment string) (postgres.OrderDetailRow, error)
 	UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy uuid.UUID) (postgres.OrderDetailRow, error)
 }
 
@@ -90,56 +90,69 @@ func (s *service) checkAdminAccess(ctx context.Context, userID uuid.UUID) error 
 	return nil
 }
 
-func (s *service) resolveCounterpartyID(ctx context.Context, userID uuid.UUID, clientID string) (uuid.UUID, error) {
+// resolveCounterpartyID maps a request's clientID (or the user's active client)
+// to a counterparty. A user with no active client yet (e.g. registered before the
+// personal-client backfill ran) gets a not-Valid NullUUID instead of an error:
+// callers proceed unscoped rather than failing the request.
+// TODO: once every user is guaranteed to have a client, restore rejecting the
+// no-client case here.
+func (s *service) resolveCounterpartyID(ctx context.Context, userID uuid.UUID, clientID string) (uuid.NullUUID, error) {
 	var id uuid.UUID
 	var err error
 
 	if clientID != "" {
 		id, err = uuid.Parse(clientID)
 		if err != nil || id == uuid.Nil {
-			return uuid.Nil, customErrors.BadRequestError().SetOuterError(err).AddCause("field", "clientID")
+			return uuid.NullUUID{}, customErrors.BadRequestError().SetOuterError(err).AddCause("field", "clientID")
 		}
 	} else {
 		id, err = s.storage.GetActiveClient(ctx, userID)
 		if err != nil {
 			if errors.Is(err, postgres.ErrUserNotFound) {
-				return uuid.Nil, customErrors.NotFoundError().AddCause("entity", "user")
+				return uuid.NullUUID{}, customErrors.NotFoundError().AddCause("entity", "user")
 			}
-			return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
+			return uuid.NullUUID{}, customErrors.InternalServerError().SetOuterError(err)
 		}
 		if id == uuid.Nil {
-			return uuid.Nil, customErrors.BadRequestError().AddCause("field", "clientID")
+			return uuid.NullUUID{}, nil
 		}
 	}
 
 	exists, err := s.storage.CounterpartyExists(ctx, id)
 	if err != nil {
-		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
+		return uuid.NullUUID{}, customErrors.InternalServerError().SetOuterError(err)
 	}
 	if !exists {
-		return uuid.Nil, customErrors.NotFoundError().AddCause("field", "clientID")
+		return uuid.NullUUID{}, customErrors.NotFoundError().AddCause("field", "clientID")
 	}
 
 	allowed, err := s.storage.UserHasClient(ctx, userID, id)
 	if err != nil {
-		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
+		return uuid.NullUUID{}, customErrors.InternalServerError().SetOuterError(err)
 	}
 	if !allowed {
-		return uuid.Nil, customErrors.ForbiddenError().AddCause("field", "clientID")
+		return uuid.NullUUID{}, customErrors.ForbiddenError().AddCause("field", "clientID")
 	}
 
-	return id, nil
+	return uuid.NullUUID{UUID: id, Valid: true}, nil
 }
 
-func emptyCart(userID uuid.UUID, counterpartyID uuid.UUID) models.Cart {
+func clientIDString(counterpartyID uuid.NullUUID) string {
+	if !counterpartyID.Valid {
+		return ""
+	}
+	return counterpartyID.UUID.String()
+}
+
+func emptyCart(userID uuid.UUID, counterpartyID uuid.NullUUID) models.Cart {
 	return models.Cart{
 		UserID:   userID.String(),
-		ClientID: counterpartyID.String(),
+		ClientID: clientIDString(counterpartyID),
 		Items:    make([]models.CartItem, 0),
 	}
 }
 
-func (s *service) buildCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (models.Cart, error) {
+func (s *service) buildCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID) (models.Cart, error) {
 	cartID, err := s.storage.GetOrCreateCart(ctx, userID, counterpartyID)
 	if err != nil {
 		if errors.Is(err, postgres.ErrCounterpartyNotFound) {
@@ -150,7 +163,7 @@ func (s *service) buildCart(ctx context.Context, userID uuid.UUID, counterpartyI
 	return s.buildExistingCart(ctx, userID, counterpartyID, cartID)
 }
 
-func (s *service) buildExistingCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID, cartID uuid.UUID) (models.Cart, error) {
+func (s *service) buildExistingCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID, cartID uuid.UUID) (models.Cart, error) {
 	rows, err := s.storage.GetCartItems(ctx, cartID)
 	if err != nil {
 		return models.Cart{}, customErrors.InternalServerError().SetOuterError(err)
@@ -190,7 +203,7 @@ func (s *service) buildExistingCart(ctx context.Context, userID uuid.UUID, count
 	return models.Cart{
 		ID:            cartID.String(),
 		UserID:        userID.String(),
-		ClientID:      counterpartyID.String(),
+		ClientID:      clientIDString(counterpartyID),
 		Items:         items,
 		Subtotal:      totals.Subtotal,
 		DiscountTotal: totals.DiscountTotal,
@@ -512,7 +525,7 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 		ID:              created.ID.String(),
 		Number:          created.Number,
 		UserID:          userID.String(),
-		ClientID:        counterpartyID.String(),
+		ClientID:        clientIDString(counterpartyID),
 		Items:           responseItems,
 		Subtotal:        totals.Subtotal,
 		DiscountTotal:   totals.DiscountTotal,
@@ -573,7 +586,7 @@ func (s *service) buildOrderModel(ctx context.Context, row postgres.OrderDetailR
 		ID:              row.ID.String(),
 		Number:          row.Number,
 		UserID:          row.UserID.String(),
-		ClientID:        row.CounterpartyID.String(),
+		ClientID:        clientIDString(row.CounterpartyID),
 		Items:           items,
 		Subtotal:        row.Subtotal,
 		DiscountTotal:   row.DiscountTotal,
@@ -602,7 +615,7 @@ func (s *service) GetOrder(ctx context.Context, orderID uuid.UUID, userID uuid.U
 		return response, err
 	}
 
-	row, err := s.storage.GetOrderByID(ctx, orderID, counterpartyID)
+	row, err := s.storage.GetOrderByID(ctx, orderID, userID, counterpartyID)
 	if err != nil {
 		if errors.Is(err, postgres.ErrOrderNotFound) {
 			return response, customErrors.NotFoundError()
@@ -632,6 +645,7 @@ func (s *service) ListOrders(ctx context.Context, userID uuid.UUID, clientID str
 	}
 
 	rows, total, err := s.storage.ListOrders(ctx, postgres.ListOrdersParams{
+		UserID:         userID,
 		CounterpartyID: counterpartyID,
 		Status:         status,
 		PaymentStatus:  paymentStatus,
@@ -684,7 +698,7 @@ func (s *service) ListOrders(ctx context.Context, userID uuid.UUID, clientID str
 		orders = append(orders, models.Order{
 			ID:            row.ID.String(),
 			Number:        row.Number,
-			ClientID:      counterpartyID.String(),
+			ClientID:      clientIDString(counterpartyID),
 			Items:         items,
 			Subtotal:      row.Subtotal,
 			DiscountTotal: row.DiscountTotal,
@@ -744,7 +758,7 @@ func (s *service) RepeatOrder(ctx context.Context, orderID uuid.UUID, userID uui
 		return response, err
 	}
 
-	row, err := s.storage.GetOrderByID(ctx, orderID, counterpartyID)
+	row, err := s.storage.GetOrderByID(ctx, orderID, userID, counterpartyID)
 	if err != nil {
 		if errors.Is(err, postgres.ErrOrderNotFound) {
 			return response, customErrors.NotFoundError()
@@ -806,7 +820,7 @@ func (s *service) GetOrderDocuments(ctx context.Context, orderID uuid.UUID, user
 		return response, err
 	}
 
-	row, err := s.storage.GetOrderByID(ctx, orderID, counterpartyID)
+	row, err := s.storage.GetOrderByID(ctx, orderID, userID, counterpartyID)
 	if err != nil {
 		if errors.Is(err, postgres.ErrOrderNotFound) {
 			return response, customErrors.NotFoundError()
@@ -844,7 +858,7 @@ func (s *service) GetOrderHistory(ctx context.Context, orderID uuid.UUID, userID
 		return response, err
 	}
 
-	row, err := s.storage.GetOrderByID(ctx, orderID, counterpartyID)
+	row, err := s.storage.GetOrderByID(ctx, orderID, userID, counterpartyID)
 	if err != nil {
 		if errors.Is(err, postgres.ErrOrderNotFound) {
 			return response, customErrors.NotFoundError()

@@ -64,7 +64,9 @@ func TestCartRoundTrip(t *testing.T) {
 		pool.Exec(ctx, `DELETE FROM price_groups WHERE id = $1`, priceGroupID)
 	})
 
-	resolvedGroupID, err := storage.GetCounterpartyPriceGroupID(ctx, counterpartyID)
+	counterpartyNullID := uuid.NullUUID{UUID: counterpartyID, Valid: true}
+
+	resolvedGroupID, err := storage.GetCounterpartyPriceGroupID(ctx, counterpartyNullID)
 	if err != nil {
 		t.Fatalf("GetCounterpartyPriceGroupID: %v", err)
 	}
@@ -80,15 +82,15 @@ func TestCartRoundTrip(t *testing.T) {
 		t.Fatalf("expected price 500, got %v", price)
 	}
 
-	if _, err = storage.GetCart(ctx, userID, counterpartyID); !errors.Is(err, ErrCartNotFound) {
+	if _, err = storage.GetCart(ctx, userID, counterpartyNullID); !errors.Is(err, ErrCartNotFound) {
 		t.Fatalf("GetCart before creation error = %v, want ErrCartNotFound", err)
 	}
 
-	cartID, err := storage.GetOrCreateCart(ctx, userID, counterpartyID)
+	cartID, err := storage.GetOrCreateCart(ctx, userID, counterpartyNullID)
 	if err != nil {
 		t.Fatalf("GetOrCreateCart: %v", err)
 	}
-	resolvedCartID, err := storage.GetCart(ctx, userID, counterpartyID)
+	resolvedCartID, err := storage.GetCart(ctx, userID, counterpartyNullID)
 	if err != nil || resolvedCartID != cartID {
 		t.Fatalf("GetCart after creation = %s, %v; want %s", resolvedCartID, err, cartID)
 	}
@@ -181,8 +183,10 @@ func TestCreateOrderAndListOrders(t *testing.T) {
 		pool.Exec(ctx, `DELETE FROM price_groups WHERE id = $1`, priceGroupID)
 	})
 
+	counterpartyNullID := uuid.NullUUID{UUID: counterpartyID, Valid: true}
+
 	emptyRows, emptyTotal, err := storage.ListOrders(ctx, ListOrdersParams{
-		CounterpartyID: counterpartyID,
+		CounterpartyID: counterpartyNullID,
 		Limit:          20,
 	})
 	if err != nil {
@@ -192,7 +196,7 @@ func TestCreateOrderAndListOrders(t *testing.T) {
 		t.Fatalf("empty ListOrders = rows:%#v total:%d", emptyRows, emptyTotal)
 	}
 
-	discountPercent, err := storage.GetVolumeDiscountPercent(ctx, counterpartyID, uuid.NullUUID{UUID: priceGroupID, Valid: true}, 2000)
+	discountPercent, err := storage.GetVolumeDiscountPercent(ctx, counterpartyNullID, uuid.NullUUID{UUID: priceGroupID, Valid: true}, 2000)
 	if err != nil {
 		t.Fatalf("GetVolumeDiscountPercent: %v", err)
 	}
@@ -200,23 +204,23 @@ func TestCreateOrderAndListOrders(t *testing.T) {
 		t.Fatalf("expected discount 10, got %v", discountPercent)
 	}
 
-	addressID, err := storage.InsertDeliveryAddress(ctx, counterpartyID, "delivery", "Test City, Test Street 1")
+	addressID, err := storage.InsertDeliveryAddress(ctx, counterpartyNullID, "delivery", "Test City, Test Street 1")
 	if err != nil {
 		t.Fatalf("InsertDeliveryAddress: %v", err)
 	}
-	contactID, err := storage.InsertContact(ctx, counterpartyID, "Test Contact", "+70000000000", "test@test.local")
+	contactID, err := storage.InsertContact(ctx, counterpartyNullID, "Test Contact", "+70000000000", "test@test.local")
 	if err != nil {
 		t.Fatalf("InsertContact: %v", err)
 	}
 
-	cartID, err := storage.GetOrCreateCart(ctx, userID, counterpartyID)
+	cartID, err := storage.GetOrCreateCart(ctx, userID, counterpartyNullID)
 	if err != nil {
 		t.Fatalf("GetOrCreateCart: %v", err)
 	}
 
 	created, err := storage.CreateOrder(ctx, CreateOrderParams{
 		UserID:            userID,
-		CounterpartyID:    counterpartyID,
+		CounterpartyID:    counterpartyNullID,
 		CartID:            cartID,
 		DeliveryMethod:    "delivery",
 		DeliveryAddressID: addressID,
@@ -264,7 +268,7 @@ func TestCreateOrderAndListOrders(t *testing.T) {
 		t.Fatalf("expected no documents for freshly created order, got %d", len(docs))
 	}
 
-	rows, total, err := storage.ListOrders(ctx, ListOrdersParams{CounterpartyID: counterpartyID, Limit: 10, Offset: 0})
+	rows, total, err := storage.ListOrders(ctx, ListOrdersParams{CounterpartyID: counterpartyNullID, Limit: 10, Offset: 0})
 	if err != nil {
 		t.Fatalf("ListOrders: %v", err)
 	}
@@ -273,5 +277,164 @@ func TestCreateOrderAndListOrders(t *testing.T) {
 	}
 	if rows[0].ID != orderID || rows[0].Status != "new" || rows[0].PaymentStatus != "not_paid" {
 		t.Fatalf("unexpected order row: %+v", rows[0])
+	}
+}
+
+// TestCartAndOrderRoundTripWithoutCounterparty proves the NULL-safe SQL added for
+// clientless users actually behaves as NULL, not as a stray zero-UUID: a cart and
+// an order created with no counterparty must be creatable, findable via GetCart /
+// GetOrderByID / ListOrders using the same not-Valid NullUUID, and isolated from a
+// different clientless user's cart.
+func TestCartAndOrderRoundTripWithoutCounterparty(t *testing.T) {
+	pool := testPool(t)
+	defer pool.Close()
+
+	ctx := context.Background()
+	storage := New(pool)
+	noClient := uuid.NullUUID{}
+
+	mustScan := func(sql string, args ...interface{}) uuid.UUID {
+		var id uuid.UUID
+		if err := pool.QueryRow(ctx, sql, args...).Scan(&id); err != nil {
+			t.Fatalf("fixture insert failed (%s): %v", sql, err)
+		}
+		return id
+	}
+
+	userID := mustScan(`INSERT INTO users (email) VALUES ($1) RETURNING id`, uuid.NewString()+"@test.local")
+	otherUserID := mustScan(`INSERT INTO users (email) VALUES ($1) RETURNING id`, uuid.NewString()+"@test.local")
+	categoryID := mustScan(`INSERT INTO categories (name, slug) VALUES ('no-client category', $1) RETURNING id`, uuid.NewString())
+	unitID := mustScan(`INSERT INTO units (code, name) VALUES ($1, 'no-client unit') RETURNING id`, uuid.NewString())
+	productID := mustScan(`INSERT INTO products (category_id, unit_id, sku, name, slug) VALUES ($1, $2, $3, 'no-client product', $4) RETURNING id`, categoryID, unitID, uuid.NewString(), uuid.NewString())
+	if _, err := pool.Exec(ctx, `INSERT INTO product_prices (product_id, price_type, price) VALUES ($1, 'base', 300)`, productID); err != nil {
+		t.Fatalf("insert product_price: %v", err)
+	}
+
+	var orderID uuid.UUID
+	t.Cleanup(func() {
+		pool.Exec(ctx, `DELETE FROM order_status_history WHERE order_id = $1`, orderID)
+		pool.Exec(ctx, `DELETE FROM order_items WHERE order_id = $1`, orderID)
+		pool.Exec(ctx, `DELETE FROM orders WHERE id = $1`, orderID)
+		pool.Exec(ctx, `DELETE FROM cart_items WHERE product_id = $1`, productID)
+		pool.Exec(ctx, `DELETE FROM carts WHERE user_id IN ($1, $2)`, userID, otherUserID)
+		pool.Exec(ctx, `DELETE FROM product_prices WHERE product_id = $1`, productID)
+		pool.Exec(ctx, `DELETE FROM products WHERE id = $1`, productID)
+		pool.Exec(ctx, `DELETE FROM units WHERE id = $1`, unitID)
+		pool.Exec(ctx, `DELETE FROM categories WHERE id = $1`, categoryID)
+		pool.Exec(ctx, `DELETE FROM users WHERE id IN ($1, $2)`, userID, otherUserID)
+	})
+
+	if _, err := storage.GetCart(ctx, userID, noClient); !errors.Is(err, ErrCartNotFound) {
+		t.Fatalf("GetCart before creation error = %v, want ErrCartNotFound", err)
+	}
+
+	cartID, err := storage.GetOrCreateCart(ctx, userID, noClient)
+	if err != nil {
+		t.Fatalf("GetOrCreateCart: %v", err)
+	}
+	resolvedCartID, err := storage.GetCart(ctx, userID, noClient)
+	if err != nil || resolvedCartID != cartID {
+		t.Fatalf("GetCart after creation = %s, %v; want %s", resolvedCartID, err, cartID)
+	}
+
+	otherCartID, err := storage.GetOrCreateCart(ctx, otherUserID, noClient)
+	if err != nil {
+		t.Fatalf("GetOrCreateCart (other user): %v", err)
+	}
+	if otherCartID == cartID {
+		t.Fatal("expected each clientless user to get their own cart")
+	}
+
+	priceGroupID, err := storage.GetCounterpartyPriceGroupID(ctx, noClient)
+	if err != nil {
+		t.Fatalf("GetCounterpartyPriceGroupID: %v", err)
+	}
+	if priceGroupID.Valid {
+		t.Fatalf("expected no price group for a clientless user, got %+v", priceGroupID)
+	}
+
+	price, err := storage.ResolveProductPrice(ctx, productID, priceGroupID)
+	if err != nil {
+		t.Fatalf("ResolveProductPrice: %v", err)
+	}
+
+	if err = storage.UpsertCartItem(ctx, cartID, productID, 1, price); err != nil {
+		t.Fatalf("UpsertCartItem: %v", err)
+	}
+
+	addressID, err := storage.InsertDeliveryAddress(ctx, noClient, "delivery", "No Client City, Street 1")
+	if err != nil {
+		t.Fatalf("InsertDeliveryAddress: %v", err)
+	}
+	contactID, err := storage.InsertContact(ctx, noClient, "No Client Contact", "+70000000001", "noclient@test.local")
+	if err != nil {
+		t.Fatalf("InsertContact: %v", err)
+	}
+
+	created, err := storage.CreateOrder(ctx, CreateOrderParams{
+		UserID:            userID,
+		CounterpartyID:    noClient,
+		CartID:            cartID,
+		DeliveryMethod:    "delivery",
+		DeliveryAddressID: addressID,
+		ContactID:         contactID,
+		Comment:           "no client order",
+		Subtotal:          300,
+		DiscountTotal:     0,
+		VATTotal:          60,
+		Total:             360,
+		Items: []OrderItemInput{
+			{ProductID: productID, SKU: "no-client-sku", Name: "no-client product", Quantity: 1, UnitPrice: 300, VATRate: 22, LineTotal: 300},
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateOrder: %v", err)
+	}
+	orderID = created.ID
+
+	fetched, err := storage.GetOrderByID(ctx, orderID, userID, noClient)
+	if err != nil {
+		t.Fatalf("GetOrderByID: %v", err)
+	}
+	if fetched.CounterpartyID.Valid {
+		t.Fatalf("expected order to have no counterparty, got %+v", fetched.CounterpartyID)
+	}
+
+	// IDOR check: a different clientless user must not be able to read this
+	// order just because both share the same NULL counterparty bucket.
+	if _, err = storage.GetOrderByID(ctx, orderID, otherUserID, noClient); !errors.Is(err, ErrOrderNotFound) {
+		t.Fatalf("GetOrderByID(other clientless user) error = %v, want ErrOrderNotFound", err)
+	}
+
+	rows, total, err := storage.ListOrders(ctx, ListOrdersParams{UserID: userID, CounterpartyID: noClient, Limit: 10})
+	if err != nil {
+		t.Fatalf("ListOrders: %v", err)
+	}
+	found := false
+	for _, row := range rows {
+		if row.ID == orderID {
+			found = true
+		}
+	}
+	if !found || total < 1 {
+		t.Fatalf("expected clientless order %s in ListOrders, rows=%+v total=%d", orderID, rows, total)
+	}
+
+	// Same IDOR check for ListOrders: the other clientless user's list must not
+	// contain this order.
+	otherRows, _, err := storage.ListOrders(ctx, ListOrdersParams{UserID: otherUserID, CounterpartyID: noClient, Limit: 10})
+	if err != nil {
+		t.Fatalf("ListOrders (other clientless user): %v", err)
+	}
+	for _, row := range otherRows {
+		if row.ID == orderID {
+			t.Fatalf("other clientless user's ListOrders leaked order %s", orderID)
+		}
+	}
+
+	// Same IDOR check for CancelOrder: the other clientless user must not be
+	// able to act on this order.
+	if _, err = storage.CancelOrder(ctx, orderID, noClient, otherUserID, "not mine"); !errors.Is(err, ErrOrderNotFound) {
+		t.Fatalf("CancelOrder(other clientless user) error = %v, want ErrOrderNotFound", err)
 	}
 }

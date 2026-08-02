@@ -15,21 +15,24 @@ import (
 
 type clientResolutionStorage struct {
 	Storage
-	activeClientID        uuid.UUID
-	activeClientErr       error
-	counterpartyExists    bool
-	counterpartyExistsErr error
-	userHasClient         bool
-	userHasClientErr      error
-	cartID                uuid.UUID
-	getCartErr            error
-	getOrCreateCartErr    error
-	listOrdersErr         error
-	listOrdersParams      postgres.ListOrdersParams
-	getCartCalls          int
-	getCartItemsCalls     int
-	getOrCreateCartCalls  int
-	listOrdersCalls       int
+	activeClientID          uuid.UUID
+	activeClientErr         error
+	counterpartyExists      bool
+	counterpartyExistsErr   error
+	userHasClient           bool
+	userHasClientErr        error
+	cartID                  uuid.UUID
+	getCartErr              error
+	getOrCreateCartErr      error
+	listOrdersErr           error
+	listOrdersParams        postgres.ListOrdersParams
+	getCartCalls            int
+	getCartItemsCalls       int
+	getOrCreateCartCalls    int
+	listOrdersCalls         int
+	counterpartyExistsCalls int
+	userHasClientCalls      int
+	getCartCounterpartyID   uuid.NullUUID
 }
 
 func (s *clientResolutionStorage) GetActiveClient(context.Context, uuid.UUID) (uuid.UUID, error) {
@@ -37,19 +40,22 @@ func (s *clientResolutionStorage) GetActiveClient(context.Context, uuid.UUID) (u
 }
 
 func (s *clientResolutionStorage) CounterpartyExists(context.Context, uuid.UUID) (bool, error) {
+	s.counterpartyExistsCalls++
 	return s.counterpartyExists, s.counterpartyExistsErr
 }
 
 func (s *clientResolutionStorage) UserHasClient(context.Context, uuid.UUID, uuid.UUID) (bool, error) {
+	s.userHasClientCalls++
 	return s.userHasClient, s.userHasClientErr
 }
 
-func (s *clientResolutionStorage) GetCart(context.Context, uuid.UUID, uuid.UUID) (uuid.UUID, error) {
+func (s *clientResolutionStorage) GetCart(_ context.Context, _ uuid.UUID, counterpartyID uuid.NullUUID) (uuid.UUID, error) {
 	s.getCartCalls++
+	s.getCartCounterpartyID = counterpartyID
 	return s.cartID, s.getCartErr
 }
 
-func (s *clientResolutionStorage) GetOrCreateCart(context.Context, uuid.UUID, uuid.UUID) (uuid.UUID, error) {
+func (s *clientResolutionStorage) GetOrCreateCart(context.Context, uuid.UUID, uuid.NullUUID) (uuid.UUID, error) {
 	s.getOrCreateCartCalls++
 	return uuid.New(), s.getOrCreateCartErr
 }
@@ -59,11 +65,11 @@ func (s *clientResolutionStorage) GetCartItems(context.Context, uuid.UUID) ([]po
 	return []postgres.CartItemRow{}, nil
 }
 
-func (s *clientResolutionStorage) GetCounterpartyPriceGroupID(context.Context, uuid.UUID) (uuid.NullUUID, error) {
+func (s *clientResolutionStorage) GetCounterpartyPriceGroupID(context.Context, uuid.NullUUID) (uuid.NullUUID, error) {
 	return uuid.NullUUID{}, nil
 }
 
-func (s *clientResolutionStorage) GetVolumeDiscountPercent(context.Context, uuid.UUID, uuid.NullUUID, float64) (float64, error) {
+func (s *clientResolutionStorage) GetVolumeDiscountPercent(context.Context, uuid.NullUUID, uuid.NullUUID, float64) (float64, error) {
 	return 0, nil
 }
 
@@ -117,14 +123,6 @@ func TestResolveCounterpartyIDValidationAndAccess(t *testing.T) {
 		wantCauseKey string
 		wantCause    string
 	}{
-		{
-			name:         "empty client and no active client",
-			storage:      &clientResolutionStorage{},
-			wantStatus:   http.StatusBadRequest,
-			wantKey:      customErrors.ErrBadRequest,
-			wantCauseKey: "field",
-			wantCause:    "clientID",
-		},
 		{
 			name:         "invalid UUID",
 			clientID:     "not-a-uuid",
@@ -188,41 +186,58 @@ func TestResolveCounterpartyIDUsesActiveClient(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveCounterpartyID() error = %v", err)
 	}
-	if got != activeClientID {
-		t.Fatalf("client ID = %s, want active client %s", got, activeClientID)
+	if !got.Valid || got.UUID != activeClientID {
+		t.Fatalf("client ID = %v, want active client %s", got, activeClientID)
 	}
 }
 
-func TestCartAndOrdersRejectMissingActiveClient(t *testing.T) {
+func TestResolveCounterpartyIDReturnsNoClientWhenUserHasNoActiveClient(t *testing.T) {
 	userID := uuid.New()
-	tests := []struct {
-		name string
-		call func(*service) error
-	}{
-		{
-			name: "cart",
-			call: func(svc *service) error {
-				_, err := svc.GetCart(context.Background(), userID, "")
-				return err
-			},
-		},
-		{
-			name: "orders",
-			call: func(svc *service) error {
-				_, err := svc.ListOrders(context.Background(), userID, "", "", "", 20, 0, "")
-				return err
-			},
-		},
-	}
+	storage := &clientResolutionStorage{}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.call(newClientResolutionService(&clientResolutionStorage{}))
-			requireOrdersError(
-				t, err, http.StatusBadRequest, customErrors.ErrBadRequest, "field", "clientID",
-			)
-		})
+	got, err := newClientResolutionService(storage).resolveCounterpartyID(context.Background(), userID, "")
+	if err != nil {
+		t.Fatalf("resolveCounterpartyID() error = %v", err)
 	}
+	if got.Valid {
+		t.Fatalf("client ID = %v, want no client", got)
+	}
+}
+
+// Users without an active client (e.g. registered without a company, before the
+// personal-client backfill ran) must still be able to use the cart and see their
+// orders. resolveCounterpartyID treats a missing active client as "no client
+// scoping" instead of failing the request.
+func TestCartAndOrdersProceedWithoutActiveClient(t *testing.T) {
+	userID := uuid.New()
+
+	t.Run("cart", func(t *testing.T) {
+		storage := &clientResolutionStorage{getCartErr: postgres.ErrCartNotFound}
+		_, err := newClientResolutionService(storage).GetCart(context.Background(), userID, "")
+		if err != nil {
+			t.Fatalf("GetCart() error = %v", err)
+		}
+		if storage.getCartCounterpartyID.Valid {
+			t.Fatalf("expected GetCart to be called with no counterparty scoping, got %v", storage.getCartCounterpartyID)
+		}
+		if storage.counterpartyExistsCalls != 0 || storage.userHasClientCalls != 0 {
+			t.Fatalf(
+				"expected no counterparty existence/ownership checks, got exists=%d userHasClient=%d",
+				storage.counterpartyExistsCalls, storage.userHasClientCalls,
+			)
+		}
+	})
+
+	t.Run("orders", func(t *testing.T) {
+		storage := &clientResolutionStorage{}
+		_, err := newClientResolutionService(storage).ListOrders(context.Background(), userID, "", "", "", 20, 0, "")
+		if err != nil {
+			t.Fatalf("ListOrders() error = %v", err)
+		}
+		if storage.listOrdersParams.CounterpartyID.Valid {
+			t.Fatalf("expected ListOrders to be called with no counterparty scoping, got %v", storage.listOrdersParams.CounterpartyID)
+		}
+	})
 }
 
 func TestCartAndOrdersRejectInvalidClientID(t *testing.T) {

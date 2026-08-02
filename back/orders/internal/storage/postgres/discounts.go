@@ -9,11 +9,11 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
-func (s *Storage) GetVolumeDiscountPercent(ctx context.Context, counterpartyID uuid.UUID, priceGroupID uuid.NullUUID, subtotal float64) (float64, error) {
+func (s *Storage) GetVolumeDiscountPercent(ctx context.Context, counterpartyID uuid.NullUUID, priceGroupID uuid.NullUUID, subtotal float64) (float64, error) {
 	var discountPercent float64
 	err := s.pool.QueryRow(ctx, `
 		SELECT discount_percent FROM volume_discounts
-		WHERE (counterparty_id = $1 OR (counterparty_id IS NULL AND price_group_id = $2 AND $2::uuid IS NOT NULL))
+		WHERE ((counterparty_id = $1 AND $1::uuid IS NOT NULL) OR (counterparty_id IS NULL AND price_group_id = $2 AND $2::uuid IS NOT NULL))
 		  AND min_order_amount <= $3
 		ORDER BY (counterparty_id = $1) DESC, min_order_amount DESC
 		LIMIT 1

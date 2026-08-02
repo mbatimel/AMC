@@ -46,6 +46,7 @@ var (
 	sqlGetUserByEmail        = query("getUserByEmail.sql")
 	sqlCreateUser            = query("createUser.sql")
 	sqlCreateClient          = query("createClient.sql")
+	sqlCreatePersonalClient  = query("createPersonalClient.sql")
 	sqlClientExists          = query("clientExists.sql")
 	sqlLinkUserClient        = query("linkUserClient.sql")
 	sqlSetInitialClient      = query("setInitialClient.sql")
@@ -173,6 +174,14 @@ func (s *Storage) CreateUser(ctx context.Context, params internalModels.CreateUs
 			return internalModels.User{}, fmt.Errorf("insert client: %w", err)
 		}
 		clientID = &createdClientID
+	}
+	if clientID == nil {
+		var personalClientID uuid.UUID
+		personalName := strings.TrimSpace(params.FirstName + " " + params.LastName)
+		if err = tx.QueryRow(ctx, sqlCreatePersonalClient, personalName).Scan(&personalClientID); err != nil {
+			return internalModels.User{}, fmt.Errorf("insert personal client: %w", err)
+		}
+		clientID = &personalClientID
 	}
 	if clientID != nil {
 		var exists bool
