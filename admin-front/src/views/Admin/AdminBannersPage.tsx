@@ -3,20 +3,27 @@
 import { Button } from '@heroui/react';
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { BannerItem, BannersSettings } from '@/core/shared/api/content';
 
-import { useContent } from '@/core/entities/content';
+import { $adminUserId } from '@/core/entities/adminSession';
+import {
+  createBannerRequest,
+  deleteBannerRequest,
+  fetchAdminBannersRequest,
+  updateBannerDelayRequest,
+  updateBannerRequest,
+} from '@/core/shared/api/content';
+import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
 
 import styles from './Admin.module.css';
-import { $contentSaveError, $isBannersSaving, bannersSaveRequested } from './model/content';
 import { AdminPageHeader } from './ui/AdminPageHeader';
 
 const createBanner = (): BannerItem => ({
   dateFrom: '',
   dateTo: '',
-  id: `banner-${Date.now().toString(36)}`,
+  id: `new-${crypto.randomUUID()}`,
   image: '',
   is_active: true,
   link: '',
@@ -26,25 +33,40 @@ const createBanner = (): BannerItem => ({
 });
 
 export const AdminBannersPage = (): JSX.Element => {
-  const { banners } = useContent();
-  const [isSaving, error, save] = useUnit([
-    $isBannersSaving,
-    $contentSaveError,
-    bannersSaveRequested,
-  ]);
+  const adminUserId = useUnit($adminUserId);
   const [draft, setDraft] = useState<BannersSettings | null>(null);
+  const [persistedIds, setPersistedIds] = useState<string[]>([]);
+  const [files, setFiles] = useState<Record<string, File | undefined>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<null | string>(null);
+
+  const load = useCallback(async (): Promise<void> => {
+    if (!adminUserId) {
+      return;
+    }
+    try {
+      const banners = await fetchAdminBannersRequest(adminUserId);
+
+      setDraft({ ...banners, items: banners.items.map((item) => ({ ...item })) });
+      setPersistedIds(banners.items.map((item) => item.id));
+      setFiles({});
+      setError(null);
+    } catch (loadError) {
+      setError(toDisplayErrorMessage(loadError, 'Не удалось загрузить баннеры'));
+    }
+  }, [adminUserId]);
 
   useEffect(() => {
-    if (banners) {
-      setDraft({ delay_sec: banners.delay_sec, items: banners.items.map((item) => ({ ...item })) });
-    }
-  }, [banners]);
+    const timeout = window.setTimeout(() => void load(), 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [load]);
 
   if (!draft) {
     return (
       <>
         <AdminPageHeader title="Баннеры" />
-        <p className={clsx(styles.hint)}>Загружаем баннеры…</p>
+        <p className={clsx(error ? styles.error : styles.hint)}>{error ?? 'Загружаем баннеры…'}</p>
       </>
     );
   }
@@ -64,23 +86,46 @@ export const AdminBannersPage = (): JSX.Element => {
 
   const moveItem = (index: number, direction: -1 | 1): void => {
     setDraft((previous) => {
-      if (!previous) {
-        return previous;
-      }
-
+      if (!previous) return previous;
       const target = index + direction;
 
-      if (target < 0 || target >= previous.items.length) {
-        return previous;
-      }
-
+      if (target < 0 || target >= previous.items.length) return previous;
       const items = [...previous.items];
       const [moved] = items.splice(index, 1);
 
       items.splice(target, 0, moved);
-
       return { ...previous, items };
     });
+  };
+
+  const save = async (): Promise<void> => {
+    if (!adminUserId) return;
+    setIsSaving(true);
+    setError(null);
+    try {
+      const currentIds = new Set(draft.items.map((item) => item.id));
+
+      for (const id of persistedIds) {
+        if (!currentIds.has(id)) await deleteBannerRequest(adminUserId, id);
+      }
+      for (const [index, rawItem] of draft.items.entries()) {
+        const item = { ...rawItem, sort_order: index + 1 };
+        const file = files[item.id];
+
+        if (item.id.startsWith('new-')) {
+          if (!file) throw new Error(`Выберите изображение для баннера «${item.title}»`);
+          await createBannerRequest(adminUserId, item, file);
+        } else {
+          await updateBannerRequest(adminUserId, item, file);
+        }
+      }
+      await updateBannerDelayRequest(adminUserId, draft.delay_sec);
+      await load();
+    } catch (saveError) {
+      setError(toDisplayErrorMessage(saveError, 'Не удалось сохранить баннеры'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -99,7 +144,7 @@ export const AdminBannersPage = (): JSX.Element => {
             >
               Добавить баннер
             </button>
-            <Button isDisabled={isSaving} onPress={() => save(draft)} variant="primary">
+            <Button isDisabled={isSaving} onPress={() => void save()} variant="primary">
               {isSaving ? 'Сохраняем…' : 'Сохранить'}
             </Button>
           </>
@@ -119,11 +164,7 @@ export const AdminBannersPage = (): JSX.Element => {
             className={clsx(styles.input)}
             id="banner-delay"
             min={1}
-            onChange={(event) =>
-              setDraft((previous) =>
-                previous ? { ...previous, delay_sec: Number(event.target.value) || 1 } : previous,
-              )
-            }
+            onChange={(event) => setDraft({ ...draft, delay_sec: Number(event.target.value) || 1 })}
             type="number"
             value={draft.delay_sec}
           />
@@ -155,14 +196,10 @@ export const AdminBannersPage = (): JSX.Element => {
                   <button
                     className={clsx(styles.smallButton, styles.smallButtonDanger)}
                     onClick={() =>
-                      setDraft((previous) =>
-                        previous
-                          ? {
-                              ...previous,
-                              items: previous.items.filter((_, i) => i !== index),
-                            }
-                          : previous,
-                      )
+                      setDraft({
+                        ...draft,
+                        items: draft.items.filter((_, itemIndex) => itemIndex !== index),
+                      })
                     }
                     type="button"
                   >
@@ -170,79 +207,65 @@ export const AdminBannersPage = (): JSX.Element => {
                   </button>
                 </div>
               </div>
-
+              {item.image ? (
+                <a href={item.image} rel="noreferrer" target="_blank">
+                  Текущее изображение
+                </a>
+              ) : null}
               <div className={clsx(styles.formGrid)}>
-                <div className={clsx(styles.field)}>
-                  <label className={clsx(styles.label)} htmlFor={`banner-title-${item.id}`}>
-                    Заголовок
-                  </label>
+                <label className={clsx(styles.field)}>
+                  Заголовок
                   <input
                     className={clsx(styles.input)}
-                    id={`banner-title-${item.id}`}
                     onChange={(event) => patchItem(index, { title: event.target.value })}
                     value={item.title}
                   />
-                </div>
-                <div className={clsx(styles.field)}>
-                  <label className={clsx(styles.label)} htmlFor={`banner-subtitle-${item.id}`}>
-                    Подзаголовок
-                  </label>
+                </label>
+                <label className={clsx(styles.field)}>
+                  Подзаголовок
                   <input
                     className={clsx(styles.input)}
-                    id={`banner-subtitle-${item.id}`}
                     onChange={(event) => patchItem(index, { subtitle: event.target.value })}
                     value={item.subtitle}
                   />
-                </div>
-                <div className={clsx(styles.field)}>
-                  <label className={clsx(styles.label)} htmlFor={`banner-link-${item.id}`}>
-                    Ссылка
-                  </label>
+                </label>
+                <label className={clsx(styles.field)}>
+                  Ссылка
                   <input
                     className={clsx(styles.input)}
-                    id={`banner-link-${item.id}`}
                     onChange={(event) => patchItem(index, { link: event.target.value })}
-                    placeholder="/catalog?q=сверло"
                     value={item.link}
                   />
-                </div>
-                <div className={clsx(styles.field)}>
-                  <label className={clsx(styles.label)} htmlFor={`banner-image-${item.id}`}>
-                    URL изображения
-                  </label>
+                </label>
+                <label className={clsx(styles.field)}>
+                  Изображение
                   <input
-                    className={clsx(styles.input)}
-                    id={`banner-image-${item.id}`}
-                    onChange={(event) => patchItem(index, { image: event.target.value })}
-                    value={item.image}
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) =>
+                      setFiles((previous) => ({ ...previous, [item.id]: event.target.files?.[0] }))
+                    }
+                    type="file"
                   />
-                </div>
-                <div className={clsx(styles.field)}>
-                  <label className={clsx(styles.label)} htmlFor={`banner-from-${item.id}`}>
-                    Показывать с
-                  </label>
+                </label>
+                <label className={clsx(styles.field)}>
+                  Показывать с
                   <input
                     className={clsx(styles.input)}
-                    id={`banner-from-${item.id}`}
                     onChange={(event) => patchItem(index, { dateFrom: event.target.value })}
                     type="date"
                     value={item.dateFrom}
                   />
-                </div>
-                <div className={clsx(styles.field)}>
-                  <label className={clsx(styles.label)} htmlFor={`banner-to-${item.id}`}>
-                    Показывать по
-                  </label>
+                </label>
+                <label className={clsx(styles.field)}>
+                  Показывать по
                   <input
                     className={clsx(styles.input)}
-                    id={`banner-to-${item.id}`}
                     onChange={(event) => patchItem(index, { dateTo: event.target.value })}
                     type="date"
                     value={item.dateTo}
                   />
-                </div>
+                </label>
               </div>
-
               <label className={clsx(styles.checkboxRow)}>
                 <input
                   checked={item.is_active}
