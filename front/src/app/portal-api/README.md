@@ -23,24 +23,22 @@ Go-сервиса**: контент публичных страниц, банн�
 
 ## Эндпоинты
 
-| Метод            | Путь                              | Назначение                                                                               |
-| ---------------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
-| GET              | `/portal-api/content`             | Контент всех публичных страниц                                                           |
-| GET/PUT          | `/portal-api/content/:key`        | Чтение и правка страницы (`home`, `about`, `terms`, `promo`, `certificates`, `contacts`) |
-| GET/PUT          | `/portal-api/banners`             | Баннеры главной + интервал смены                                                         |
-| GET              | `/portal-api/legal`               | Список юридических документов                                                            |
-| GET/PUT          | `/portal-api/legal/:id`           | Документ и публикация новой версии                                                       |
-| GET/POST         | `/portal-api/signup-requests`     | Заявки на регистрацию                                                                    |
-| PATCH            | `/portal-api/signup-requests/:id` | Одобрение / отклонение заявки                                                            |
-| GET/POST         | `/portal-api/support`             | Обращения в поддержку                                                                    |
-| PATCH            | `/portal-api/support/:id`         | Статус и ответ по обращению                                                              |
-| GET/POST         | `/portal-api/feedback`            | Отзывы по заказам                                                                        |
-| GET/POST         | `/portal-api/promotions`          | Акции (промо-скидки): список и создание                                                  |
-| GET/PATCH/DELETE | `/portal-api/promotions/:id`      | Чтение, правка, досрочное завершение, удаление                                           |
-| GET/POST         | `/portal-api/portal-users`        | Пользователи портала и приглашения                                                       |
-| PATCH            | `/portal-api/portal-users/:id`    | Блокировка / сброс пароля                                                                |
-| GET/POST         | `/portal-api/audit-log`           | Локальный журнал действий                                                                |
-| POST             | `/portal-api/assistant`           | ИИ-помощник по подбору инструмента (DeepSeek + поиск по каталогу)                        |
+| Метод    | Путь                              | Назначение                                                                               |
+| -------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
+| GET      | `/portal-api/content`             | Контент всех публичных страниц                                                           |
+| GET/PUT  | `/portal-api/content/:key`        | Чтение и правка страницы (`home`, `about`, `terms`, `promo`, `certificates`, `contacts`) |
+| GET/PUT  | `/portal-api/banners`             | Баннеры главной + интервал смены                                                         |
+| GET      | `/portal-api/legal`               | Список юридических документов                                                            |
+| GET/PUT  | `/portal-api/legal/:id`           | Документ и публикация новой версии                                                       |
+| GET/POST | `/portal-api/signup-requests`     | Заявки на регистрацию                                                                    |
+| PATCH    | `/portal-api/signup-requests/:id` | Одобрение / отклонение заявки                                                            |
+| GET/POST | `/portal-api/support`             | Обращения в поддержку                                                                    |
+| PATCH    | `/portal-api/support/:id`         | Статус и ответ по обращению                                                              |
+| GET/POST | `/portal-api/feedback`            | Отзывы по заказам                                                                        |
+| GET/POST | `/portal-api/portal-users`        | Пользователи портала и приглашения                                                       |
+| PATCH    | `/portal-api/portal-users/:id`    | Блокировка / сброс пароля                                                                |
+| GET/POST | `/portal-api/audit-log`           | Локальный журнал действий                                                                |
+| POST     | `/portal-api/assistant`           | ИИ-помощник по подбору инструмента (DeepSeek + поиск по каталогу)                        |
 
 ## ИИ-помощник
 

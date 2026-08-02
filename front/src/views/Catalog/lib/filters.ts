@@ -1,3 +1,5 @@
+import type { ProductListItem } from '@/core/shared/api/products';
+
 export type CatalogFilters = {
   brandID?: string;
   brandName?: string;
@@ -5,6 +7,8 @@ export type CatalogFilters = {
   gost?: string;
   inStock?: boolean;
   material?: string;
+  promotionID?: string;
+  promotionName?: string;
   q?: string;
   size?: string;
   view: CatalogViewMode;
@@ -21,11 +25,13 @@ export const parseCatalogFilters = (params: URLSearchParams): CatalogFilters => 
 
   return {
     brandID: params.get('brandID') || undefined,
-    brandName: params.get('brandName') || undefined,
+    brandName: params.get('brandName') || params.get('brand') || undefined,
     categoryID: params.get('categoryID') || undefined,
     gost: params.get('gost') || undefined,
     inStock: params.get('inStock') === 'true' ? true : undefined,
     material: params.get('material') || undefined,
+    promotionID: params.get('promotionID') || undefined,
+    promotionName: params.get('promotionName') || undefined,
     q: params.get('q') || undefined,
     size: params.get('size') || undefined,
     view: view === 'cards' ? 'cards' : 'table',
@@ -49,6 +55,14 @@ export const catalogFiltersToSearchParams = (filters: CatalogFilters): URLSearch
 
   if (filters.brandName) {
     params.set('brandName', filters.brandName);
+  }
+
+  if (filters.promotionID) {
+    params.set('promotionID', filters.promotionID);
+  }
+
+  if (filters.promotionName) {
+    params.set('promotionName', filters.promotionName);
   }
 
   if (filters.material) {
@@ -96,9 +110,13 @@ export const countActiveFilters = (filters: CatalogFilters): number => {
   return count;
 };
 
-/** Ключ только по полям, уходящим в listProducts — без view/brandName. */
-export const toCatalogProductsQueryKey = (filters: CatalogFilters): string =>
-  [
+/** Ключ загрузки: для акции — только promotionID; иначе поля listProducts. */
+export const toCatalogProductsQueryKey = (filters: CatalogFilters): string => {
+  if (filters.promotionID) {
+    return `promo\u001f${filters.promotionID}`;
+  }
+
+  return [
     filters.brandID ?? '',
     filters.categoryID ?? '',
     filters.gost ?? '',
@@ -107,3 +125,53 @@ export const toCatalogProductsQueryKey = (filters: CatalogFilters): string =>
     filters.q ?? '',
     filters.size ?? '',
   ].join('\u001f');
+};
+
+const matchesQuery = (product: ProductListItem, q: string): boolean => {
+  const needle = q.trim().toLowerCase();
+
+  if (!needle) {
+    return true;
+  }
+
+  return [product.name, product.sku, product.gost, product.brand_name, product.category_name]
+    .filter(Boolean)
+    .some((value) => value!.toLowerCase().includes(needle));
+};
+
+/** Клиентские фильтры поверх полного набора товаров акции. */
+export const applyClientCatalogFilters = (
+  products: ProductListItem[],
+  filters: CatalogFilters,
+): ProductListItem[] =>
+  products.filter((product) => {
+    if (filters.brandID && product.brand_id !== filters.brandID) {
+      return false;
+    }
+
+    if (filters.categoryID && product.category_id !== filters.categoryID) {
+      return false;
+    }
+
+    if (filters.material && product.material !== filters.material) {
+      return false;
+    }
+
+    if (filters.size && product.size !== filters.size) {
+      return false;
+    }
+
+    if (filters.gost && product.gost !== filters.gost) {
+      return false;
+    }
+
+    if (filters.inStock && product.stock_qty <= 0) {
+      return false;
+    }
+
+    if (filters.q && !matchesQuery(product, filters.q)) {
+      return false;
+    }
+
+    return true;
+  });

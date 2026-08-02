@@ -83,6 +83,8 @@ export const useCatalog = () => {
       brandID: urlFilters.brandID,
       brandName: urlFilters.brandName,
       categoryID: urlFilters.categoryID,
+      promotionID: urlFilters.promotionID,
+      promotionName: urlFilters.promotionName,
       q: urlFilters.q,
       view: urlFilters.view,
     });

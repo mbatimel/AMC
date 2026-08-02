@@ -1,0 +1,69 @@
+.root {
+  display: flex;
+  min-inline-size: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  color: var(--palette-black);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.group {
+  box-sizing: border-box;
+  display: flex;
+  overflow: hidden;
+  block-size: 2.25rem;
+  min-block-size: 2.25rem;
+  inline-size: 100%;
+  align-items: center;
+}
+
+.groupInvalid {
+  border-color: var(--alert);
+  outline: 1px solid var(--alert);
+}
+
+.error {
+  margin: 0;
+  color: var(--alert);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.input {
+  display: flex;
+  inline-size: 100%;
+  flex: 1;
+  align-items: center;
+  padding-block: 0;
+  gap: 1px;
+  line-height: 1.25rem;
+}
+
+.suffix {
+  display: flex;
+  align-items: center;
+}
+
+.popover {
+  display: flex;
+  box-sizing: border-box;
+  z-index: var(--z-index-popup);
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.calendar {
+  inline-size: 100% !important;
+  max-inline-size: none !important;
+}
+
+.timeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

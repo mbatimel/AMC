@@ -32,10 +32,6 @@ const readFromDisk = (): null | PortalState => {
     const defaults = createDefaultPortalState();
     const merged = { ...defaults, ...(parsed as PortalState) };
 
-    if (!Array.isArray(merged.promotions)) {
-      merged.promotions = defaults.promotions;
-    }
-
     return merged;
   } catch {
     return null;
@@ -54,10 +50,6 @@ const writeToDisk = (state: PortalState): void => {
 export const readPortalState = (): PortalState => {
   if (!portalGlobal.__portalState) {
     portalGlobal.__portalState = readFromDisk() ?? createDefaultPortalState();
-  }
-
-  if (!Array.isArray(portalGlobal.__portalState.promotions)) {
-    portalGlobal.__portalState.promotions = createDefaultPortalState().promotions;
   }
 
   return portalGlobal.__portalState;

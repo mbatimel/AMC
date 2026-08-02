@@ -5,61 +5,131 @@
   gap: 6px;
 }
 
-.label {
-  color: var(--palette-black);
-  font-size: 14px;
-  font-weight: 600;
+.control {
+  display: flex;
+  min-inline-size: 0;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .trigger {
-  display: flex;
+  box-sizing: border-box;
+  block-size: 2.25rem;
+  min-block-size: 2.25rem;
   inline-size: 100%;
-  min-block-size: 40px;
-  align-items: center;
-  justify-content: space-between;
-  padding-block: 8px;
-  padding-inline: 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--palette-white);
-  cursor: pointer;
-  font: inherit;
-  gap: 8px;
-  text-align: start;
 }
 
-.trigger:hover {
-  border-color: var(--palette-gray);
+.controlInvalid :global([data-slot='autocomplete-trigger']),
+.controlInvalid .trigger {
+  border-color: var(--alert);
 }
 
-.trigger[data-disabled] {
-  background: var(--palette-ulight);
-  color: var(--palette-disabled);
-  cursor: not-allowed;
+.error {
+  margin: 0;
+  color: var(--alert);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
-.value {
-  overflow: hidden;
-  font-size: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.label {
+  color: var(--palette-black);
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.placeholder {
-  color: var(--palette-dark);
-}
-
-.icon {
-  flex-shrink: 0;
-  color: var(--palette-dark);
+.triggerMultiple {
+  block-size: auto;
+  min-block-size: 2.25rem;
+  align-items: flex-start;
+  padding-block: 6px;
 }
 
 .popover {
   z-index: var(--z-index-popup);
   max-block-size: 320px;
+}
+
+.search {
+  margin-block-end: 8px;
+}
+
+.list {
+  max-block-size: 320px;
   overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--palette-white);
-  box-shadow: 0 8px 24px rgb(18 26 51 / 12%);
+}
+
+/* В секции у HeroUI gap-0 — без этого айтемы вплотную */
+/* stylelint-disable selector-class-pattern -- классы HeroUI ListBox */
+.list :global(.list-box-section) {
+  gap: 4px !important;
+}
+
+.list :global(.list-box-item[data-selected='true']),
+.list :global(.list-box-item[aria-selected='true']) {
+  background-color: var(--success-bg) !important;
+  color: var(--success) !important;
+  font-weight: 600;
+}
+
+.list :global(.list-box-item[data-selected='true'][data-hovered='true']),
+.list :global(.list-box-item[aria-selected='true']:hover) {
+  background-color: var(--success-alt) !important;
+  color: var(--success) !important;
+}
+/* stylelint-enable selector-class-pattern */
+
+.groupHeader {
+  margin: 0;
+  padding: 0;
+}
+
+.groupToggle {
+  display: flex;
+  inline-size: 100%;
+  align-items: center;
+  padding-block: 7px;
+  padding-inline-end: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--palette-black);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  gap: 6px;
+  text-align: start;
+}
+
+.groupToggle:hover {
+  background: var(--palette-ulight);
+}
+
+.groupChevron {
+  flex-shrink: 0;
+  color: var(--palette-dark);
+  transform: rotate(-90deg);
+  transition: transform 120ms ease;
+}
+
+.groupChevronOpen {
+  transform: rotate(0deg);
+}
+
+.groupLabel {
+  overflow: hidden;
+  min-inline-size: 0;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.groupCount {
+  flex-shrink: 0;
+  color: var(--palette-dark);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.itemCollapsed {
+  display: none !important;
 }

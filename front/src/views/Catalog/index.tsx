@@ -22,6 +22,7 @@ import { CatalogFiltersPanel } from './ui/CatalogFilters';
 import { CatalogSearchSection } from './ui/CatalogSearchSection';
 import { CatalogSkeleton } from './ui/CatalogSkeleton';
 import { CatalogToolbar } from './ui/CatalogToolbar';
+import { PromoFilterChip } from './ui/PromoFilterChip';
 
 const is1cUnavailable =
   process.env.NEXT_PUBLIC_CATALOG_1C_UNAVAILABLE === 'true' ||
@@ -119,6 +120,13 @@ const CatalogContent = (): JSX.Element => {
               onChange={patchFilters}
               onReset={resetFilters}
             />
+
+            {filters.promotionID && filters.promotionName ? (
+              <PromoFilterChip
+                onClear={() => patchFilters({ promotionID: undefined, promotionName: undefined })}
+                promotionName={filters.promotionName}
+              />
+            ) : null}
 
             {isPending ? <CatalogSkeleton view={effectiveView} /> : null}
             {error ? <p className={clsx(styles.error)}>{error}</p> : null}

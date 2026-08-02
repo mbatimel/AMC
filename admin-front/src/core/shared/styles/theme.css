@@ -17,6 +17,12 @@
   --disabled-filter: grayscale(0.5) opacity(0.4);
   --disabled-overlay: rgb(246 246 246 / 80%);
 
+  /* HeroUI form fields (--field-*) */
+  --field-background: var(--palette-white);
+  --field-border: var(--border);
+  --field-border-width: 1px;
+  --field-radius: 10px;
+
   /* Header */
   --header-active: #111;
   --header-bg: #fff;

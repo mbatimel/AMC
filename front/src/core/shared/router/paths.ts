@@ -33,6 +33,12 @@ export const getLegalDocPath = (docId: string): string => `${AppPath.Legal}/${do
 export const getCatalogBrandPath = (brandId: string, brandName: string): string =>
   `${AppPath.Catalog}?${new URLSearchParams({ brand: brandName, brandID: brandId }).toString()}`;
 
+export const getCatalogPromotionPath = (promotionId: string, promotionName: string): string =>
+  `${AppPath.Catalog}?${new URLSearchParams({
+    promotionID: promotionId,
+    promotionName,
+  }).toString()}`;
+
 export const getSupportPath = (orderId?: string): string =>
   orderId ? `${AppPath.Support}?order=${encodeURIComponent(orderId)}` : AppPath.Support;
 

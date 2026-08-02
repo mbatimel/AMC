@@ -4,6 +4,9 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--palette-white);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .cardTitle {
@@ -136,10 +139,200 @@
   gap: 6px;
 }
 
+.promoTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .label {
   color: var(--palette-black);
   font-size: 13px;
   font-weight: 600;
+}
+
+/* Одна высота контролов: HeroUI date-group = h-9, input-group = min-h-9, Input — только py-2. */
+.fieldControl {
+  box-sizing: border-box;
+  block-size: 2.25rem;
+  min-block-size: 2.25rem;
+  inline-size: 100%;
+}
+
+.fieldControlInput {
+  padding-block: 0;
+  line-height: 1.25rem;
+}
+
+.numberGroup {
+  overflow: hidden;
+}
+
+/* HeroUI всегда задаёт grid 40px 1fr 40px под ±; без кнопок инпут сжимается до 40px. */
+.numberGroup:not(:has([slot='decrement']), :has([slot='increment'])) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.minQtyField {
+  display: flex;
+  min-inline-size: 0;
+  max-inline-size: 148px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.minQtyLabel {
+  color: var(--palette-dark);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.numberInput {
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding-block: 0;
+  text-align: center;
+  line-height: 1.25rem;
+}
+
+.numberGroup:not(:has([slot='decrement']), :has([slot='increment'])) .numberInput {
+  text-align: start;
+}
+
+.productsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--palette-ulight);
+}
+
+.productsHeader {
+  display: flex;
+  inline-size: 100%;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  gap: 8px;
+  text-align: start;
+}
+
+.productsTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.productsHeader:hover .productsTitle {
+  color: var(--palette-dark);
+}
+
+.productsChevron {
+  flex-shrink: 0;
+  color: var(--palette-dark);
+  transform: rotate(-90deg);
+  transition: transform 120ms ease;
+}
+
+.productsChevronOpen {
+  transform: rotate(0deg);
+}
+
+.productsCount {
+  display: inline-flex;
+  min-inline-size: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  padding-block: 1px;
+  padding-inline: 7px;
+  border-radius: 999px;
+  background: var(--palette-white);
+  color: var(--palette-dark);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.productList {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+}
+
+.productRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--palette-white);
+}
+
+.productMeta {
+  display: flex;
+  min-inline-size: 0;
+  flex: 1 1 200px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.productName {
+  overflow: hidden;
+  color: var(--palette-black);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.productSku {
+  overflow: hidden;
+  color: var(--palette-dark);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.productControls {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.removeProductButton {
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+  block-size: 36px;
+  inline-size: 36px;
+}
+
+.productsEmpty {
+  margin: 0;
+  padding: 18px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--palette-white);
+  color: var(--palette-dark);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
 }
 
 .input,

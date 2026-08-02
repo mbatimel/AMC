@@ -7,19 +7,24 @@ import { useEffect } from 'react';
 import { useContent } from '@/core/entities/content';
 
 import styles from '../Home.module.css';
-import { $homeContent, homeCategoriesRequested } from '../model';
+import { $homeContent, homeCategoriesRequested, homePromosRequested } from '../model';
 import { HomeCategories } from './HomeCategories';
 import { HomeHero } from './HomeHero';
 import { HomePromos } from './HomePromos';
 
 export const HomeContent = (): JSX.Element => {
-  const [content, requestCategories] = useUnit([$homeContent, homeCategoriesRequested]);
+  const [content, requestCategories, requestPromos] = useUnit([
+    $homeContent,
+    homeCategoriesRequested,
+    homePromosRequested,
+  ]);
 
   useContent();
 
   useEffect(() => {
     requestCategories();
-  }, [requestCategories]);
+    requestPromos();
+  }, [requestCategories, requestPromos]);
 
   return (
     <div className={clsx(styles.root)}>

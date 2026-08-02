@@ -1,5 +1,6 @@
 'use client';
 
+import { Button, ScrollShadow } from '@heroui/react';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { useRef } from 'react';
@@ -12,8 +13,12 @@ type HomePromosProps = {
   content: HomePromosContent;
 };
 
-export const HomePromos = ({ content }: HomePromosProps): JSX.Element => {
+export const HomePromos = ({ content }: HomePromosProps): JSX.Element | null => {
   const scrollerRef = useRef<HTMLDivElement>(null);
+
+  if (content.items.length === 0) {
+    return null;
+  }
 
   const scrollByCard = (direction: -1 | 1): void => {
     const node = scrollerRef.current;
@@ -33,54 +38,66 @@ export const HomePromos = ({ content }: HomePromosProps): JSX.Element => {
         <div className={clsx(styles.header)}>
           <h2 className={clsx(styles.title)}>{content.title}</h2>
           <div className={clsx(styles.nav)}>
-            <button
+            <Button
               aria-label="Предыдущие акции"
               className={clsx(styles.navButton)}
-              onClick={() => scrollByCard(-1)}
-              type="button"
+              isIconOnly
+              onPress={() => scrollByCard(-1)}
+              size="sm"
+              variant="secondary"
             >
               ←
-            </button>
-            <button
+            </Button>
+            <Button
               aria-label="Следующие акции"
               className={clsx(styles.navButton)}
-              onClick={() => scrollByCard(1)}
-              type="button"
+              isIconOnly
+              onPress={() => scrollByCard(1)}
+              size="sm"
+              variant="secondary"
             >
               →
-            </button>
+            </Button>
           </div>
         </div>
 
-        <div className={clsx(styles.scroller)} ref={scrollerRef}>
-          {content.items.map((item) => {
-            const cardClass = clsx(
-              styles.card,
-              item.tone === 'red' ? styles.cardRed : styles.cardDark,
-            );
-
-            const body = (
-              <>
-                <h3 className={clsx(styles.cardTitle)}>{item.title}</h3>
-                <p className={clsx(styles.cardText)}>{item.text}</p>
-              </>
-            );
-
-            if (item.href) {
-              return (
-                <Link className={cardClass} href={item.href} key={item.id}>
-                  {body}
-                </Link>
+        <ScrollShadow
+          className={clsx(styles.scrollShadow)}
+          hideScrollBar
+          orientation="horizontal"
+          ref={scrollerRef}
+          size={48}
+        >
+          <div className={clsx(styles.scroller)}>
+            {content.items.map((item) => {
+              const cardClass = clsx(
+                styles.card,
+                item.tone === 'red' ? styles.cardRed : styles.cardDark,
               );
-            }
 
-            return (
-              <div className={cardClass} key={item.id}>
-                {body}
-              </div>
-            );
-          })}
-        </div>
+              const body = (
+                <>
+                  <h3 className={clsx(styles.cardTitle)}>{item.title}</h3>
+                  <p className={clsx(styles.cardText)}>{item.text}</p>
+                </>
+              );
+
+              if (item.href) {
+                return (
+                  <Link className={cardClass} href={item.href} key={item.id}>
+                    {body}
+                  </Link>
+                );
+              }
+
+              return (
+                <div className={cardClass} key={item.id}>
+                  {body}
+                </div>
+              );
+            })}
+          </div>
+        </ScrollShadow>
       </div>
     </section>
   );

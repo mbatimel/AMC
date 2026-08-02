@@ -3,18 +3,46 @@ import { combine, createEffect, createEvent, createStore, sample } from 'effecto
 import type { Category, ListProductsResult, ProductListItem } from '@/core/shared/api/products';
 
 import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
-import { listCategoriesRequest, listProductsRequest } from '@/core/shared/api/products';
+import {
+  getProductRequest,
+  listCategoriesRequest,
+  listProductsRequest,
+} from '@/core/shared/api/products';
+import { getPromotionRequest } from '@/core/shared/api/promotions';
 
 import type { CatalogFilters } from './lib/filters';
 
-import { DEFAULT_CATALOG_FILTERS, toCatalogProductsQueryKey } from './lib/filters';
+import {
+  applyClientCatalogFilters,
+  DEFAULT_CATALOG_FILTERS,
+  toCatalogProductsQueryKey,
+} from './lib/filters';
 
 export const catalogMounted = createEvent();
 export const catalogFiltersApplied = createEvent<CatalogFilters>();
 
+const fetchPromotionProducts = async (promotionID: string): Promise<ListProductsResult> => {
+  const promotion = await getPromotionRequest(promotionID);
+  const productIds = promotion.products.map((item) => item.product_id);
+
+  const settled = await Promise.allSettled(productIds.map((id) => getProductRequest(id)));
+  const items = settled.flatMap((result) =>
+    result.status === 'fulfilled' ? [result.value as ProductListItem] : [],
+  );
+
+  return {
+    items,
+    pagination: { limit: items.length, offset: 0, total: items.length },
+  };
+};
+
 export const fetchCatalogProductsFx = createEffect(
-  async (filters: CatalogFilters): Promise<ListProductsResult> =>
-    listProductsRequest({
+  async (filters: CatalogFilters): Promise<ListProductsResult> => {
+    if (filters.promotionID) {
+      return fetchPromotionProducts(filters.promotionID);
+    }
+
+    return listProductsRequest({
       brandID: filters.brandID,
       categoryID: filters.categoryID,
       gost: filters.gost,
@@ -24,7 +52,8 @@ export const fetchCatalogProductsFx = createEffect(
       offset: 0,
       q: filters.q,
       size: filters.size,
-    }),
+    });
+  },
 );
 
 export const fetchCategoriesFx = createEffect(() => listCategoriesRequest());
@@ -34,14 +63,28 @@ export const $catalogFilters = createStore<CatalogFilters>(DEFAULT_CATALOG_FILTE
   (_, filters) => filters,
 );
 
-export const $catalogProducts = createStore<ProductListItem[]>([]).on(
+const $catalogRawProducts = createStore<ProductListItem[]>([]).on(
   fetchCatalogProductsFx.doneData,
   (_, result) => result.items,
 );
 
-export const $catalogTotal = createStore(0).on(
+const $catalogRawTotal = createStore(0).on(
   fetchCatalogProductsFx.doneData,
   (_, result) => result.pagination.total,
+);
+
+export const $catalogProducts = combine(
+  $catalogRawProducts,
+  $catalogFilters,
+  (products, filters) =>
+    filters.promotionID ? applyClientCatalogFilters(products, filters) : products,
+);
+
+export const $catalogTotal = combine(
+  $catalogProducts,
+  $catalogRawTotal,
+  $catalogFilters,
+  (products, rawTotal, filters) => (filters.promotionID ? products.length : rawTotal),
 );
 
 export const $categories = createStore<Category[]>([]).on(
@@ -68,7 +111,7 @@ const $isCategoriesFetched = createStore(false)
   .on(fetchCategoriesFx, () => true)
   .on(fetchCategoriesFx.fail, () => false);
 
-/** Последний успешно запрошенный ключ продуктов (API-поля). */
+/** Последний успешно запрошенный ключ продуктов (API-поля / promo id). */
 const $productsQueryKey = createStore<null | string>(null)
   .on(fetchCatalogProductsFx, (_, filters) => toCatalogProductsQueryKey(filters))
   .on(fetchCatalogProductsFx.fail, () => null);
