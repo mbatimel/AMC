@@ -9,6 +9,9 @@ import { useEffect, useState } from 'react';
 
 import type { ProductWritePayload } from '@/core/shared/api/products';
 
+import { $adminUserId } from '@/core/entities/adminSession';
+import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
+import { deleteProductImageRequest, uploadProductImageRequest } from '@/core/shared/api/products';
 import { AppPath } from '@/core/shared/router/paths';
 import { FormSelect } from '@/core/shared/ui/FormSelect';
 
@@ -64,7 +67,9 @@ export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Elem
       adminProductSaved,
     ]);
   const [draft, setDraft] = useState<ProductWritePayload>(emptyProduct);
-  const [imagesText, setImagesText] = useState('');
+  const adminUserId = useUnit($adminUserId);
+  const [imageError, setImageError] = useState<null | string>(null);
+  const [isImageSaving, setIsImageSaving] = useState(false);
   const [loadedProductId, setLoadedProductId] = useState<null | string>(null);
 
   useEffect(() => {
@@ -90,7 +95,6 @@ export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Elem
       sku: product.sku,
       stockQty: product.stock_qty,
     });
-    setImagesText((product.images ?? []).map((image) => image.url).join('\n'));
   }
 
   const patch = (value: Partial<ProductWritePayload>): void => {
@@ -100,16 +104,39 @@ export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Elem
   const finalPrice = draft.basePrice * (1 - draft.discountPercent / 100);
 
   const submit = (): void => {
-    const images = imagesText
-      .split('\n')
-      .map((url) => url.trim())
-      .filter(Boolean)
-      .map((url, index) => ({ is_primary: index === 0, sort_order: index, url }));
-
     save({
-      payload: { ...draft, images },
+      payload: draft,
       productId: isNew ? null : productId,
     });
+  };
+
+  const uploadImage = async (file: File): Promise<void> => {
+    if (!adminUserId || isNew) {
+      return;
+    }
+    setImageError(null);
+    setIsImageSaving(true);
+    try {
+      await uploadProductImageRequest(adminUserId, productId, file);
+      openProduct(productId);
+    } catch (uploadError) {
+      setImageError(toDisplayErrorMessage(uploadError, 'Не удалось загрузить изображение'));
+    } finally {
+      setIsImageSaving(false);
+    }
+  };
+
+  const removeImage = async (imageId: string): Promise<void> => {
+    if (!adminUserId || isNew) {
+      return;
+    }
+    setImageError(null);
+    try {
+      await deleteProductImageRequest(adminUserId, productId, imageId);
+      openProduct(productId);
+    } catch (deleteError) {
+      setImageError(toDisplayErrorMessage(deleteError, 'Не удалось удалить изображение'));
+    }
   };
 
   useEffect(() => {
@@ -308,18 +335,44 @@ export const AdminProductPage = ({ productId }: AdminProductPageProps): JSX.Elem
 
       <section className={clsx(styles.card)}>
         <h2 className={clsx(styles.cardTitle)}>Фотографии и публикация</h2>
-        <div className={clsx(styles.field)}>
-          <label className={clsx(styles.label)} htmlFor="product-images">
-            Ссылки на изображения — по одной в строке
-          </label>
-          <textarea
-            className={clsx(styles.textarea)}
-            id="product-images"
-            onChange={(event) => setImagesText(event.target.value)}
-            placeholder="https://cdn.example.com/product-1.jpg"
-            value={imagesText}
-          />
-        </div>
+        {imageError ? <p className={clsx(styles.error)}>{imageError}</p> : null}
+        {!isNew ? (
+          <div className={clsx(styles.listEditor)}>
+            {(product?.images ?? []).map((image) => (
+              <div className={clsx(styles.bannerHeader)} key={image.id}>
+                <a href={image.url} rel="noreferrer" target="_blank">
+                  {image.is_primary ? 'Главное фото' : 'Фото товара'}
+                </a>
+                <button
+                  className={clsx(styles.smallButton, styles.smallButtonDanger)}
+                  onClick={() => void removeImage(image.id)}
+                  type="button"
+                >
+                  Удалить
+                </button>
+              </div>
+            ))}
+            <label className={clsx(styles.label)} htmlFor="product-image-file">
+              {isImageSaving ? 'Загружаем…' : 'Добавить изображение'}
+            </label>
+            <input
+              accept="image/jpeg,image/png,image/webp"
+              disabled={isImageSaving}
+              id="product-image-file"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+
+                if (file) {
+                  void uploadImage(file);
+                }
+                event.target.value = '';
+              }}
+              type="file"
+            />
+          </div>
+        ) : (
+          <p className={clsx(styles.hint)}>Сначала сохраните товар, затем добавьте фотографии.</p>
+        )}
         <label className={clsx(styles.checkboxRow)}>
           <input
             checked={draft.isPublished}

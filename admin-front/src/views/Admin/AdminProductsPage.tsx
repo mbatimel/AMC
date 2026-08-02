@@ -3,8 +3,13 @@
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
+import type { ProductImageBatchResult } from '@/core/shared/api/products';
+
+import { $adminUserId } from '@/core/entities/adminSession';
+import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
+import { uploadProductImagesBatchRequest } from '@/core/shared/api/products';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
 import { getProductPath } from '@/core/shared/router/paths';
 
@@ -22,6 +27,10 @@ import {
 import { AdminPageHeader } from './ui/AdminPageHeader';
 
 export const AdminProductsPage = (): JSX.Element => {
+  const adminUserId = useUnit($adminUserId);
+  const [batchResults, setBatchResults] = useState<ProductImageBatchResult[]>([]);
+  const [batchError, setBatchError] = useState<null | string>(null);
+  const [isBatchPending, setIsBatchPending] = useState(false);
   const [products, total, query, isPending, error, open, changeQuery, remove] = useUnit([
     $adminProducts,
     $adminProductsTotal,
@@ -36,6 +45,22 @@ export const AdminProductsPage = (): JSX.Element => {
   useEffect(() => {
     open();
   }, [open]);
+
+  const uploadBatch = async (files: File[]): Promise<void> => {
+    if (!adminUserId || files.length === 0) {
+      return;
+    }
+    setBatchError(null);
+    setIsBatchPending(true);
+    try {
+      setBatchResults(await uploadProductImagesBatchRequest(adminUserId, files));
+      open();
+    } catch (uploadError) {
+      setBatchError(toDisplayErrorMessage(uploadError, 'Не удалось загрузить фотографии'));
+    } finally {
+      setIsBatchPending(false);
+    }
+  };
 
   return (
     <>
@@ -66,6 +91,32 @@ export const AdminProductsPage = (): JSX.Element => {
             placeholder="Например: метчик М8"
             value={query}
           />
+        </div>
+        <div className={clsx(styles.field)}>
+          <label className={clsx(styles.label)} htmlFor="product-images-batch">
+            Массовая загрузка фото по SKU в имени файла
+          </label>
+          <input
+            accept="image/jpeg,image/png,image/webp"
+            disabled={isBatchPending}
+            id="product-images-batch"
+            multiple
+            onChange={(event) => {
+              void uploadBatch(Array.from(event.target.files ?? []));
+              event.target.value = '';
+            }}
+            type="file"
+          />
+          {batchError ? <p className={clsx(styles.error)}>{batchError}</p> : null}
+          {batchResults.map((result, index) => (
+            <p
+              className={clsx(result.success ? styles.hint : styles.error)}
+              key={`${result.fileName}-${index}`}
+            >
+              {result.fileName} —{' '}
+              {result.success ? `загружено для ${result.sku}` : result.errorText}
+            </p>
+          ))}
         </div>
       </section>
 

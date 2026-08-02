@@ -397,14 +397,17 @@ export type ProductWritePayload = {
   stockQty: number;
 };
 
-const productWriteBody = (payload: ProductWritePayload): Record<string, unknown> => ({
+const productWriteBody = (
+  payload: ProductWritePayload,
+  includeImages = true,
+): Record<string, unknown> => ({
   basePrice: payload.basePrice,
   brandID: payload.brandID || undefined,
   categoryID: payload.categoryID || undefined,
   description: payload.description,
   discountPercent: payload.discountPercent,
   gost: payload.gost,
-  images: payload.images,
+  images: includeImages ? payload.images : undefined,
   isPublished: payload.isPublished,
   material: payload.material,
   name: payload.name,
@@ -445,7 +448,7 @@ export const updateProductRequest = async (
   payload: ProductWritePayload,
 ): Promise<void> => {
   const response = await fetch(`/api/v1/products/${productId}`, {
-    body: JSON.stringify(productWriteBody(payload)),
+    body: JSON.stringify(productWriteBody(payload, false)),
     headers: adminHeaders(userId),
     method: 'PATCH',
   });
@@ -458,6 +461,92 @@ export const updateProductRequest = async (
   }
 
   assertApiSuccess(await response.json(), 'Не удалось сохранить товар');
+};
+
+export type ProductImageBatchResult = {
+  errorText?: string;
+  fileName: string;
+  image?: ProductImage;
+  sku: string;
+  success: boolean;
+};
+
+export const uploadProductImageRequest = async (
+  userId: string,
+  productId: string,
+  file: File,
+): Promise<ProductImage> => {
+  const body = new FormData();
+
+  body.append('file', file);
+  const response = await fetch(`/api/v1/products/${productId}/images`, {
+    body,
+    headers: { 'X-User-Id': userId },
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new ProductsApiError(
+      response.status,
+      await parseApiErrorMessage(response, 'Не удалось загрузить изображение'),
+    );
+  }
+
+  const record = assertApiSuccess(await response.json(), 'Не удалось загрузить изображение');
+  const payload = record.data as { image?: unknown };
+  const image = parseImages([payload.image])[0];
+
+  if (!image) {
+    throw new ProductsApiError(500, 'Некорректный ответ сервера');
+  }
+
+  return image;
+};
+
+export const deleteProductImageRequest = async (
+  userId: string,
+  productId: string,
+  imageId: string,
+): Promise<void> => {
+  const response = await fetch(`/api/v1/products/${productId}/images/${imageId}`, {
+    headers: { 'X-User-Id': userId },
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new ProductsApiError(
+      response.status,
+      await parseApiErrorMessage(response, 'Не удалось удалить изображение'),
+    );
+  }
+
+  assertApiSuccess(await response.json(), 'Не удалось удалить изображение');
+};
+
+export const uploadProductImagesBatchRequest = async (
+  userId: string,
+  files: File[],
+): Promise<ProductImageBatchResult[]> => {
+  const body = new FormData();
+
+  files.forEach((file) => body.append('files', file));
+  const response = await fetch('/api/v1/products/images/batch', {
+    body,
+    headers: { 'X-User-Id': userId },
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new ProductsApiError(
+      response.status,
+      await parseApiErrorMessage(response, 'Не удалось загрузить фотографии'),
+    );
+  }
+
+  const record = assertApiSuccess(await response.json(), 'Не удалось загрузить фотографии');
+  const payload = record.data as { items?: ProductImageBatchResult[] };
+
+  return Array.isArray(payload.items) ? payload.items : [];
 };
 
 export const deleteProductRequest = async (userId: string, productId: string): Promise<void> => {
