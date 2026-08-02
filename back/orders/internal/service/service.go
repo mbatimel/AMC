@@ -17,7 +17,9 @@ import (
 type Storage interface {
 	GetCities(ctx context.Context) ([]postgres.City, error)
 
-	GetUserCounterpartyID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
+	GetActiveClient(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
+	CounterpartyExists(ctx context.Context, clientID uuid.UUID) (bool, error)
+	UserHasClient(ctx context.Context, userID uuid.UUID, clientID uuid.UUID) (bool, error)
 	GetCounterpartyPriceGroupID(ctx context.Context, counterpartyID uuid.UUID) (uuid.NullUUID, error)
 	InsertDeliveryAddress(ctx context.Context, counterpartyID uuid.UUID, addrType string, address string) (uuid.UUID, error)
 	InsertContact(ctx context.Context, counterpartyID uuid.UUID, fullName string, phone string, email string) (uuid.UUID, error)
@@ -86,21 +88,43 @@ func (s *service) checkAdminAccess(ctx context.Context, userID uuid.UUID) error 
 }
 
 func (s *service) resolveCounterpartyID(ctx context.Context, userID uuid.UUID, clientID string) (uuid.UUID, error) {
+	var id uuid.UUID
+	var err error
+
 	if clientID != "" {
-		id, err := uuid.Parse(clientID)
-		if err != nil {
+		id, err = uuid.Parse(clientID)
+		if err != nil || id == uuid.Nil {
 			return uuid.Nil, customErrors.BadRequestError().SetOuterError(err).AddCause("field", "clientID")
 		}
-		return id, nil
+	} else {
+		id, err = s.storage.GetActiveClient(ctx, userID)
+		if err != nil {
+			if errors.Is(err, postgres.ErrUserNotFound) {
+				return uuid.Nil, customErrors.NotFoundError().AddCause("entity", "user")
+			}
+			return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
+		}
+		if id == uuid.Nil {
+			return uuid.Nil, customErrors.BadRequestError().AddCause("field", "clientID")
+		}
 	}
 
-	id, err := s.storage.GetUserCounterpartyID(ctx, userID)
+	exists, err := s.storage.CounterpartyExists(ctx, id)
 	if err != nil {
 		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
 	}
-	if id == uuid.Nil {
-		return uuid.Nil, customErrors.BadRequestError().AddCause("field", "clientID")
+	if !exists {
+		return uuid.Nil, customErrors.NotFoundError().AddCause("field", "clientID")
 	}
+
+	allowed, err := s.storage.UserHasClient(ctx, userID, id)
+	if err != nil {
+		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
+	}
+	if !allowed {
+		return uuid.Nil, customErrors.ForbiddenError().AddCause("field", "clientID")
+	}
+
 	return id, nil
 }
 
