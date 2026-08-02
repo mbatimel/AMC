@@ -23,7 +23,7 @@ type OrderItemInput struct {
 
 type CreateOrderParams struct {
 	UserID            uuid.UUID
-	CounterpartyID    uuid.UUID
+	CounterpartyID    uuid.NullUUID
 	CartID            uuid.UUID
 	DeliveryMethod    string
 	DeliveryAddressID uuid.UUID
@@ -111,7 +111,10 @@ type OrderRow struct {
 }
 
 type ListOrdersParams struct {
-	CounterpartyID uuid.UUID
+	// UserID scopes orders when CounterpartyID is not valid: a user with no
+	// client must only see their own orders, never every clientless user's.
+	UserID         uuid.UUID
+	CounterpartyID uuid.NullUUID
 	Status         string
 	PaymentStatus  string
 	Limit          int
@@ -140,12 +143,15 @@ func (s *Storage) ListOrders(ctx context.Context, params ListOrdersParams) ([]Or
 	rows, err := s.pool.Query(ctx, fmt.Sprintf(`
 		SELECT id, number, status, payment_status, delivery_method, subtotal, discount_total, vat_total, total, created_at
 		FROM orders
-		WHERE counterparty_id = $1
+		WHERE (
+		    (counterparty_id = $1 AND $1::uuid IS NOT NULL)
+		    OR (counterparty_id IS NULL AND $1::uuid IS NULL AND user_id = $6)
+		  )
 		  AND ($2 = '' OR status = $2)
 		  AND ($3 = '' OR payment_status = $3)
 		ORDER BY %s
 		LIMIT $4 OFFSET $5
-	`, orderBy), params.CounterpartyID, params.Status, params.PaymentStatus, limit, params.Offset)
+	`, orderBy), params.CounterpartyID, params.Status, params.PaymentStatus, limit, params.Offset, params.UserID)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list orders: %w", err)
 	}
@@ -177,10 +183,13 @@ func (s *Storage) ListOrders(ctx context.Context, params ListOrdersParams) ([]Or
 	var total int
 	err = s.pool.QueryRow(ctx, `
 		SELECT COUNT(*) FROM orders
-		WHERE counterparty_id = $1
+		WHERE (
+		    (counterparty_id = $1 AND $1::uuid IS NOT NULL)
+		    OR (counterparty_id IS NULL AND $1::uuid IS NULL AND user_id = $4)
+		  )
 		  AND ($2 = '' OR status = $2)
 		  AND ($3 = '' OR payment_status = $3)
-	`, params.CounterpartyID, params.Status, params.PaymentStatus).Scan(&total)
+	`, params.CounterpartyID, params.Status, params.PaymentStatus, params.UserID).Scan(&total)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count orders: %w", err)
 	}
@@ -192,7 +201,7 @@ type OrderDetailRow struct {
 	ID              uuid.UUID
 	Number          string
 	UserID          uuid.UUID
-	CounterpartyID  uuid.UUID
+	CounterpartyID  uuid.NullUUID
 	Status          string
 	PaymentStatus   string
 	DeliveryMethod  string
@@ -210,17 +219,18 @@ type OrderDetailRow struct {
 
 var ErrOrderNotFound = errors.New("order not found")
 
-func (s *Storage) GetOrderByID(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.UUID) (OrderDetailRow, error) {
+const orderDetailSelect = `
+	SELECT o.id, o.number, o.user_id, o.counterparty_id, o.status, o.payment_status, o.delivery_method,
+	       COALESCE(ca.address, ''), COALESCE(cc.full_name, ''), COALESCE(cc.phone, ''), COALESCE(cc.email, ''),
+	       COALESCE(o.comment, ''), o.subtotal, o.discount_total, o.vat_total, o.total, o.created_at
+	FROM orders o
+	LEFT JOIN counterparty_addresses ca ON ca.id = o.delivery_address_id
+	LEFT JOIN counterparty_contacts cc ON cc.id = o.contact_id
+`
+
+func scanOrderDetail(row pgx.Row) (OrderDetailRow, error) {
 	var order OrderDetailRow
-	err := s.pool.QueryRow(ctx, `
-		SELECT o.id, o.number, o.user_id, o.counterparty_id, o.status, o.payment_status, o.delivery_method,
-		       COALESCE(ca.address, ''), COALESCE(cc.full_name, ''), COALESCE(cc.phone, ''), COALESCE(cc.email, ''),
-		       COALESCE(o.comment, ''), o.subtotal, o.discount_total, o.vat_total, o.total, o.created_at
-		FROM orders o
-		LEFT JOIN counterparty_addresses ca ON ca.id = o.delivery_address_id
-		LEFT JOIN counterparty_contacts cc ON cc.id = o.contact_id
-		WHERE o.id = $1 AND o.counterparty_id = $2
-	`, orderID, counterpartyID).Scan(
+	err := row.Scan(
 		&order.ID,
 		&order.Number,
 		&order.UserID,
@@ -248,7 +258,30 @@ func (s *Storage) GetOrderByID(ctx context.Context, orderID uuid.UUID, counterpa
 	return order, nil
 }
 
-func (s *Storage) CancelOrder(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.UUID, changedBy uuid.UUID, comment string) (OrderDetailRow, error) {
+// GetOrderByID resolves an order for a buyer-facing request. When counterpartyID
+// is not valid (the caller has no client bound), the lookup falls back to
+// userID scoping so one clientless user can't read another's orders through a
+// shared NULL counterparty bucket.
+func (s *Storage) GetOrderByID(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, counterpartyID uuid.NullUUID) (OrderDetailRow, error) {
+	row := s.pool.QueryRow(ctx, orderDetailSelect+`
+		WHERE o.id = $1 AND (
+		    (o.counterparty_id = $2 AND $2::uuid IS NOT NULL)
+		    OR (o.counterparty_id IS NULL AND $2::uuid IS NULL AND o.user_id = $3)
+		  )
+	`, orderID, counterpartyID, userID)
+	return scanOrderDetail(row)
+}
+
+// orderDetailByID re-reads an order by ID with no ownership scoping. Only for
+// internal use after the caller has already established access some other way
+// (admin role check, or a prior scoped SELECT ... FOR UPDATE in the same
+// transaction/request).
+func (s *Storage) orderDetailByID(ctx context.Context, orderID uuid.UUID) (OrderDetailRow, error) {
+	row := s.pool.QueryRow(ctx, orderDetailSelect+`WHERE o.id = $1`, orderID)
+	return scanOrderDetail(row)
+}
+
+func (s *Storage) CancelOrder(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.NullUUID, changedBy uuid.UUID, comment string) (OrderDetailRow, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return OrderDetailRow{}, fmt.Errorf("begin tx: %w", err)
@@ -257,8 +290,12 @@ func (s *Storage) CancelOrder(ctx context.Context, orderID uuid.UUID, counterpar
 
 	var oldStatus, oldPaymentStatus string
 	err = tx.QueryRow(ctx, `
-		SELECT status, payment_status FROM orders WHERE id = $1 AND counterparty_id = $2 FOR UPDATE
-	`, orderID, counterpartyID).Scan(&oldStatus, &oldPaymentStatus)
+		SELECT status, payment_status FROM orders
+		WHERE id = $1 AND (
+		    (counterparty_id = $2 AND $2::uuid IS NOT NULL)
+		    OR (counterparty_id IS NULL AND $2::uuid IS NULL AND user_id = $3)
+		  ) FOR UPDATE
+	`, orderID, counterpartyID, changedBy).Scan(&oldStatus, &oldPaymentStatus)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return OrderDetailRow{}, ErrOrderNotFound
@@ -281,7 +318,7 @@ func (s *Storage) CancelOrder(ctx context.Context, orderID uuid.UUID, counterpar
 		return OrderDetailRow{}, fmt.Errorf("commit tx: %w", err)
 	}
 
-	return s.GetOrderByID(ctx, orderID, counterpartyID)
+	return s.orderDetailByID(ctx, orderID)
 }
 
 func (s *Storage) UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy uuid.UUID) (OrderDetailRow, error) {
@@ -291,11 +328,10 @@ func (s *Storage) UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, stat
 	}
 	defer tx.Rollback(ctx)
 
-	var counterpartyID uuid.UUID
 	var oldStatus, oldPaymentStatus string
 	err = tx.QueryRow(ctx, `
-		SELECT counterparty_id, status, payment_status FROM orders WHERE id = $1 FOR UPDATE
-	`, orderID).Scan(&counterpartyID, &oldStatus, &oldPaymentStatus)
+		SELECT status, payment_status FROM orders WHERE id = $1 FOR UPDATE
+	`, orderID).Scan(&oldStatus, &oldPaymentStatus)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return OrderDetailRow{}, ErrOrderNotFound
@@ -327,7 +363,7 @@ func (s *Storage) UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, stat
 		return OrderDetailRow{}, fmt.Errorf("commit tx: %w", err)
 	}
 
-	return s.GetOrderByID(ctx, orderID, counterpartyID)
+	return s.orderDetailByID(ctx, orderID)
 }
 
 type OrderHistoryRow struct {

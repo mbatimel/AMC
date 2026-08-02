@@ -59,16 +59,19 @@ func (s *Storage) UserHasClient(ctx context.Context, userID uuid.UUID, clientID 
 	return allowed, nil
 }
 
-func (s *Storage) GetCounterpartyPriceGroupID(ctx context.Context, counterpartyID uuid.UUID) (uuid.NullUUID, error) {
+func (s *Storage) GetCounterpartyPriceGroupID(ctx context.Context, counterpartyID uuid.NullUUID) (uuid.NullUUID, error) {
+	if !counterpartyID.Valid {
+		return uuid.NullUUID{}, nil
+	}
 	var priceGroupID uuid.NullUUID
-	err := s.pool.QueryRow(ctx, `SELECT price_group_id FROM counterparties WHERE id = $1`, counterpartyID).Scan(&priceGroupID)
+	err := s.pool.QueryRow(ctx, `SELECT price_group_id FROM counterparties WHERE id = $1`, counterpartyID.UUID).Scan(&priceGroupID)
 	if err != nil {
 		return uuid.NullUUID{}, fmt.Errorf("get counterparty price group id: %w", err)
 	}
 	return priceGroupID, nil
 }
 
-func (s *Storage) InsertDeliveryAddress(ctx context.Context, counterpartyID uuid.UUID, addrType string, address string) (uuid.UUID, error) {
+func (s *Storage) InsertDeliveryAddress(ctx context.Context, counterpartyID uuid.NullUUID, addrType string, address string) (uuid.UUID, error) {
 	var id uuid.UUID
 	err := s.pool.QueryRow(ctx, `
 		INSERT INTO counterparty_addresses (counterparty_id, type, address)
@@ -81,7 +84,7 @@ func (s *Storage) InsertDeliveryAddress(ctx context.Context, counterpartyID uuid
 	return id, nil
 }
 
-func (s *Storage) InsertContact(ctx context.Context, counterpartyID uuid.UUID, fullName string, phone string, email string) (uuid.UUID, error) {
+func (s *Storage) InsertContact(ctx context.Context, counterpartyID uuid.NullUUID, fullName string, phone string, email string) (uuid.UUID, error) {
 	var id uuid.UUID
 	err := s.pool.QueryRow(ctx, `
 		INSERT INTO counterparty_contacts (counterparty_id, full_name, phone, email)

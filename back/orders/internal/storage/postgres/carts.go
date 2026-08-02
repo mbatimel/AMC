@@ -29,10 +29,11 @@ type CartItemRow struct {
 	Price       float64
 }
 
-func (s *Storage) GetCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (uuid.UUID, error) {
+func (s *Storage) GetCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID) (uuid.UUID, error) {
 	var cartID uuid.UUID
 	err := s.pool.QueryRow(ctx, `
-		SELECT id FROM carts WHERE user_id = $1 AND counterparty_id = $2
+		SELECT id FROM carts
+		WHERE user_id = $1 AND (counterparty_id = $2 OR (counterparty_id IS NULL AND $2::uuid IS NULL))
 	`, userID, counterpartyID).Scan(&cartID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return uuid.Nil, ErrCartNotFound
@@ -43,7 +44,7 @@ func (s *Storage) GetCart(ctx context.Context, userID uuid.UUID, counterpartyID 
 	return cartID, nil
 }
 
-func (s *Storage) GetOrCreateCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.UUID) (uuid.UUID, error) {
+func (s *Storage) GetOrCreateCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID) (uuid.UUID, error) {
 	cartID, err := s.GetCart(ctx, userID, counterpartyID)
 	if err == nil {
 		return cartID, nil
