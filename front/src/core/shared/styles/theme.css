@@ -45,6 +45,10 @@
   --header-topbar-typo-hover: #fff;
   --header-typo: rgb(17 17 17);
 
+  /* HeroUI accent (primary buttons) */
+  --accent: var(--header-brand);
+  --accent-foreground: var(--palette-white);
+
   /* Link */
   --link: #4086e4;
   --link-active: rgb(10 88 178);

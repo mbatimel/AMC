@@ -19,6 +19,7 @@ import { CatalogCardsGrid } from './ui/CatalogCardsGrid';
 import { CatalogCategories } from './ui/CatalogCategories';
 import { CatalogEmptyState } from './ui/CatalogEmptyState';
 import { CatalogFiltersPanel } from './ui/CatalogFilters';
+import { CatalogPagination } from './ui/CatalogPagination';
 import { CatalogSearchSection } from './ui/CatalogSearchSection';
 import { CatalogSkeleton } from './ui/CatalogSkeleton';
 import { CatalogToolbar } from './ui/CatalogToolbar';
@@ -42,10 +43,12 @@ const CatalogContent = (): JSX.Element => {
     filters,
     handleAddToCart,
     isPending,
+    pageCount,
     patchFilters,
     products,
     resetAll,
     resetFilters,
+    setPage,
     setView,
     total,
   } = useCatalog();
@@ -134,40 +137,50 @@ const CatalogContent = (): JSX.Element => {
             {showEmpty ? <CatalogEmptyState onReset={resetAll} /> : null}
 
             {!isPending && !error && products.length > 0 ? (
-              hasQuery ? (
-                <CatalogSearchSection
-                  isFavorite={favorites.isFavorite}
-                  onAddToCart={handleAddToCart}
-                  onAddToCartFromCard={(product) =>
-                    handleAddToCart(
-                      product.id,
-                      product.name,
-                      product.package_qty,
-                      product.package_qty,
-                    )
-                  }
-                  onToggleFavorite={favorites.toggleFavorite}
-                  products={products}
-                  total={total}
-                  view={effectiveView}
+              <>
+                {hasQuery ? (
+                  <CatalogSearchSection
+                    isFavorite={favorites.isFavorite}
+                    onAddToCart={handleAddToCart}
+                    onAddToCartFromCard={(product) =>
+                      handleAddToCart(
+                        product.id,
+                        product.name,
+                        product.package_qty,
+                        product.package_qty,
+                      )
+                    }
+                    onToggleFavorite={favorites.toggleFavorite}
+                    products={products}
+                    total={total}
+                    view={effectiveView}
+                  />
+                ) : effectiveView === 'table' ? (
+                  <CatalogB2BTable onAddToCart={handleAddToCart} products={products} />
+                ) : (
+                  <CatalogCardsGrid
+                    isFavorite={favorites.isFavorite}
+                    onAddToCart={(product) =>
+                      handleAddToCart(
+                        product.id,
+                        product.name,
+                        product.package_qty,
+                        product.package_qty,
+                      )
+                    }
+                    onToggleFavorite={favorites.toggleFavorite}
+                    products={products}
+                  />
+                )}
+                <CatalogPagination
+                  onPageChange={(page) => {
+                    setPage(page);
+                    window.scrollTo({ behavior: 'smooth', top: 0 });
+                  }}
+                  page={filters.page}
+                  pageCount={pageCount}
                 />
-              ) : effectiveView === 'table' ? (
-                <CatalogB2BTable onAddToCart={handleAddToCart} products={products} />
-              ) : (
-                <CatalogCardsGrid
-                  isFavorite={favorites.isFavorite}
-                  onAddToCart={(product) =>
-                    handleAddToCart(
-                      product.id,
-                      product.name,
-                      product.package_qty,
-                      product.package_qty,
-                    )
-                  }
-                  onToggleFavorite={favorites.toggleFavorite}
-                  products={products}
-                />
-              )
+              </>
             ) : null}
           </div>
         </div>

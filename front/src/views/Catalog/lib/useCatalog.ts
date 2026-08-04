@@ -23,7 +23,12 @@ import {
   catalogFiltersApplied,
   catalogMounted,
 } from '../model';
-import { catalogFiltersToSearchParams, countActiveFilters, parseCatalogFilters } from './filters';
+import {
+  catalogFiltersToSearchParams,
+  catalogPageCount,
+  countActiveFilters,
+  parseCatalogFilters,
+} from './filters';
 
 export const useCatalog = () => {
   const router = useRouter();
@@ -75,7 +80,12 @@ export const useCatalog = () => {
   };
 
   const patchFilters = (patch: Partial<CatalogFilters>): void => {
-    replaceFilters({ ...urlFilters, ...patch });
+    const shouldResetPage = patch.page === undefined;
+    replaceFilters({
+      ...urlFilters,
+      ...patch,
+      ...(shouldResetPage ? { page: 1 } : {}),
+    });
   };
 
   const resetFilters = (): void => {
@@ -83,6 +93,7 @@ export const useCatalog = () => {
       brandID: urlFilters.brandID,
       brandName: urlFilters.brandName,
       categoryID: urlFilters.categoryID,
+      page: 1,
       promotionID: urlFilters.promotionID,
       promotionName: urlFilters.promotionName,
       q: urlFilters.q,
@@ -91,11 +102,15 @@ export const useCatalog = () => {
   };
 
   const resetAll = (): void => {
-    replaceFilters({ view: urlFilters.view });
+    replaceFilters({ page: 1, view: urlFilters.view });
   };
 
   const setView = (view: CatalogViewMode): void => {
-    patchFilters({ view });
+    replaceFilters({ ...urlFilters, view });
+  };
+
+  const setPage = (page: number): void => {
+    patchFilters({ page });
   };
 
   const handleAddToCart = (productID: string, name: string, qty: number, packageQty: number) => {
@@ -125,10 +140,12 @@ export const useCatalog = () => {
     handleAddToCart,
     isCategoriesPending,
     isPending,
+    pageCount: catalogPageCount(total),
     patchFilters,
     products,
     resetAll,
     resetFilters,
+    setPage,
     setView,
     storeFilters: filters,
     total,

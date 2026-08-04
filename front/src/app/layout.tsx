@@ -5,7 +5,7 @@ import '@/core/shared/styles/index.css';
 import { ToastViewport } from '@/core/shared/ui/Toast';
 
 export const metadata: Metadata = {
-  title: 'AMC',
+  title: 'VOINT',
 };
 
 type RootLayoutProps = {

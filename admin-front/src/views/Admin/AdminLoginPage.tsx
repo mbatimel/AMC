@@ -72,7 +72,7 @@ export const AdminLoginPage = (): JSX.Element => {
       <Form className={clsx(formStyles.form)} onSubmit={handleSubmit}>
         <TextField className={clsx(formStyles.field)} isRequired name="email" type="email">
           <Label className={clsx(formStyles.label)}>E-mail</Label>
-          <Input className={clsx(formStyles.input)} fullWidth placeholder="admin@amc.ru" />
+          <Input className={clsx(formStyles.input)} fullWidth placeholder="admin@voint.ru" />
           <FieldError />
         </TextField>
         <TextField className={clsx(formStyles.field)} isRequired name="password" type="password">

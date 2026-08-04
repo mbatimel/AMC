@@ -282,161 +282,334 @@ const ListEditor = ({ onChange, value }: EditorProps<ListPageContent>): JSX.Elem
   </>
 );
 
-const ContactsEditor = ({ onChange, value }: EditorProps<ContactsPageContent>): JSX.Element => (
-  <>
-    <div className={clsx(styles.formGrid)}>
-      <div className={clsx(styles.field)}>
-        <label className={clsx(styles.label)} htmlFor="contacts-title">
-          Заголовок
-        </label>
-        <input
-          className={clsx(styles.input)}
-          id="contacts-title"
-          onChange={(event) => onChange({ title: event.target.value })}
-          value={value.title}
-        />
-      </div>
-      <div className={clsx(styles.field)}>
-        <label className={clsx(styles.label)} htmlFor="contacts-phone">
-          Телефон
-        </label>
-        <input
-          className={clsx(styles.input)}
-          id="contacts-phone"
-          onChange={(event) => onChange({ phone: event.target.value })}
-          value={value.phone}
-        />
-      </div>
-      <div className={clsx(styles.field)}>
-        <label className={clsx(styles.label)} htmlFor="contacts-email">
-          E-mail
-        </label>
-        <input
-          className={clsx(styles.input)}
-          id="contacts-email"
-          onChange={(event) => onChange({ email: event.target.value })}
-          value={value.email}
-        />
-      </div>
-      <div className={clsx(styles.field)}>
-        <label className={clsx(styles.label)} htmlFor="contacts-hours">
-          Часы работы
-        </label>
-        <input
-          className={clsx(styles.input)}
-          id="contacts-hours"
-          onChange={(event) => onChange({ work_hours: event.target.value })}
-          value={value.work_hours}
-        />
-      </div>
-    </div>
+const ContactsEditor = ({ onChange, value }: EditorProps<ContactsPageContent>): JSX.Element => {
+  const offices = value.offices ?? [];
+  const requisiteItems = value.requisite_items ?? [];
 
-    <div className={clsx(styles.field)}>
-      <label className={clsx(styles.label)} htmlFor="contacts-address">
-        Адрес
-      </label>
-      <input
-        className={clsx(styles.input)}
-        id="contacts-address"
-        onChange={(event) => onChange({ address: event.target.value })}
-        value={value.address}
-      />
-    </div>
-
-    <div className={clsx(styles.field)}>
-      <label className={clsx(styles.label)} htmlFor="contacts-requisites">
-        Реквизиты
-      </label>
-      <textarea
-        className={clsx(styles.textarea)}
-        id="contacts-requisites"
-        onChange={(event) => onChange({ requisites: event.target.value })}
-        value={value.requisites}
-      />
-    </div>
-
-    <div className={clsx(styles.field)}>
-      <span className={clsx(styles.label)}>Ответственные</span>
-      <div className={clsx(styles.listEditor)}>
-        {value.managers.map((manager, index) => (
-          <div className={clsx(styles.formGrid)} key={`manager-${index}`}>
-            <input
-              aria-label={`Название отдела ${index + 1}`}
-              className={clsx(styles.input)}
-              onChange={(event) =>
-                onChange({
-                  managers: value.managers.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, name: event.target.value } : item,
-                  ),
-                })
-              }
-              placeholder="Отдел продаж"
-              value={manager.name}
-            />
-            <input
-              aria-label={`Описание ${index + 1}`}
-              className={clsx(styles.input)}
-              onChange={(event) =>
-                onChange({
-                  managers: value.managers.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, role: event.target.value } : item,
-                  ),
-                })
-              }
-              placeholder="Оформление заказов"
-              value={manager.role}
-            />
-            <input
-              aria-label={`Телефон ${index + 1}`}
-              className={clsx(styles.input)}
-              onChange={(event) =>
-                onChange({
-                  managers: value.managers.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, phone: event.target.value } : item,
-                  ),
-                })
-              }
-              placeholder="+7 846 000-00-00"
-              value={manager.phone}
-            />
-            <input
-              aria-label={`E-mail ${index + 1}`}
-              className={clsx(styles.input)}
-              onChange={(event) =>
-                onChange({
-                  managers: value.managers.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, email: event.target.value } : item,
-                  ),
-                })
-              }
-              placeholder="order@amc.ru"
-              value={manager.email}
-            />
-            <button
-              className={clsx(styles.smallButton, styles.smallButtonDanger)}
-              onClick={() =>
-                onChange({
-                  managers: value.managers.filter((_, itemIndex) => itemIndex !== index),
-                })
-              }
-              type="button"
-            >
-              Удалить
-            </button>
-          </div>
-        ))}
-        <button
-          className={clsx(styles.smallButton)}
-          onClick={() =>
-            onChange({
-              managers: [...value.managers, { email: '', name: '', phone: '', role: '' }],
-            })
-          }
-          type="button"
-        >
-          Добавить контакт
-        </button>
+  return (
+    <>
+      <div className={clsx(styles.formGrid)}>
+        <div className={clsx(styles.field)}>
+          <label className={clsx(styles.label)} htmlFor="contacts-title">
+            Заголовок
+          </label>
+          <input
+            className={clsx(styles.input)}
+            id="contacts-title"
+            onChange={(event) => onChange({ title: event.target.value })}
+            value={value.title}
+          />
+        </div>
+        <div className={clsx(styles.field)}>
+          <label className={clsx(styles.label)} htmlFor="contacts-phone">
+            Телефон
+          </label>
+          <input
+            className={clsx(styles.input)}
+            id="contacts-phone"
+            onChange={(event) => onChange({ phone: event.target.value })}
+            value={value.phone}
+          />
+        </div>
+        <div className={clsx(styles.field)}>
+          <label className={clsx(styles.label)} htmlFor="contacts-email">
+            E-mail
+          </label>
+          <input
+            className={clsx(styles.input)}
+            id="contacts-email"
+            onChange={(event) => onChange({ email: event.target.value })}
+            value={value.email}
+          />
+        </div>
+        <div className={clsx(styles.field)}>
+          <label className={clsx(styles.label)} htmlFor="contacts-hours">
+            Часы работы
+          </label>
+          <input
+            className={clsx(styles.input)}
+            id="contacts-hours"
+            onChange={(event) => onChange({ work_hours: event.target.value })}
+            value={value.work_hours}
+          />
+        </div>
       </div>
-    </div>
-  </>
-);
+
+      <div className={clsx(styles.field)}>
+        <label className={clsx(styles.label)} htmlFor="contacts-subtitle">
+          Подзаголовок
+        </label>
+        <input
+          className={clsx(styles.input)}
+          id="contacts-subtitle"
+          onChange={(event) => onChange({ subtitle: event.target.value })}
+          value={value.subtitle ?? ''}
+        />
+      </div>
+
+      <div className={clsx(styles.field)}>
+        <label className={clsx(styles.label)} htmlFor="contacts-address">
+          Адрес
+        </label>
+        <input
+          className={clsx(styles.input)}
+          id="contacts-address"
+          onChange={(event) => onChange({ address: event.target.value })}
+          value={value.address}
+        />
+      </div>
+
+      <div className={clsx(styles.field)}>
+        <label className={clsx(styles.label)} htmlFor="contacts-requisites">
+          Реквизиты (кратко)
+        </label>
+        <textarea
+          className={clsx(styles.textarea)}
+          id="contacts-requisites"
+          onChange={(event) => onChange({ requisites: event.target.value })}
+          value={value.requisites}
+        />
+      </div>
+
+      <div className={clsx(styles.field)}>
+        <span className={clsx(styles.label)}>Отделы</span>
+        <div className={clsx(styles.listEditor)}>
+          {value.managers.map((manager, index) => (
+            <div className={clsx(styles.formGrid)} key={`manager-${index}`}>
+              <input
+                aria-label={`Название отдела ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    managers: value.managers.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, name: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="Отдел продаж"
+                value={manager.name}
+              />
+              <input
+                aria-label={`Описание ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    managers: value.managers.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, role: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="Оформление заказов"
+                value={manager.role}
+              />
+              <input
+                aria-label={`Телефон ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    managers: value.managers.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, phone: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="+7 846 000-00-00"
+                value={manager.phone}
+              />
+              <input
+                aria-label={`E-mail ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    managers: value.managers.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, email: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="order@voint.ru"
+                value={manager.email}
+              />
+              <button
+                className={clsx(styles.smallButton, styles.smallButtonDanger)}
+                onClick={() =>
+                  onChange({
+                    managers: value.managers.filter((_, itemIndex) => itemIndex !== index),
+                  })
+                }
+                type="button"
+              >
+                Удалить
+              </button>
+            </div>
+          ))}
+          <button
+            className={clsx(styles.smallButton)}
+            onClick={() =>
+              onChange({
+                managers: [...value.managers, { email: '', name: '', phone: '', role: '' }],
+              })
+            }
+            type="button"
+          >
+            Добавить отдел
+          </button>
+        </div>
+      </div>
+
+      <div className={clsx(styles.field)}>
+        <span className={clsx(styles.label)}>Представительства</span>
+        <div className={clsx(styles.listEditor)}>
+          {offices.map((office, index) => (
+            <div className={clsx(styles.formGrid)} key={`office-${index}`}>
+              <input
+                aria-label={`Город ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    offices: offices.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, city: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="Самара"
+                value={office.city}
+              />
+              <input
+                aria-label={`Адрес ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    offices: offices.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, address: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="Адрес"
+                value={office.address}
+              />
+              <input
+                aria-label={`Телефон офиса ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    offices: offices.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, phone: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="+7 846 000-00-00"
+                value={office.phone}
+              />
+              <input
+                aria-label={`E-mail офиса ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    offices: offices.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, email: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="office@voint.ru"
+                value={office.email}
+              />
+              <label className={clsx(styles.checkboxLabel)}>
+                <input
+                  checked={Boolean(office.is_main)}
+                  onChange={(event) =>
+                    onChange({
+                      offices: offices.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, is_main: event.target.checked } : item,
+                      ),
+                    })
+                  }
+                  type="checkbox"
+                />
+                Главный офис
+              </label>
+              <button
+                className={clsx(styles.smallButton, styles.smallButtonDanger)}
+                onClick={() =>
+                  onChange({
+                    offices: offices.filter((_, itemIndex) => itemIndex !== index),
+                  })
+                }
+                type="button"
+              >
+                Удалить
+              </button>
+            </div>
+          ))}
+          <button
+            className={clsx(styles.smallButton)}
+            onClick={() =>
+              onChange({
+                offices: [...offices, { address: '', city: '', email: '', phone: '' }],
+              })
+            }
+            type="button"
+          >
+            Добавить представительство
+          </button>
+        </div>
+      </div>
+
+      <div className={clsx(styles.field)}>
+        <span className={clsx(styles.label)}>Реквизиты (строки)</span>
+        <div className={clsx(styles.listEditor)}>
+          {requisiteItems.map((row, index) => (
+            <div className={clsx(styles.formGrid)} key={`requisite-${index}`}>
+              <input
+                aria-label={`Поле реквизита ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    requisite_items: requisiteItems.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, label: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="ИНН"
+                value={row.label}
+              />
+              <input
+                aria-label={`Значение реквизита ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    requisite_items: requisiteItems.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, value: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="0000000000"
+                value={row.value}
+              />
+              <button
+                className={clsx(styles.smallButton, styles.smallButtonDanger)}
+                onClick={() =>
+                  onChange({
+                    requisite_items: requisiteItems.filter((_, itemIndex) => itemIndex !== index),
+                  })
+                }
+                type="button"
+              >
+                Удалить
+              </button>
+            </div>
+          ))}
+          <button
+            className={clsx(styles.smallButton)}
+            onClick={() =>
+              onChange({
+                requisite_items: [...requisiteItems, { label: '', value: '' }],
+              })
+            }
+            type="button"
+          >
+            Добавить строку
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};

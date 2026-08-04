@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import type { PortalState } from './types';
+import type { ContactsPageContent, PortalState } from './types';
 
 import { createDefaultPortalState } from './defaults';
 
@@ -20,6 +20,30 @@ type PortalGlobal = typeof globalThis & { __portalState?: PortalState };
 
 const portalGlobal = globalThis as PortalGlobal;
 
+const mergeContacts = (
+  defaults: ContactsPageContent,
+  saved?: Partial<ContactsPageContent>,
+): ContactsPageContent => ({
+  ...defaults,
+  ...saved,
+  managers: saved?.managers ?? defaults.managers,
+  offices: saved?.offices?.length ? saved.offices : defaults.offices,
+  requisite_items: saved?.requisite_items?.length
+    ? saved.requisite_items
+    : defaults.requisite_items,
+  subtitle: saved?.subtitle || defaults.subtitle,
+});
+
+const mergePortalState = (defaults: PortalState, saved: PortalState): PortalState => ({
+  ...defaults,
+  ...saved,
+  content: {
+    ...defaults.content,
+    ...saved.content,
+    contacts: mergeContacts(defaults.content.contacts, saved.content?.contacts),
+  },
+});
+
 const readFromDisk = (): null | PortalState => {
   try {
     const raw = readFileSync(DATA_FILE, 'utf8');
@@ -29,10 +53,7 @@ const readFromDisk = (): null | PortalState => {
       return null;
     }
 
-    const defaults = createDefaultPortalState();
-    const merged = { ...defaults, ...(parsed as PortalState) };
-
-    return merged;
+    return mergePortalState(createDefaultPortalState(), parsed as PortalState);
   } catch {
     return null;
   }

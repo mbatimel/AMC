@@ -152,6 +152,14 @@
   font-weight: 600;
 }
 
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--palette-black);
+  font-size: 13px;
+}
+
 /* Одна высота контролов: HeroUI date-group = h-9, input-group = min-h-9, Input — только py-2. */
 .fieldControl {
   box-sizing: border-box;

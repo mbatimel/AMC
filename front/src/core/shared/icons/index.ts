@@ -1,6 +1,7 @@
 export { IconAbout } from './IconAbout';
 export { IconBrands } from './IconBrands';
 export { IconBuilding } from './IconBuilding';
+export { IconCalendar } from './IconCalendar';
 export { IconCart } from './IconCart';
 export { IconCatalog } from './IconCatalog';
 export { IconCertificates } from './IconCertificates';

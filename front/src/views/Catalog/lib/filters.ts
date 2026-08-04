@@ -7,6 +7,7 @@ export type CatalogFilters = {
   gost?: string;
   inStock?: boolean;
   material?: string;
+  page: number;
   promotionID?: string;
   promotionName?: string;
   q?: string;
@@ -16,8 +17,17 @@ export type CatalogFilters = {
 
 export type CatalogViewMode = 'cards' | 'table';
 
+export const CATALOG_PAGE_SIZE = 50;
+
 export const DEFAULT_CATALOG_FILTERS: CatalogFilters = {
+  page: 1,
   view: 'table',
+};
+
+const parsePage = (value: null | string): number => {
+  const page = Number(value);
+
+  return Number.isFinite(page) && page >= 1 ? Math.floor(page) : 1;
 };
 
 export const parseCatalogFilters = (params: URLSearchParams): CatalogFilters => {
@@ -30,6 +40,7 @@ export const parseCatalogFilters = (params: URLSearchParams): CatalogFilters => 
     gost: params.get('gost') || undefined,
     inStock: params.get('inStock') === 'true' ? true : undefined,
     material: params.get('material') || undefined,
+    page: parsePage(params.get('page')),
     promotionID: params.get('promotionID') || undefined,
     promotionName: params.get('promotionName') || undefined,
     q: params.get('q') || undefined,
@@ -85,6 +96,10 @@ export const catalogFiltersToSearchParams = (filters: CatalogFilters): URLSearch
     params.set('view', 'cards');
   }
 
+  if (filters.page > 1) {
+    params.set('page', String(filters.page));
+  }
+
   return params;
 };
 
@@ -110,7 +125,7 @@ export const countActiveFilters = (filters: CatalogFilters): number => {
   return count;
 };
 
-/** Ключ загрузки: для акции — только promotionID; иначе поля listProducts. */
+/** Ключ загрузки: для акции — только promotionID; иначе поля listProducts + page. */
 export const toCatalogProductsQueryKey = (filters: CatalogFilters): string => {
   if (filters.promotionID) {
     return `promo\u001f${filters.promotionID}`;
@@ -122,6 +137,7 @@ export const toCatalogProductsQueryKey = (filters: CatalogFilters): string => {
     filters.gost ?? '',
     filters.inStock ? '1' : '0',
     filters.material ?? '',
+    String(filters.page),
     filters.q ?? '',
     filters.size ?? '',
   ].join('\u001f');
@@ -175,3 +191,17 @@ export const applyClientCatalogFilters = (
 
     return true;
   });
+
+export const paginateProducts = (
+  products: ProductListItem[],
+  page: number,
+  pageSize = CATALOG_PAGE_SIZE,
+): ProductListItem[] => {
+  const safePage = Math.max(1, page);
+  const start = (safePage - 1) * pageSize;
+
+  return products.slice(start, start + pageSize);
+};
+
+export const catalogPageCount = (total: number, pageSize = CATALOG_PAGE_SIZE): number =>
+  Math.max(1, Math.ceil(Math.max(0, total) / pageSize));

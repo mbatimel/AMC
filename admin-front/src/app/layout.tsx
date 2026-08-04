@@ -6,7 +6,7 @@ import { ToastViewport } from '@/core/shared/ui/Toast';
 import { AdminShell } from '@/views/Admin';
 
 export const metadata: Metadata = {
-  title: 'AMC Admin',
+  title: 'VOINT Admin',
 };
 
 type RootLayoutProps = {

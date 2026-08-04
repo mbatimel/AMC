@@ -12,6 +12,8 @@ import { portalRequest } from './portalClient';
 export type {
   BannerItem,
   BannersSettings,
+  ContactOffice,
+  ContactRequisiteItem,
   ContactsPageContent,
   ContentPageKey,
   ContentPages,

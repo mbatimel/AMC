@@ -1,87 +1,191 @@
 'use client';
 
-import { Button } from '@heroui/react';
 import clsx from 'clsx';
-import { useRouter } from 'next/navigation';
 
 import { useContent } from '@/core/entities/content';
-import { AppPath } from '@/core/shared/router/paths';
-import { InfoCard, InfoPage, InfoPageSkeleton } from '@/core/shared/ui/InfoPage';
+import {
+  IconBuilding,
+  IconCalendar,
+  IconEmail,
+  IconLocation,
+  IconMail,
+  IconPhone,
+  IconSupport,
+} from '@/core/shared/icons';
 import { Page } from '@/core/shared/ui/Page';
 
 import styles from './Contacts.module.css';
+import { toTelHref } from './lib/contactsData';
+
+const departmentIcons = [IconSupport, IconPhone, IconBuilding] as const;
 
 export const Contacts = (): JSX.Element => {
-  const router = useRouter();
   const { content, error, isPending } = useContent();
   const contacts = content?.contacts;
+  const title = contacts?.title ?? 'Контакты';
+  const subtitle = contacts?.subtitle ?? 'Контакты отделов и представительств компании.';
+  const workHours = contacts?.work_hours ?? '';
+  const managers = contacts?.managers ?? [];
+  const offices = contacts?.offices ?? [];
+  const requisiteItems = contacts?.requisite_items ?? [];
 
   return (
     <Page>
-      <InfoPage
-        description="Отдел продаж, техническая поддержка и реквизиты предприятия."
-        eyebrow="Связь"
-        title={contacts?.title ?? 'Контакты'}
-      >
-        <InfoCard>
-          {isPending && !contacts ? <InfoPageSkeleton /> : null}
-          {error && !contacts ? <p>{error}</p> : null}
+      <div className={clsx(styles.root)}>
+        <section className={clsx(styles.hero)}>
+          <div className={clsx(styles.heroInner)}>
+            {workHours ? <p className={clsx(styles.heroBadge)}>Мы на связи {workHours}</p> : null}
+            <h1 className={clsx(styles.heroTitle)}>{title}</h1>
+            {subtitle ? <p className={clsx(styles.heroDescription)}>{subtitle}</p> : null}
+          </div>
+        </section>
 
-          {contacts ? (
-            <dl className={clsx(styles.grid)}>
-              <div className={clsx(styles.row)}>
-                <dt className={clsx(styles.term)}>Адрес</dt>
-                <dd className={clsx(styles.value)}>{contacts.address}</dd>
-              </div>
-              <div className={clsx(styles.row)}>
-                <dt className={clsx(styles.term)}>Телефон</dt>
-                <dd className={clsx(styles.value)}>
-                  <a href={`tel:${contacts.phone.replace(/[^\d+]/g, '')}`}>{contacts.phone}</a>
-                </dd>
-              </div>
-              <div className={clsx(styles.row)}>
-                <dt className={clsx(styles.term)}>E-mail</dt>
-                <dd className={clsx(styles.value)}>
-                  <a href={`mailto:${contacts.email}`}>{contacts.email}</a>
-                </dd>
-              </div>
-              <div className={clsx(styles.row)}>
-                <dt className={clsx(styles.term)}>Часы работы</dt>
-                <dd className={clsx(styles.value)}>{contacts.work_hours}</dd>
-              </div>
-              <div className={clsx(styles.row)}>
-                <dt className={clsx(styles.term)}>Реквизиты</dt>
-                <dd className={clsx(styles.value)}>{contacts.requisites}</dd>
-              </div>
-            </dl>
+        <div className={clsx(styles.container)}>
+          {isPending && !contacts ? <p className={clsx(styles.status)}>Загрузка…</p> : null}
+          {error && !contacts ? <p className={clsx(styles.error)}>{error}</p> : null}
+
+          {managers.length > 0 ? (
+            <section aria-label="Отделы" className={clsx(styles.departments)}>
+              {managers.map((manager, index) => {
+                const Icon = departmentIcons[index] ?? IconBuilding;
+                const isFeatured = index === 0;
+
+                return (
+                  <article
+                    className={clsx(styles.departmentCard, isFeatured && styles.departmentFeatured)}
+                    key={`${manager.name}-${manager.email}-${index}`}
+                  >
+                    <div aria-hidden className={clsx(styles.departmentIcon)}>
+                      <Icon currentColor="currentColor" height={22} width={22} />
+                    </div>
+
+                    {isFeatured ? (
+                      <p className={clsx(styles.departmentEyebrow)}>Единый контакт</p>
+                    ) : null}
+
+                    <h2 className={clsx(styles.departmentTitle)}>{manager.name}</h2>
+
+                    <ul className={clsx(styles.departmentMeta)}>
+                      {manager.email ? (
+                        <li>
+                          <IconEmail currentColor="currentColor" height={14} width={14} />
+                          <a href={`mailto:${manager.email}`}>{manager.email}</a>
+                        </li>
+                      ) : null}
+                      {manager.phone ? (
+                        <li>
+                          <IconPhone currentColor="currentColor" height={14} width={14} />
+                          <a href={toTelHref(manager.phone)}>{manager.phone}</a>
+                        </li>
+                      ) : null}
+                      {manager.role && !isFeatured ? (
+                        <li>
+                          {index === 1 ? (
+                            <IconCalendar currentColor="currentColor" height={14} width={14} />
+                          ) : (
+                            <IconMail currentColor="currentColor" height={14} width={14} />
+                          )}
+                          <span>{manager.role}</span>
+                        </li>
+                      ) : null}
+                    </ul>
+
+                    {isFeatured ? (
+                      <div className={clsx(styles.departmentActions)}>
+                        {manager.email ? (
+                          <a
+                            className={clsx(styles.primaryButton)}
+                            href={`mailto:${manager.email}`}
+                          >
+                            Письмо
+                          </a>
+                        ) : null}
+                        {manager.phone ? (
+                          <a
+                            className={clsx(styles.secondaryButton)}
+                            href={toTelHref(manager.phone)}
+                          >
+                            Позвонить
+                          </a>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </section>
           ) : null}
-        </InfoCard>
 
-        {contacts && contacts.managers.length > 0 ? (
-          <InfoCard title="Кому писать">
-            <div className={clsx(styles.managers)}>
-              {contacts.managers.map((manager) => (
-                <article className={clsx(styles.manager)} key={manager.email}>
-                  <h3 className={clsx(styles.managerName)}>{manager.name}</h3>
-                  <p className={clsx(styles.managerRole)}>{manager.role}</p>
-                  <p className={clsx(styles.managerContact)}>
-                    <a href={`tel:${manager.phone.replace(/[^\d+]/g, '')}`}>{manager.phone}</a>
-                  </p>
-                  <p className={clsx(styles.managerContact)}>
-                    <a href={`mailto:${manager.email}`}>{manager.email}</a>
-                  </p>
-                </article>
-              ))}
-            </div>
-          </InfoCard>
-        ) : null}
+          {offices.length > 0 ? (
+            <section aria-labelledby="offices-title" className={clsx(styles.officesSection)}>
+              <div className={clsx(styles.sectionIntro)}>
+                <p className={clsx(styles.sectionBadge)}>География</p>
+                <h2 className={clsx(styles.sectionTitle)} id="offices-title">
+                  Представительства
+                </h2>
+              </div>
 
-        <InfoCard>
-          <Button onPress={() => router.push(AppPath.Support)} variant="primary">
-            Написать в поддержку
-          </Button>
-        </InfoCard>
-      </InfoPage>
+              <div className={clsx(styles.officesGrid)}>
+                {offices.map((office) => (
+                  <article className={clsx(styles.officeCard)} key={office.city}>
+                    <div className={clsx(styles.officeHeader)}>
+                      <span aria-hidden className={clsx(styles.officePin)}>
+                        <IconLocation currentColor="currentColor" height={16} width={16} />
+                      </span>
+                      <h3 className={clsx(styles.officeCity)}>{office.city}</h3>
+                      {office.is_main ? (
+                        <span className={clsx(styles.officeMain)}>главный офис</span>
+                      ) : null}
+                    </div>
+                    <ul className={clsx(styles.officeMeta)}>
+                      {office.address ? (
+                        <li>
+                          <IconLocation currentColor="currentColor" height={13} width={13} />
+                          <span>{office.address}</span>
+                        </li>
+                      ) : null}
+                      {office.phone ? (
+                        <li>
+                          <IconPhone currentColor="currentColor" height={13} width={13} />
+                          <a href={toTelHref(office.phone)}>{office.phone}</a>
+                        </li>
+                      ) : null}
+                      {office.email ? (
+                        <li>
+                          <IconEmail currentColor="currentColor" height={13} width={13} />
+                          <a href={`mailto:${office.email}`}>{office.email}</a>
+                        </li>
+                      ) : null}
+                    </ul>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {requisiteItems.length > 0 ? (
+            <section aria-labelledby="requisites-title" className={clsx(styles.requisites)}>
+              <header className={clsx(styles.requisitesHeader)}>
+                <span aria-hidden className={clsx(styles.requisitesIcon)}>
+                  <IconBuilding currentColor="currentColor" height={18} width={18} />
+                </span>
+                <h2 className={clsx(styles.requisitesTitle)} id="requisites-title">
+                  Реквизиты компании
+                </h2>
+              </header>
+
+              <dl className={clsx(styles.requisitesList)}>
+                {requisiteItems.map((row) => (
+                  <div className={clsx(styles.requisitesRow)} key={row.label}>
+                    <dt>{row.label}</dt>
+                    <dd>{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ) : null}
+        </div>
+      </div>
     </Page>
   );
 };

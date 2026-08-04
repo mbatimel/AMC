@@ -31,12 +31,29 @@ export type BannersSettings = {
   items: BannerItem[];
 };
 
+export type ContactOffice = {
+  address: string;
+  city: string;
+  email: string;
+  is_main?: boolean;
+  phone: string;
+};
+
+export type ContactRequisiteItem = {
+  label: string;
+  value: string;
+};
+
 export type ContactsPageContent = {
   address: string;
   email: string;
   managers: { email: string; name: string; phone: string; role: string }[];
+  offices: ContactOffice[];
   phone: string;
+  requisite_items: ContactRequisiteItem[];
+  /** Краткое резюме реквизитов (для обратной совместимости / админки). */
   requisites: string;
+  subtitle: string;
   title: string;
   work_hours: string;
 };

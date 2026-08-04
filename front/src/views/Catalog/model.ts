@@ -14,7 +14,9 @@ import type { CatalogFilters } from './lib/filters';
 
 import {
   applyClientCatalogFilters,
+  CATALOG_PAGE_SIZE,
   DEFAULT_CATALOG_FILTERS,
+  paginateProducts,
   toCatalogProductsQueryKey,
 } from './lib/filters';
 
@@ -42,14 +44,17 @@ export const fetchCatalogProductsFx = createEffect(
       return fetchPromotionProducts(filters.promotionID);
     }
 
+    const page = Math.max(1, filters.page);
+    const offset = (page - 1) * CATALOG_PAGE_SIZE;
+
     return listProductsRequest({
       brandID: filters.brandID,
       categoryID: filters.categoryID,
       gost: filters.gost,
       inStock: filters.inStock,
-      limit: 100,
+      limit: CATALOG_PAGE_SIZE,
       material: filters.material,
-      offset: 0,
+      offset,
       q: filters.q,
       size: filters.size,
     });
@@ -76,15 +81,21 @@ const $catalogRawTotal = createStore(0).on(
 export const $catalogProducts = combine(
   $catalogRawProducts,
   $catalogFilters,
-  (products, filters) =>
-    filters.promotionID ? applyClientCatalogFilters(products, filters) : products,
+  (products, filters) => {
+    if (!filters.promotionID) {
+      return products;
+    }
+
+    return paginateProducts(applyClientCatalogFilters(products, filters), filters.page);
+  },
 );
 
 export const $catalogTotal = combine(
-  $catalogProducts,
+  $catalogRawProducts,
   $catalogRawTotal,
   $catalogFilters,
-  (products, rawTotal, filters) => (filters.promotionID ? products.length : rawTotal),
+  (products, rawTotal, filters) =>
+    filters.promotionID ? applyClientCatalogFilters(products, filters).length : rawTotal,
 );
 
 export const $categories = createStore<Category[]>([]).on(
