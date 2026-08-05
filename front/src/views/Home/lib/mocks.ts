@@ -71,7 +71,7 @@ export const HOME_PAGE_MOCK: HomePageContent = {
     ],
     description:
       'Собственное производство металлорежущего инструмента, складская программа и быстрая отгрузка для оптовых клиентов.',
-    imageUrl: null,
+    imageUrl: '/hero-workshop.png',
     primaryCta: {
       href: AppPath.Catalog,
       label: 'Перейти в каталог',
