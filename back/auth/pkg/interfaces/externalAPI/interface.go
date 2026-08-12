@@ -65,23 +65,6 @@ type AuthAPI interface {
 		correspondentAccount *string,
 	) (userID uuid.UUID, err error)
 
-	// RegisterIndividual ...
-	// @tg http-method=POST
-	// @tg http-path=/v1/auth/register/individual
-	// @tg uuidPackage=github.com/google/uuid
-	// @tg summary=`Регистрация физического лица`
-	// @tg desc=`Создание нового пользователя-физлица. ИНН необязателен, остальные поля обязательны.`
-	RegisterIndividual(
-		ctx context.Context,
-		fio string,
-		phone string,
-		email string,
-		deliveryAddress string,
-		password string,
-		city string,
-		inn *string,
-	) (userID uuid.UUID, err error)
-
 	// LogoutUser ...
 	// @tg http-method=POST
 	// @tg http-path=/v1/auth/logout

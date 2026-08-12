@@ -65,29 +65,6 @@ func (m metricsAuthAPI) RegisterIP(ctx context.Context, email string, password s
 	return m.next.RegisterIP(ctx, email, password, fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress, directorFullName, directorPosition, phone, additionalPhone, website, bankAccount, bankName, bankBik, correspondentAccount)
 }
 
-func (m metricsAuthAPI) RegisterIndividual(ctx context.Context, fio string, phone string, email string, deliveryAddress string, password string, city string, inn *string) (userID uuid.UUID, err error) {
-
-	defer func(_begin time.Time) {
-		var (
-			success = true
-			errCode int
-		)
-		if err != nil {
-			success = false
-			errCode = v2.StatusInternalServerError
-			ec, ok := err.(withErrorCode)
-			if ok {
-				errCode = ec.Code()
-			}
-		}
-		RequestCount.WithLabelValues("authAPI", "registerIndividual", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestCountAll.WithLabelValues("authAPI", "registerIndividual", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestLatency.WithLabelValues("authAPI", "registerIndividual", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
-	}(time.Now())
-
-	return m.next.RegisterIndividual(ctx, fio, phone, email, deliveryAddress, password, city, inn)
-}
-
 func (m metricsAuthAPI) LogoutUser(ctx context.Context, userID uuid.UUID) (err error) {
 
 	defer func(_begin time.Time) {

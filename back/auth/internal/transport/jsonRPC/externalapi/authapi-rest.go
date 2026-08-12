@@ -79,41 +79,6 @@ func (http *httpAuthAPI) serveRegisterIP(ctx *fiber.Ctx) (err error) {
 	}
 	return sendResponse(ctx, err)
 }
-func (http *httpAuthAPI) registerIndividual(ctx context.Context, request requestAuthAPIRegisterIndividual) (response responseAuthAPIRegisterIndividual, err error) {
-
-	response.UserID, err = http.svc.RegisterIndividual(ctx, request.Fio, request.Phone, request.Email, request.DeliveryAddress, request.Password, request.City, request.Inn)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpAuthAPI) serveRegisterIndividual(ctx *fiber.Ctx) (err error) {
-
-	var request requestAuthAPIRegisterIndividual
-	if err = ctx.BodyParser(&request); err != nil {
-		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
-		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
-		return
-	}
-
-	var response responseAuthAPIRegisterIndividual
-	if response, err = http.registerIndividual(ctx.UserContext(), request); err == nil {
-		var iResponse interface{} = response
-		if redirect, ok := iResponse.(withRedirect); ok {
-			return ctx.Redirect(redirect.RedirectTo())
-		}
-
-		return sendResponse(ctx, response)
-	}
-	if errCoder, ok := err.(withErrorCode); ok {
-		ctx.Status(errCoder.Code())
-	} else {
-		ctx.Status(fiber.StatusInternalServerError)
-	}
-	return sendResponse(ctx, err)
-}
 func (http *httpAuthAPI) logoutUser(ctx context.Context, request requestAuthAPILogoutUser) (response responseAuthAPILogoutUser, err error) {
 
 	err = http.svc.LogoutUser(ctx, request.UserID)

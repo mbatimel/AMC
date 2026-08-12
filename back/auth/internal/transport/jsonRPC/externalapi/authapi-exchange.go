@@ -39,20 +39,6 @@ type responseAuthAPIRegisterIP struct {
 	UserID uuid.UUID `json:"userID,omitempty"`
 }
 
-type requestAuthAPIRegisterIndividual struct {
-	Fio             string  `json:"fio,omitempty"`
-	Phone           string  `json:"phone,omitempty"`
-	Email           string  `json:"email,omitempty"`
-	DeliveryAddress string  `json:"deliveryAddress,omitempty"`
-	Password        string  `json:"password,omitempty"`
-	City            string  `json:"city,omitempty"`
-	Inn             *string `json:"inn,omitempty"`
-}
-
-type responseAuthAPIRegisterIndividual struct {
-	UserID uuid.UUID `json:"userID,omitempty"`
-}
-
 type requestAuthAPILogoutUser struct {
 	UserID uuid.UUID `json:"userID,omitempty"`
 }
