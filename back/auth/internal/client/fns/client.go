@@ -41,7 +41,8 @@ type flStatusResponse struct {
 // or parsing failure returns valid=false with a non-nil error (fail-closed) —
 // the caller must reject registration rather than assume validity.
 func (c *Client) CheckIndividual(ctx context.Context, inn string) (valid bool, err error) {
-	reqURL := fmt.Sprintf("%s?inn=%s&key=%s", c.addr, url.QueryEscape(inn), url.QueryEscape(c.key))
+	// если взять подписку или ключ то req заменить на inn
+	reqURL := fmt.Sprintf("%s?req=%s&key=%s", c.addr, url.QueryEscape(inn), url.QueryEscape(c.key))
 
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()

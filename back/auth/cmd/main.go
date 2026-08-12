@@ -31,7 +31,7 @@ func main() {
 
 	pool, err := postgres.NewPool(cfg)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to connect to postgres")
+		// log.Fatal().Err(err).Msg("failed to connect to postgres")
 	}
 	defer pool.Close()
 
