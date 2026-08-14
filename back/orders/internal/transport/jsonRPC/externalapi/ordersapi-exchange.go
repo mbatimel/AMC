@@ -95,6 +95,17 @@ type responseOrdersAPIListOrders struct {
 	Response models.ListOrdersResponse `json:"response,omitempty"`
 }
 
+type requestOrdersAPIListPreviouslyOrderedProducts struct {
+	UserID   uuid.UUID `json:"userID,omitempty"`
+	ClientID string    `json:"clientID,omitempty"`
+	Limit    int       `json:"limit,omitempty"`
+	Offset   int       `json:"offset,omitempty"`
+}
+
+type responseOrdersAPIListPreviouslyOrderedProducts struct {
+	Response models.ListPreviouslyOrderedProductsResponse `json:"response,omitempty"`
+}
+
 type requestOrdersAPICancelOrder struct {
 	OrderID uuid.UUID `json:"orderID,omitempty"`
 	UserID  uuid.UUID `json:"userID,omitempty"`

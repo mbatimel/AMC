@@ -224,6 +224,31 @@ func (m loggerOrdersAPI) ListOrders(ctx context.Context, userID uuid.UUID, clien
 	return m.next.ListOrders(ctx, userID, clientID, status, paymentStatus, limit, offset, sort)
 }
 
+func (m loggerOrdersAPI) ListPreviouslyOrderedProducts(ctx context.Context, userID uuid.UUID, clientID string, limit int, offset int) (response models.ListPreviouslyOrderedProductsResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "OrdersAPI").Str("method", "listPreviouslyOrderedProducts").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "ordersAPI.listPreviouslyOrderedProducts",
+				"request": viewer.Sprintf("%+v", requestOrdersAPIListPreviouslyOrderedProducts{
+					ClientID: clientID,
+					Limit:    limit,
+					Offset:   offset,
+					UserID:   userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseOrdersAPIListPreviouslyOrderedProducts{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call listPreviouslyOrderedProducts")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call listPreviouslyOrderedProducts")
+	}(time.Now())
+	return m.next.ListPreviouslyOrderedProducts(ctx, userID, clientID, limit, offset)
+}
+
 func (m loggerOrdersAPI) CancelOrder(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, comment string) (response models.CancelOrderResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "OrdersAPI").Str("method", "cancelOrder").Logger()
 	defer func(_begin time.Time) {

@@ -127,6 +127,19 @@ type OrdersAPI interface {
 	// @tg uuidPackage=github.com/google/uuid
 	ListOrders(ctx context.Context, userID uuid.UUID, clientID string, status string, paymentStatus string, limit int, offset int, sort string) (response models.ListOrdersResponse, err error)
 
+	// ListPreviouslyOrderedProducts returns unique products from placed client orders.
+	// @tg http-method=GET
+	// @tg http-path=/v1/orders/previously-ordered-products
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-args=clientID|clientID
+	// @tg http-args=limit|limit
+	// @tg http-args=offset|offset
+	// @tg http-response=github.com/mbatimel/AMC/orders/internal/transport/custom-handlers:ListPreviouslyOrderedProducts
+	// @tg summary=`Ранее заказанные товары`
+	// @tg desc=`Возвращает уникальные товары из неотменённых заказов клиента, начиная с заказанных последними`
+	// @tg uuidPackage=github.com/google/uuid
+	ListPreviouslyOrderedProducts(ctx context.Context, userID uuid.UUID, clientID string, limit int, offset int) (response models.ListPreviouslyOrderedProductsResponse, err error)
+
 	// CancelOrder cancels an order.
 	// @tg http-method=POST
 	// @tg http-path=/v1/orders/cancel
@@ -186,7 +199,7 @@ type OrdersAPI interface {
 	// @tg summary=`Обновление статуса заказа`
 	// @tg desc=`Администраторское изменение статуса заказа и оплаты`
 	// @tg uuidPackage=github.com/google/uuid
-	UpdateOrderStatus(ctx context.Context,userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error)
+	UpdateOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error)
 
 	// GetCities ...
 	// @tg http-method=GET

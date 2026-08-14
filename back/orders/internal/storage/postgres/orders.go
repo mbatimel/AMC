@@ -197,6 +197,64 @@ func (s *Storage) ListOrders(ctx context.Context, params ListOrdersParams) ([]Or
 	return items, total, nil
 }
 
+type PreviouslyOrderedProductRow struct {
+	ProductID     uuid.UUID
+	LastOrderedAt time.Time
+}
+
+type ListPreviouslyOrderedProductsParams struct {
+	UserID         uuid.UUID
+	CounterpartyID uuid.NullUUID
+	Limit          int
+	Offset         int
+}
+
+func (s *Storage) ListPreviouslyOrderedProducts(ctx context.Context, params ListPreviouslyOrderedProductsParams) ([]PreviouslyOrderedProductRow, int, error) {
+	const historyCTE = `
+		WITH product_history AS (
+			SELECT oi.product_id, MAX(o.created_at) AS last_ordered_at
+			FROM orders o
+			JOIN order_items oi ON oi.order_id = o.id
+			WHERE (
+				(o.counterparty_id = $1 AND $1::uuid IS NOT NULL)
+				OR (o.counterparty_id IS NULL AND $1::uuid IS NULL AND o.user_id = $2)
+			)
+			AND o.status <> 'cancelled'
+			AND oi.product_id IS NOT NULL
+			GROUP BY oi.product_id
+		)
+	`
+
+	rows, err := s.pool.Query(ctx, historyCTE+`
+		SELECT product_id, last_ordered_at
+		FROM product_history
+		ORDER BY last_ordered_at DESC, product_id
+		LIMIT $3 OFFSET $4
+	`, params.CounterpartyID, params.UserID, params.Limit, params.Offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list previously ordered products: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]PreviouslyOrderedProductRow, 0)
+	for rows.Next() {
+		var item PreviouslyOrderedProductRow
+		if err = rows.Scan(&item.ProductID, &item.LastOrderedAt); err != nil {
+			return nil, 0, fmt.Errorf("scan previously ordered product: %w", err)
+		}
+		items = append(items, item)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate previously ordered products: %w", err)
+	}
+
+	var total int
+	if err = s.pool.QueryRow(ctx, historyCTE+`SELECT COUNT(*) FROM product_history`, params.CounterpartyID, params.UserID).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count previously ordered products: %w", err)
+	}
+	return items, total, nil
+}
+
 type OrderDetailRow struct {
 	ID              uuid.UUID
 	Number          string

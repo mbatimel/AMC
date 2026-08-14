@@ -67,6 +67,11 @@ type OrderItem struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+type PreviouslyOrderedProduct struct {
+	ProductID     string    `json:"product_id"`
+	LastOrderedAt time.Time `json:"last_ordered_at"`
+}
+
 type OrderDocument struct {
 	ID        string    `json:"id"`
 	OrderID   string    `json:"order_id"`

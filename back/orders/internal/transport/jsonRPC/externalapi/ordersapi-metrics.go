@@ -204,6 +204,29 @@ func (m metricsOrdersAPI) ListOrders(ctx context.Context, userID uuid.UUID, clie
 	return m.next.ListOrders(ctx, userID, clientID, status, paymentStatus, limit, offset, sort)
 }
 
+func (m metricsOrdersAPI) ListPreviouslyOrderedProducts(ctx context.Context, userID uuid.UUID, clientID string, limit int, offset int) (response models.ListPreviouslyOrderedProductsResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("ordersAPI", "listPreviouslyOrderedProducts", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("ordersAPI", "listPreviouslyOrderedProducts", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("ordersAPI", "listPreviouslyOrderedProducts", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.ListPreviouslyOrderedProducts(ctx, userID, clientID, limit, offset)
+}
+
 func (m metricsOrdersAPI) CancelOrder(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, comment string) (response models.CancelOrderResponse, err error) {
 
 	defer func(_begin time.Time) {
