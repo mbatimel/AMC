@@ -331,6 +331,68 @@ func TestAddFavoriteIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestListFavoritesEmpty(t *testing.T) {
+	userID, clientID := uuid.New(), uuid.New()
+	repo := &fakeStorage{
+		getActiveClientFn: func(context.Context, uuid.UUID) (uuid.UUID, error) {
+			return clientID, nil
+		},
+		listFavoritesFn: func(_ context.Context, gotUserID, gotClientID uuid.UUID) ([]internalModels.Favorite, error) {
+			if gotUserID != userID || gotClientID != clientID {
+				t.Fatalf("unexpected scope: user=%s client=%s", gotUserID, gotClientID)
+			}
+			return nil, nil
+		},
+	}
+
+	response, err := testService(repo).ListFavorites(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("ListFavorites() error = %v", err)
+	}
+	if response.Items == nil || len(response.Items) != 0 {
+		t.Fatalf("items = %#v, want non-nil empty list", response.Items)
+	}
+}
+
+func TestListFavoritesWithData(t *testing.T) {
+	userID, clientID, productID := uuid.New(), uuid.New(), uuid.New()
+	createdAt := time.Now()
+	repo := &fakeStorage{
+		getActiveClientFn: func(context.Context, uuid.UUID) (uuid.UUID, error) {
+			return clientID, nil
+		},
+		listFavoritesFn: func(context.Context, uuid.UUID, uuid.UUID) ([]internalModels.Favorite, error) {
+			return []internalModels.Favorite{{
+				UserID: userID, ClientID: clientID, ProductID: productID, CreatedAt: createdAt,
+			}}, nil
+		},
+	}
+
+	response, err := testService(repo).ListFavorites(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("ListFavorites() error = %v", err)
+	}
+	if len(response.Items) != 1 || response.Items[0].ProductID != productID.String() || response.Items[0].CreatedAt != createdAt {
+		t.Fatalf("items = %#v", response.Items)
+	}
+}
+
+func TestListFavoritesStorageError(t *testing.T) {
+	repo := &fakeStorage{
+		getActiveClientFn: func(context.Context, uuid.UUID) (uuid.UUID, error) {
+			return uuid.New(), nil
+		},
+		listFavoritesFn: func(context.Context, uuid.UUID, uuid.UUID) ([]internalModels.Favorite, error) {
+			return nil, errors.New("database unavailable")
+		},
+	}
+
+	_, err := testService(repo).ListFavorites(context.Background(), uuid.New())
+	if err == nil || !errors.Is(err, customErrors.ErrInternal) {
+		t.Fatalf("expected internal error, got %v", err)
+	}
+}
+
 func TestDeleteFavoritesBulk(t *testing.T) {
 	userID, clientID := uuid.New(), uuid.New()
 	productIDs := []uuid.UUID{uuid.New(), uuid.New()}
@@ -357,6 +419,48 @@ func TestDeleteFavoritesBulk(t *testing.T) {
 	}
 	if response.Deleted != 2 {
 		t.Fatalf("deleted = %d, want 2", response.Deleted)
+	}
+}
+
+func TestDeleteFavoriteSingle(t *testing.T) {
+	userID, clientID, productID := uuid.New(), uuid.New(), uuid.New()
+	repo := &fakeStorage{
+		getActiveClientFn: func(context.Context, uuid.UUID) (uuid.UUID, error) {
+			return clientID, nil
+		},
+		deleteFavoritesFn: func(_ context.Context, gotUserID, gotClientID uuid.UUID, gotProductIDs []uuid.UUID) (int, error) {
+			if gotUserID != userID || gotClientID != clientID || len(gotProductIDs) != 1 || gotProductIDs[0] != productID {
+				t.Fatalf("unexpected delete: user=%s client=%s products=%v", gotUserID, gotClientID, gotProductIDs)
+			}
+			return 1, nil
+		},
+	}
+
+	response, err := testService(repo).DeleteFavorites(context.Background(), userID, []string{productID.String()})
+	if err != nil {
+		t.Fatalf("DeleteFavorites() error = %v", err)
+	}
+	if response.Deleted != 1 {
+		t.Fatalf("deleted = %d, want 1", response.Deleted)
+	}
+}
+
+func TestDeleteMissingFavoriteIsIdempotent(t *testing.T) {
+	repo := &fakeStorage{
+		getActiveClientFn: func(context.Context, uuid.UUID) (uuid.UUID, error) {
+			return uuid.New(), nil
+		},
+		deleteFavoritesFn: func(context.Context, uuid.UUID, uuid.UUID, []uuid.UUID) (int, error) {
+			return 0, nil
+		},
+	}
+
+	response, err := testService(repo).DeleteFavorites(context.Background(), uuid.New(), []string{uuid.NewString()})
+	if err != nil {
+		t.Fatalf("DeleteFavorites() error = %v", err)
+	}
+	if response.Deleted != 0 {
+		t.Fatalf("deleted = %d, want 0", response.Deleted)
 	}
 }
 
