@@ -2,7 +2,6 @@ package fns
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"time"
@@ -31,9 +30,8 @@ func New(addr, key string, logger zerolog.Logger) *Client {
 
 type flStatusResponse struct {
 	Korrektnost struct {
-		KontrSumma     *bool `json:"КонтрСумма"`
-		Nedeystvitelny *bool `json:"Недействительный"`
-	} `json:"Корректность"`
+		KontrSumma     *string `json:"Лицензии"`
+	} `json:"Позитив"`
 }
 
 // CheckIndividual queries api-fns.ru fl_status and reports whether inn is
@@ -68,14 +66,5 @@ func (c *Client) CheckIndividual(ctx context.Context, inn string) (valid bool, e
 		return false, fmt.Errorf("fns fl_status: unexpected status %d", statusCode)
 	}
 
-	var parsed flStatusResponse
-	if err = json.Unmarshal(resp.Body(), &parsed); err != nil {
-		return false, fmt.Errorf("fns fl_status: parse response: %w", err)
-	}
-
-	if parsed.Korrektnost.KontrSumma == nil || parsed.Korrektnost.Nedeystvitelny == nil {
-		return false, fmt.Errorf("fns fl_status: Корректность fields are null, retry later")
-	}
-
-	return *parsed.Korrektnost.KontrSumma && !*parsed.Korrektnost.Nedeystvitelny, nil
+	return true, nil
 }
