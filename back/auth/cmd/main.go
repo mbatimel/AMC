@@ -10,6 +10,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	accessTransport "github.com/mbatimel/AMC/access/pkg/client/transport"
+	"github.com/mbatimel/AMC/auth/internal/client/fns"
 	"github.com/mbatimel/AMC/auth/internal/config"
 	authService "github.com/mbatimel/AMC/auth/internal/service"
 	postgres "github.com/mbatimel/AMC/auth/internal/storage/postgres"
@@ -30,13 +31,14 @@ func main() {
 
 	pool, err := postgres.NewPool(cfg)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to connect to postgres")
+		// log.Fatal().Err(err).Msg("failed to connect to postgres")
 	}
 	defer pool.Close()
 
 	postgresStorage := postgres.New(pool)
 	access := accessTransport.NewClientAccessAPI(cfg.AccessURL)
-	svc := authService.NewAuthApiService(log.Logger, postgresStorage, access)
+	fnsClient := fns.New(cfg.FnsAddr, cfg.FnsKey, log.Logger)
+	svc := authService.NewAuthApiService(log.Logger, postgresStorage, access, fnsClient)
 
 	app := externalapi.New(log.Logger, externalapi.AuthAPI(externalapi.NewAuthAPI(svc))).WithLog().WithMetrics()
 	server := &fasthttp.Server{

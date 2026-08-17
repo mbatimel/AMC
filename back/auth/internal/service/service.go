@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -40,17 +41,24 @@ type AccessClient interface {
 	CheckAccess(ctx context.Context, userID uuid.UUID, role int) (allowed bool, err error)
 }
 
+// FnsClient is implemented by internal/client/fns.Client.
+type FnsClient interface {
+	CheckIndividual(ctx context.Context, inn string) (valid bool, err error)
+}
+
 type service struct {
 	logger       zerolog.Logger
 	storage      Storage
 	accessClient AccessClient
+	fnsClient    FnsClient
 }
 
-func NewAuthApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient) externalAPI.AuthAPI {
+func NewAuthApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient, fnsClient FnsClient) externalAPI.AuthAPI {
 	return &service{
 		logger:       logger,
 		storage:      storage,
 		accessClient: accessClient,
+		fnsClient:    fnsClient,
 	}
 }
 
@@ -85,12 +93,27 @@ func (s *service) RegisterIP(
 	if strings.TrimSpace(password) == "" {
 		return uuid.Nil, customErrors.ValidationError("password")
 	}
-
+	if inn == nil{
+		return uuid.Nil,customErrors.InnEmptyErr("inn")
+	}
+	valid, err := validate(*inn)
+	if  err !=nil{
+		return uuid.Nil,err
+	}
+	if !valid{
+		return uuid.Nil,fmt.Errorf("Inn not valid:%w",err)
+	}
+	fnsValid, err := s.fnsClient.CheckIndividual(ctx, *inn)
+	if err != nil {
+		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
+	}
+	if !fnsValid {
+		return uuid.Nil, customErrors.InnInvalidError(*inn)
+	}
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
 	}
-
 	userID, err = s.storage.CreateIPUser(
 		ctx, email, string(passwordHash),
 		fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
@@ -108,59 +131,6 @@ func (s *service) RegisterIP(
 	return userID, nil
 }
 
-func (s *service) RegisterIndividual(
-	ctx context.Context,
-	fio string,
-	phone string,
-	email string,
-	deliveryAddress string,
-	password string,
-	city string,
-	inn *string,
-) (userID uuid.UUID, err error) {
-	fio = strings.TrimSpace(fio)
-	phone = strings.TrimSpace(phone)
-	email = strings.TrimSpace(email)
-	deliveryAddress = strings.TrimSpace(deliveryAddress)
-	city = strings.TrimSpace(city)
-
-	requiredFields := []struct {
-		name  string
-		value string
-	}{
-		{"fio", fio},
-		{"phone", phone},
-		{"email", email},
-		{"deliveryAddress", deliveryAddress},
-		{"city", city},
-		{"password", strings.TrimSpace(password)},
-	}
-	for _, f := range requiredFields {
-		if f.value == "" {
-			return uuid.Nil, customErrors.ValidationError(f.name)
-		}
-	}
-
-	surename, name, middleName := splitFio(fio)
-
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
-	}
-
-	userID, err = s.storage.CreateIndividualUser(
-		ctx, email, string(passwordHash), surename, name, middleName, phone, city, deliveryAddress,
-		inn, defaultSignUpRoleCode,
-	)
-	if errors.Is(err, postgres.ErrEmailTaken) {
-		return uuid.Nil, customErrors.EmailTakenError()
-	}
-	if err != nil {
-		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
-	}
-
-	return userID, nil
-}
 
 // splitFio splits a Russian "Фамилия Имя Отчество" string into its three parts.
 // Fewer than two words leaves name/middleName empty.

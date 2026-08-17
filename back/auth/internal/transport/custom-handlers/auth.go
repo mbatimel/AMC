@@ -140,57 +140,6 @@ func RegisterIP(
 	return nil
 }
 
-func RegisterIndividual(
-	ctx *fiber.Ctx,
-	svc externalapi.AuthAPI,
-	fio string,
-	phone string,
-	email string,
-	deliveryAddress string,
-	password string,
-	city string,
-	inn *string,
-) error {
-	var (
-		methodName = "RegisterIndividual"
-		err        error
-	)
-
-	defer func(begin time.Time) {
-		fields := map[string]interface{}{
-			"method":          "post",
-			"path":            "/v1/auth/register/individual",
-			"methodName":      methodName,
-			"fio":             fio,
-			"phone":           phone,
-			"email":           email,
-			"deliveryAddress": deliveryAddress,
-			"city":            city,
-			"inn":             derefStr(inn),
-			"took":            time.Since(begin).String(),
-		}
-
-		l := log.Info()
-		if err != nil {
-			if errors.Is(err, errors.ForbiddenError()) {
-				l = log.Warn().Err(err)
-			} else {
-				l = log.Error().Err(err)
-			}
-		}
-
-		l.Fields(fields).Msg("call")
-	}(time.Now())
-
-	userID, err := svc.RegisterIndividual(ctx.UserContext(), fio, phone, email, deliveryAddress, password, city, inn)
-	if err != nil {
-		sendResponse(ctx, log.Logger, nil, err)
-		return nil
-	}
-
-	sendResponse(ctx, log.Logger, userID, nil)
-	return nil
-}
 
 func LogoutUser(
 	ctx *fiber.Ctx,

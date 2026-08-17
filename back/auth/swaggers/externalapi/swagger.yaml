@@ -317,107 +317,6 @@ paths:
                                         type: string
                                         example: content.api.errors.auth.internalError
                                         description: Заголовок ошибки
-    /api/v1/auth/register/individual:
-        post:
-            tags:
-                - AuthAPI
-            summary: Регистрация физического лица
-            description: Создание нового пользователя-физлица. ИНН необязателен, остальные поля обязательны.
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/requestAuthAPIRegisterIndividual'
-            responses:
-                "200":
-                    description: Successful operation
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors: {}
-                                    data:
-                                        example: true
-                                    error:
-                                        type: boolean
-                                        example: false
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                "400":
-                    description: Bad Request
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        type: object
-                                        properties:
-                                            errors:
-                                                type: array
-                                                items:
-                                                    type: object
-                                                    properties:
-                                                        params:
-                                                            type: object
-                                                            example:
-                                                                "1": value one
-                                                                "2": value two
-                                                            additionalProperties:
-                                                                type: string
-                                                        trKey:
-                                                            type: string
-                                                nullable: true
-                                        description: Текст ошибки, при ответе
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.auth.badRequest
-                                        description: Заголовок ошибки
-                "401":
-                    description: Unauthorized
-                "403":
-                    description: Forbidden
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.auth.accessDenied
-                                        description: Заголовок ошибки
-                "500":
-                    description: Internal Server Error
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    additionalErrors:
-                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
-                                    data: {}
-                                    error:
-                                        type: boolean
-                                        example: true
-                                        description: Флаг показывающий, что ответ пришел с ошибкой
-                                    errorText:
-                                        type: string
-                                        example: content.api.errors.auth.internalError
-                                        description: Заголовок ошибки
     /api/v1/auth/register/ip:
         post:
             tags:
@@ -857,34 +756,6 @@ components:
                         - type: string
                         - nullable: true
             description: Создание нового пользователя с реквизитами ИП/организации. Все поля кроме email и пароля необязательны.
-        requestAuthAPIRegisterIndividual:
-            type: object
-            required:
-                - fio
-                - phone
-                - email
-                - deliveryAddress
-                - password
-                - city
-                - inn
-            properties:
-                city:
-                    type: string
-                deliveryAddress:
-                    type: string
-                email:
-                    type: string
-                fio:
-                    type: string
-                inn:
-                    oneOf:
-                        - type: string
-                        - nullable: true
-                password:
-                    type: string
-                phone:
-                    type: string
-            description: Создание нового пользователя-физлица. ИНН необязателен, остальные поля обязательны.
         requestAuthAPISendEmailVerification:
             type: object
         requestAuthAPIVerifyEmailCode:
@@ -911,15 +782,6 @@ components:
                     type: string
                     format: uuid
             description: Создание нового пользователя с реквизитами ИП/организации. Все поля кроме email и пароля необязательны.
-        responseAuthAPIRegisterIndividual:
-            type: object
-            required:
-                - userID
-            properties:
-                userID:
-                    type: string
-                    format: uuid
-            description: Создание нового пользователя-физлица. ИНН необязателен, остальные поля обязательны.
         responseAuthAPISendEmailVerification:
             type: object
         responseAuthAPIVerifyEmailCode:

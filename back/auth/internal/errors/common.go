@@ -19,6 +19,12 @@ var (
 	ValidationError = func(field string) *Error {
 		return New("validation failed", fasthttp.StatusBadRequest, ErrInvalidRequest).AddCause("field", field)
 	}
+	InnEmptyErr = func(field string) *Error {
+		return New("inn is empty", fasthttp.StatusBadRequest, ErrInvalidRequest).AddCause("field", field)
+	}
+	InnInvalidError = func(inn string) *Error {
+		return New("inn is invalid", fasthttp.StatusBadRequest, ErrInvalidRequest).AddCause("inn", inn)
+	}
 )
 
 const (

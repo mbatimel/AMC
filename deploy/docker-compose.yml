@@ -74,6 +74,8 @@ services:
       PG_DB: ${PG_DB}
       PG_USER: ${PG_USER}
       PG_PASSWORD: ${PG_PASSWORD}
+      API_FNS_ADDR: ${API_FNS_ADDR}
+      API_FNS_KEY: ${API_FNS_KEY}
       BIND_ADDR: ":8081"
       ACCESS_URL: "http://access:8080"
     depends_on:

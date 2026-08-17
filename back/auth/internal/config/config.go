@@ -16,6 +16,8 @@ type Config struct {
 	PGPassword string
 	BindAddr   string
 	AccessURL  string
+	FnsAddr    string
+	FnsKey     string
 }
 
 func LoadConfig() Config {
@@ -27,6 +29,8 @@ func LoadConfig() Config {
 		PGPassword: os.Getenv("PG_PASSWORD"),
 		BindAddr:   GetEnv("BIND_ADDR", ":8081"),
 		AccessURL:  os.Getenv("ACCESS_URL"),
+		FnsAddr:    os.Getenv("API_FNS_ADDR"),
+		FnsKey:     os.Getenv("API_FNS_KEY"),
 	}
 
 	if cfg.PGDB == "" || cfg.PGUser == "" || cfg.PGPassword == "" {
@@ -34,6 +38,9 @@ func LoadConfig() Config {
 	}
 	if cfg.AccessURL == "" {
 		log.Fatal().Msg("ACCESS_URL must be specified")
+	}
+	if cfg.FnsAddr == "" || cfg.FnsKey == "" {
+		log.Fatal().Msg("API_FNS_ADDR and API_FNS_KEY must be specified")
 	}
 	return cfg
 }
