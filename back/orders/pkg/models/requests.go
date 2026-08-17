@@ -57,6 +57,13 @@ type ListOrdersRequest struct {
 	Sort          string `json:"sort,omitempty"`
 }
 
+type ListPreviouslyOrderedProductsRequest struct {
+	UserID   string `json:"user_id,omitempty"`
+	ClientID string `json:"client_id,omitempty"`
+	Limit    int    `json:"limit,omitempty"`
+	Offset   int    `json:"offset,omitempty"`
+}
+
 type CancelOrderRequest struct {
 	ID      string `json:"id"`
 	UserID  string `json:"user_id,omitempty"`

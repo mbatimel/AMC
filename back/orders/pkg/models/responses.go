@@ -37,6 +37,11 @@ type ListOrdersResponse struct {
 	Pagination Pagination `json:"pagination"`
 }
 
+type ListPreviouslyOrderedProductsResponse struct {
+	Items      []PreviouslyOrderedProduct `json:"items"`
+	Pagination Pagination                 `json:"pagination"`
+}
+
 type CancelOrderResponse struct {
 	Order Order `json:"order"`
 }

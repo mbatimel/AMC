@@ -20,8 +20,7 @@ func GetCart(ctx *fiber.Ctx, svc externalapi.OrdersAPI, userID uuid.UUID, client
 	})
 }
 func GetCities(ctx *fiber.Ctx, svc externalapi.OrdersAPI) error {
-	return handle(ctx, "get", "/v1/orders/cities", "GetCities", map[string]interface{}{
-	}, func() (interface{}, error) {
+	return handle(ctx, "get", "/v1/orders/cities", "GetCities", map[string]interface{}{}, func() (interface{}, error) {
 		return svc.GetCities(ctx.UserContext())
 	})
 }
@@ -106,6 +105,17 @@ func ListOrders(ctx *fiber.Ctx, svc externalapi.OrdersAPI, userID uuid.UUID, cli
 	})
 }
 
+func ListPreviouslyOrderedProducts(ctx *fiber.Ctx, svc externalapi.OrdersAPI, userID uuid.UUID, clientID string, limit int, offset int) error {
+	return handle(ctx, "get", "/v1/orders/previously-ordered-products", "ListPreviouslyOrderedProducts", map[string]interface{}{
+		"userID":   userID,
+		"clientID": clientID,
+		"limit":    limit,
+		"offset":   offset,
+	}, func() (interface{}, error) {
+		return svc.ListPreviouslyOrderedProducts(ctx.UserContext(), userID, clientID, limit, offset)
+	})
+}
+
 func CancelOrder(ctx *fiber.Ctx, svc externalapi.OrdersAPI, orderID uuid.UUID, userID uuid.UUID, comment string) error {
 	return handle(ctx, "post", "/v1/orders/{orderID}/cancel", "CancelOrder", map[string]interface{}{
 		"orderID": orderID,
@@ -144,7 +154,7 @@ func GetOrderHistory(ctx *fiber.Ctx, svc externalapi.OrdersAPI, orderID uuid.UUI
 	})
 }
 
-func UpdateOrderStatus(ctx *fiber.Ctx, svc externalapi.OrdersAPI,userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) error {
+func UpdateOrderStatus(ctx *fiber.Ctx, svc externalapi.OrdersAPI, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) error {
 	return handle(ctx, "patch", "/v1/admin/orders/{orderID}/status", "UpdateOrderStatus", map[string]interface{}{
 		"orderID":       orderID,
 		"status":        status,
@@ -152,7 +162,7 @@ func UpdateOrderStatus(ctx *fiber.Ctx, svc externalapi.OrdersAPI,userID uuid.UUI
 		"comment":       comment,
 		"changedBy":     changedBy,
 	}, func() (interface{}, error) {
-		return svc.UpdateOrderStatus(ctx.UserContext(),userID, orderID, status, paymentStatus, comment, changedBy)
+		return svc.UpdateOrderStatus(ctx.UserContext(), userID, orderID, status, paymentStatus, comment, changedBy)
 	})
 }
 

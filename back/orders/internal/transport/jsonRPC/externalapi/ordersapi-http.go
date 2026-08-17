@@ -51,6 +51,7 @@ func (http *httpOrdersAPI) SetRoutes(route *fiber.App) {
 	route.Post("/api/v1/orders", http.serveCreateOrder)
 	route.Get("/api/v1/orders/id", http.serveGetOrder)
 	route.Get("/api/v1/orders", http.serveListOrders)
+	route.Get("/api/v1/orders/previously-ordered-products", http.serveListPreviouslyOrderedProducts)
 	route.Post("/api/v1/orders/cancel", http.serveCancelOrder)
 	route.Post("/api/v1/orders/repeat", http.serveRepeatOrder)
 	route.Get("/api/v1/orders/documents", http.serveGetOrderDocuments)

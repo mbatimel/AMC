@@ -17,6 +17,7 @@ type OrdersAPIClearCart func(ctx context.Context, userID uuid.UUID, clientID str
 type OrdersAPICreateOrder func(ctx context.Context, userID uuid.UUID, clientID string, deliveryType string, deliveryAddress string, contactName string, phone string, email string, comment string) (response models.CreateOrderResponse, err error)
 type OrdersAPIGetOrder func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, clientID string) (response models.GetOrderResponse, err error)
 type OrdersAPIListOrders func(ctx context.Context, userID uuid.UUID, clientID string, status string, paymentStatus string, limit int, offset int, sort string) (response models.ListOrdersResponse, err error)
+type OrdersAPIListPreviouslyOrderedProducts func(ctx context.Context, userID uuid.UUID, clientID string, limit int, offset int) (response models.ListPreviouslyOrderedProductsResponse, err error)
 type OrdersAPICancelOrder func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, comment string) (response models.CancelOrderResponse, err error)
 type OrdersAPIRepeatOrder func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, clientID string) (response models.RepeatOrderResponse, err error)
 type OrdersAPIGetOrderDocuments func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderDocumentsResponse, err error)
@@ -34,6 +35,7 @@ type MiddlewareOrdersAPIClearCart func(next OrdersAPIClearCart) OrdersAPIClearCa
 type MiddlewareOrdersAPICreateOrder func(next OrdersAPICreateOrder) OrdersAPICreateOrder
 type MiddlewareOrdersAPIGetOrder func(next OrdersAPIGetOrder) OrdersAPIGetOrder
 type MiddlewareOrdersAPIListOrders func(next OrdersAPIListOrders) OrdersAPIListOrders
+type MiddlewareOrdersAPIListPreviouslyOrderedProducts func(next OrdersAPIListPreviouslyOrderedProducts) OrdersAPIListPreviouslyOrderedProducts
 type MiddlewareOrdersAPICancelOrder func(next OrdersAPICancelOrder) OrdersAPICancelOrder
 type MiddlewareOrdersAPIRepeatOrder func(next OrdersAPIRepeatOrder) OrdersAPIRepeatOrder
 type MiddlewareOrdersAPIGetOrderDocuments func(next OrdersAPIGetOrderDocuments) OrdersAPIGetOrderDocuments

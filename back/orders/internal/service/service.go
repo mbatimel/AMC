@@ -37,6 +37,7 @@ type Storage interface {
 
 	CreateOrder(ctx context.Context, params postgres.CreateOrderParams) (postgres.CreatedOrder, error)
 	ListOrders(ctx context.Context, params postgres.ListOrdersParams) ([]postgres.OrderRow, int, error)
+	ListPreviouslyOrderedProducts(ctx context.Context, params postgres.ListPreviouslyOrderedProductsParams) ([]postgres.PreviouslyOrderedProductRow, int, error)
 	GetOrderByID(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, counterpartyID uuid.NullUUID) (postgres.OrderDetailRow, error)
 	GetOrderItems(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderItemRow, error)
 	GetOrderDocumentsByOrderID(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderDocumentRow, error)
@@ -45,7 +46,10 @@ type Storage interface {
 	UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy uuid.UUID) (postgres.OrderDetailRow, error)
 }
 
-const defaultOrdersLimit = 20
+const (
+	defaultOrdersLimit = 20
+	maxOrdersLimit     = 100
+)
 
 // AccessClient is implemented by internal/access.Client.
 type AccessClient interface {
@@ -714,6 +718,51 @@ func (s *service) ListOrders(ctx context.Context, userID uuid.UUID, clientID str
 
 	return models.ListOrdersResponse{
 		Items: orders,
+		Pagination: models.Pagination{
+			Limit:  limit,
+			Offset: offset,
+			Total:  total,
+		},
+	}, nil
+}
+
+func (s *service) ListPreviouslyOrderedProducts(ctx context.Context, userID uuid.UUID, clientID string, limit int, offset int) (response models.ListPreviouslyOrderedProductsResponse, err error) {
+	if err = s.checkBuyerAccess(ctx, userID); err != nil {
+		return response, err
+	}
+	if limit == 0 {
+		limit = defaultOrdersLimit
+	}
+	if limit < 0 || limit > maxOrdersLimit {
+		return response, customErrors.BadRequestError().AddCause("field", "limit")
+	}
+	if offset < 0 {
+		return response, customErrors.BadRequestError().AddCause("field", "offset")
+	}
+
+	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, clientID)
+	if err != nil {
+		return response, err
+	}
+	rows, total, err := s.storage.ListPreviouslyOrderedProducts(ctx, postgres.ListPreviouslyOrderedProductsParams{
+		UserID:         userID,
+		CounterpartyID: counterpartyID,
+		Limit:          limit,
+		Offset:         offset,
+	})
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+
+	items := make([]models.PreviouslyOrderedProduct, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, models.PreviouslyOrderedProduct{
+			ProductID:     row.ProductID.String(),
+			LastOrderedAt: row.LastOrderedAt,
+		})
+	}
+	return models.ListPreviouslyOrderedProductsResponse{
+		Items: items,
 		Pagination: models.Pagination{
 			Limit:  limit,
 			Offset: offset,

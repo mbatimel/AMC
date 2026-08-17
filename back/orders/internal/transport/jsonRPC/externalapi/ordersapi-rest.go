@@ -52,11 +52,6 @@ func (http *httpOrdersAPI) serveAddCartItem(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIAddCartItem
 
-	if _clientID := ctx.Query("clientID"); _clientID != "" {
-		var clientID string
-		clientID = _clientID
-		request.ClientID = clientID
-	}
 	if _productID := ctx.Query("productID"); _productID != "" {
 		var productID string
 		productID = _productID
@@ -70,6 +65,11 @@ func (http *httpOrdersAPI) serveAddCartItem(ctx *fiber.Ctx) (err error) {
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
 		request.Qty = qty
+	}
+	if _clientID := ctx.Query("clientID"); _clientID != "" {
+		var clientID string
+		clientID = _clientID
+		request.ClientID = clientID
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -288,24 +288,6 @@ func (http *httpOrdersAPI) serveListOrders(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIListOrders
 
-	if _limit := ctx.Query("limit"); _limit != "" {
-		var limit int
-		limit, err = strconv.Atoi(_limit)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Limit = limit
-	}
-	if _offset := ctx.Query("offset"); _offset != "" {
-		var offset int
-		offset, err = strconv.Atoi(_offset)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Offset = offset
-	}
 	if _sort := ctx.Query("sort"); _sort != "" {
 		var sort string
 		sort = _sort
@@ -326,6 +308,24 @@ func (http *httpOrdersAPI) serveListOrders(ctx *fiber.Ctx) (err error) {
 		paymentStatus = _paymentStatus
 		request.PaymentStatus = paymentStatus
 	}
+	if _limit := ctx.Query("limit"); _limit != "" {
+		var limit int
+		limit, err = strconv.Atoi(_limit)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Limit = limit
+	}
+	if _offset := ctx.Query("offset"); _offset != "" {
+		var offset int
+		offset, err = strconv.Atoi(_offset)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Offset = offset
+	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
 		var userID uuid.UUID
@@ -334,6 +334,52 @@ func (http *httpOrdersAPI) serveListOrders(ctx *fiber.Ctx) (err error) {
 	}
 
 	return customhandlers.ListOrders(ctx, http.svc, request.UserID, request.ClientID, request.Status, request.PaymentStatus, request.Limit, request.Offset, request.Sort)
+}
+func (http *httpOrdersAPI) listPreviouslyOrderedProducts(ctx context.Context, request requestOrdersAPIListPreviouslyOrderedProducts) (response responseOrdersAPIListPreviouslyOrderedProducts, err error) {
+
+	response.Response, err = http.svc.ListPreviouslyOrderedProducts(ctx, request.UserID, request.ClientID, request.Limit, request.Offset)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpOrdersAPI) serveListPreviouslyOrderedProducts(ctx *fiber.Ctx) (err error) {
+
+	var request requestOrdersAPIListPreviouslyOrderedProducts
+
+	if _clientID := ctx.Query("clientID"); _clientID != "" {
+		var clientID string
+		clientID = _clientID
+		request.ClientID = clientID
+	}
+	if _limit := ctx.Query("limit"); _limit != "" {
+		var limit int
+		limit, err = strconv.Atoi(_limit)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Limit = limit
+	}
+	if _offset := ctx.Query("offset"); _offset != "" {
+		var offset int
+		offset, err = strconv.Atoi(_offset)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Offset = offset
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.ListPreviouslyOrderedProducts(ctx, http.svc, request.UserID, request.ClientID, request.Limit, request.Offset)
 }
 func (http *httpOrdersAPI) cancelOrder(ctx context.Context, request requestOrdersAPICancelOrder) (response responseOrdersAPICancelOrder, err error) {
 
@@ -471,6 +517,11 @@ func (http *httpOrdersAPI) serveUpdateOrderStatus(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIUpdateOrderStatus
 
+	if _orderID := ctx.Query("orderID"); _orderID != "" {
+		var orderID uuid.UUID
+		orderID, _ = uuid.Parse(_orderID)
+		request.OrderID = orderID
+	}
 	if _status := ctx.Query("status"); _status != "" {
 		var status string
 		status = _status
@@ -490,11 +541,6 @@ func (http *httpOrdersAPI) serveUpdateOrderStatus(ctx *fiber.Ctx) (err error) {
 		var changedBy string
 		changedBy = _changedBy
 		request.ChangedBy = changedBy
-	}
-	if _orderID := ctx.Query("orderID"); _orderID != "" {
-		var orderID uuid.UUID
-		orderID, _ = uuid.Parse(_orderID)
-		request.OrderID = orderID
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {

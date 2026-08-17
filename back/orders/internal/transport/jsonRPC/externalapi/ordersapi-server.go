@@ -10,21 +10,22 @@ import (
 )
 
 type serverOrdersAPI struct {
-	svc               externalapi.OrdersAPI
-	getCart           OrdersAPIGetCart
-	addCartItem       OrdersAPIAddCartItem
-	updateCartItem    OrdersAPIUpdateCartItem
-	deleteCartItem    OrdersAPIDeleteCartItem
-	clearCart         OrdersAPIClearCart
-	createOrder       OrdersAPICreateOrder
-	getOrder          OrdersAPIGetOrder
-	listOrders        OrdersAPIListOrders
-	cancelOrder       OrdersAPICancelOrder
-	repeatOrder       OrdersAPIRepeatOrder
-	getOrderDocuments OrdersAPIGetOrderDocuments
-	getOrderHistory   OrdersAPIGetOrderHistory
-	updateOrderStatus OrdersAPIUpdateOrderStatus
-	getCities         OrdersAPIGetCities
+	svc                           externalapi.OrdersAPI
+	getCart                       OrdersAPIGetCart
+	addCartItem                   OrdersAPIAddCartItem
+	updateCartItem                OrdersAPIUpdateCartItem
+	deleteCartItem                OrdersAPIDeleteCartItem
+	clearCart                     OrdersAPIClearCart
+	createOrder                   OrdersAPICreateOrder
+	getOrder                      OrdersAPIGetOrder
+	listOrders                    OrdersAPIListOrders
+	listPreviouslyOrderedProducts OrdersAPIListPreviouslyOrderedProducts
+	cancelOrder                   OrdersAPICancelOrder
+	repeatOrder                   OrdersAPIRepeatOrder
+	getOrderDocuments             OrdersAPIGetOrderDocuments
+	getOrderHistory               OrdersAPIGetOrderHistory
+	updateOrderStatus             OrdersAPIUpdateOrderStatus
+	getCities                     OrdersAPIGetCities
 }
 
 type MiddlewareSetOrdersAPI interface {
@@ -37,6 +38,7 @@ type MiddlewareSetOrdersAPI interface {
 	WrapCreateOrder(m MiddlewareOrdersAPICreateOrder)
 	WrapGetOrder(m MiddlewareOrdersAPIGetOrder)
 	WrapListOrders(m MiddlewareOrdersAPIListOrders)
+	WrapListPreviouslyOrderedProducts(m MiddlewareOrdersAPIListPreviouslyOrderedProducts)
 	WrapCancelOrder(m MiddlewareOrdersAPICancelOrder)
 	WrapRepeatOrder(m MiddlewareOrdersAPIRepeatOrder)
 	WrapGetOrderDocuments(m MiddlewareOrdersAPIGetOrderDocuments)
@@ -50,21 +52,22 @@ type MiddlewareSetOrdersAPI interface {
 
 func newServerOrdersAPI(svc externalapi.OrdersAPI) *serverOrdersAPI {
 	return &serverOrdersAPI{
-		addCartItem:       svc.AddCartItem,
-		cancelOrder:       svc.CancelOrder,
-		clearCart:         svc.ClearCart,
-		createOrder:       svc.CreateOrder,
-		deleteCartItem:    svc.DeleteCartItem,
-		getCart:           svc.GetCart,
-		getCities:         svc.GetCities,
-		getOrder:          svc.GetOrder,
-		getOrderDocuments: svc.GetOrderDocuments,
-		getOrderHistory:   svc.GetOrderHistory,
-		listOrders:        svc.ListOrders,
-		repeatOrder:       svc.RepeatOrder,
-		svc:               svc,
-		updateCartItem:    svc.UpdateCartItem,
-		updateOrderStatus: svc.UpdateOrderStatus,
+		addCartItem:                   svc.AddCartItem,
+		cancelOrder:                   svc.CancelOrder,
+		clearCart:                     svc.ClearCart,
+		createOrder:                   svc.CreateOrder,
+		deleteCartItem:                svc.DeleteCartItem,
+		getCart:                       svc.GetCart,
+		getCities:                     svc.GetCities,
+		getOrder:                      svc.GetOrder,
+		getOrderDocuments:             svc.GetOrderDocuments,
+		getOrderHistory:               svc.GetOrderHistory,
+		listOrders:                    svc.ListOrders,
+		listPreviouslyOrderedProducts: svc.ListPreviouslyOrderedProducts,
+		repeatOrder:                   svc.RepeatOrder,
+		svc:                           svc,
+		updateCartItem:                svc.UpdateCartItem,
+		updateOrderStatus:             svc.UpdateOrderStatus,
 	}
 }
 
@@ -78,6 +81,7 @@ func (srv *serverOrdersAPI) Wrap(m MiddlewareOrdersAPI) {
 	srv.createOrder = srv.svc.CreateOrder
 	srv.getOrder = srv.svc.GetOrder
 	srv.listOrders = srv.svc.ListOrders
+	srv.listPreviouslyOrderedProducts = srv.svc.ListPreviouslyOrderedProducts
 	srv.cancelOrder = srv.svc.CancelOrder
 	srv.repeatOrder = srv.svc.RepeatOrder
 	srv.getOrderDocuments = srv.svc.GetOrderDocuments
@@ -116,6 +120,10 @@ func (srv *serverOrdersAPI) GetOrder(ctx context.Context, orderID uuid.UUID, use
 
 func (srv *serverOrdersAPI) ListOrders(ctx context.Context, userID uuid.UUID, clientID string, status string, paymentStatus string, limit int, offset int, sort string) (response models.ListOrdersResponse, err error) {
 	return srv.listOrders(ctx, userID, clientID, status, paymentStatus, limit, offset, sort)
+}
+
+func (srv *serverOrdersAPI) ListPreviouslyOrderedProducts(ctx context.Context, userID uuid.UUID, clientID string, limit int, offset int) (response models.ListPreviouslyOrderedProductsResponse, err error) {
+	return srv.listPreviouslyOrderedProducts(ctx, userID, clientID, limit, offset)
 }
 
 func (srv *serverOrdersAPI) CancelOrder(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, comment string) (response models.CancelOrderResponse, err error) {
@@ -172,6 +180,10 @@ func (srv *serverOrdersAPI) WrapGetOrder(m MiddlewareOrdersAPIGetOrder) {
 
 func (srv *serverOrdersAPI) WrapListOrders(m MiddlewareOrdersAPIListOrders) {
 	srv.listOrders = m(srv.listOrders)
+}
+
+func (srv *serverOrdersAPI) WrapListPreviouslyOrderedProducts(m MiddlewareOrdersAPIListPreviouslyOrderedProducts) {
+	srv.listPreviouslyOrderedProducts = m(srv.listPreviouslyOrderedProducts)
 }
 
 func (srv *serverOrdersAPI) WrapCancelOrder(m MiddlewareOrdersAPICancelOrder) {
