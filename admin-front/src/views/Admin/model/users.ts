@@ -6,7 +6,11 @@ import type { RealUser } from '@/core/shared/api/users';
 
 import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
 import { invitePortalUser, patchPortalUser } from '@/core/shared/api/portalUsers';
-import { decideSignupRequest, listSignupRequests } from '@/core/shared/api/signupRequests';
+import {
+  decideSignupRequest,
+  listSignupRequests,
+  rejectSignupRequest,
+} from '@/core/shared/api/signupRequests';
 import { listUsersRequest, setUserActiveRequest } from '@/core/shared/api/users';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
@@ -32,6 +36,7 @@ export const signupDecided = createEvent<{
   rejectReason?: string;
   status: SignupRequestStatus;
 }>();
+export const signupRejected = createEvent<{ id: string; reason: string }>();
 
 export const fetchPortalUsersFx = createEffect(async () => {
   const { items } = await listUsersRequest();
@@ -69,6 +74,10 @@ export const decideSignupFx = createEffect(
   }) => decideSignupRequest(id, { rejectReason, status }),
 );
 
+export const rejectSignupFx = createEffect(({ id, reason }: { id: string; reason: string }) =>
+  rejectSignupRequest(id, reason),
+);
+
 export const $portalUsers = createStore<PortalUser[]>([])
   .on(fetchPortalUsersFx.doneData, (_, users) => users)
   .on(inviteUserFx.doneData, (state, user) => [user, ...state])
@@ -78,7 +87,7 @@ export const $portalUsers = createStore<PortalUser[]>([])
 
 export const $signupRequests = createStore<SignupRequest[]>([])
   .on(fetchSignupRequestsFx.doneData, (_, items) => items)
-  .on(decideSignupFx.doneData, (state, updated) =>
+  .on([decideSignupFx.doneData, rejectSignupFx.doneData], (state, updated) =>
     state.map((item) => (item.id === updated.id ? updated : item)),
   );
 
@@ -93,6 +102,7 @@ export const $usersError = createStore<null | string>(null)
       inviteUserFx.failData,
       toggleUserFx.failData,
       decideSignupFx.failData,
+      rejectSignupFx.failData,
     ],
     (_, error) => toDisplayErrorMessage(error, 'Не удалось выполнить операцию'),
   );
@@ -123,12 +133,17 @@ sample({
 });
 
 sample({
-  clock: decideSignupFx.done,
+  clock: signupRejected,
+  target: rejectSignupFx,
+});
+
+sample({
+  clock: [decideSignupFx.done, rejectSignupFx.done],
   target: fetchPortalUsersFx,
 });
 
 sample({
-  clock: [inviteUserFx.done, toggleUserFx.done, decideSignupFx.done],
+  clock: [inviteUserFx.done, toggleUserFx.done, decideSignupFx.done, rejectSignupFx.done],
   fn: () => ({ message: 'Готово', tone: 'success' as const }),
   target: toastShown,
 });

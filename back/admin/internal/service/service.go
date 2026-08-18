@@ -38,6 +38,9 @@ type Storage interface {
 	UpdateBanner(ctx context.Context, banner postgres.Banner, replaceImage bool) (postgres.Banner, error)
 	DeleteBanner(ctx context.Context, bannerID uuid.UUID) error
 	UpdateBannerDelay(ctx context.Context, delaySec int) error
+	CreateSignupRequest(ctx context.Context, request postgres.SignupRequest) (postgres.SignupRequest, error)
+	ListSignupRequests(ctx context.Context, status string) ([]postgres.SignupRequest, error)
+	DecideSignupRequest(ctx context.Context, id uuid.UUID, status string, rejectReason string) (postgres.SignupRequest, error)
 }
 
 // AuthClient is implemented by auth/pkg/client/transport.ClientAuthAPI.
@@ -50,23 +53,38 @@ type AccessClient interface {
 	CheckAccess(ctx context.Context, userID uuid.UUID, role int) (allowed bool, err error)
 }
 
+// UsersClient is implemented by internal/client/users.Client.
+type UsersClient interface {
+	FindUserIDByEmail(ctx context.Context, email string) (userID uuid.UUID, found bool, err error)
+	DeleteUser(ctx context.Context, userID uuid.UUID) error
+}
+
+// Mailer is implemented by internal/mailer.SMTPMailer.
+type Mailer interface {
+	Send(ctx context.Context, to string, subject string, body string) error
+}
+
 type service struct {
 	logger        zerolog.Logger
 	storage       Storage
 	authClient    AuthClient
 	accessClient  AccessClient
+	usersClient   UsersClient
+	mailer        Mailer
 	objectStorage ObjectStorage
 	maxFileSize   int64
 }
 
 var _ externalapi.AdminAPI = (*service)(nil)
 
-func NewAdminApiService(logger zerolog.Logger, storage Storage, authClient AuthClient, accessClient AccessClient, options ...Option) *service {
+func NewAdminApiService(logger zerolog.Logger, storage Storage, authClient AuthClient, accessClient AccessClient, usersClient UsersClient, mailer Mailer, options ...Option) *service {
 	result := &service{
 		logger:       logger,
 		storage:      storage,
 		authClient:   authClient,
 		accessClient: accessClient,
+		usersClient:  usersClient,
+		mailer:       mailer,
 	}
 	for _, option := range options {
 		option(result)

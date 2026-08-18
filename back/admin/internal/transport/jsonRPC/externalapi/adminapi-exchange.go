@@ -39,3 +39,44 @@ type requestAdminAPIListAuditLog struct {
 type responseAdminAPIListAuditLog struct {
 	Response models.ListAuditLogResponse `json:"response,omitempty"`
 }
+
+type requestAdminAPICreateSignupRequest struct {
+	Company     string `json:"company,omitempty"`
+	Inn         string `json:"inn,omitempty"`
+	Contact     string `json:"contact,omitempty"`
+	Email       string `json:"email,omitempty"`
+	Phone       string `json:"phone,omitempty"`
+	RequestType string `json:"requestType,omitempty"`
+}
+
+type responseAdminAPICreateSignupRequest struct {
+	Response models.SignupRequest `json:"response,omitempty"`
+}
+
+type requestAdminAPIListSignupRequests struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+	Status string    `json:"status,omitempty"`
+}
+
+type responseAdminAPIListSignupRequests struct {
+	Response models.ListSignupRequestsResponse `json:"response,omitempty"`
+}
+
+type requestAdminAPIApproveSignupRequest struct {
+	UserID    uuid.UUID `json:"userID,omitempty"`
+	RequestID uuid.UUID `json:"requestID,omitempty"`
+}
+
+type responseAdminAPIApproveSignupRequest struct {
+	Response models.SignupRequest `json:"response,omitempty"`
+}
+
+type requestAdminAPIRejectSignupRequest struct {
+	UserID    uuid.UUID `json:"userID,omitempty"`
+	RequestID uuid.UUID `json:"requestID,omitempty"`
+	Reason    string    `json:"reason,omitempty"`
+}
+
+type responseAdminAPIRejectSignupRequest struct {
+	Response models.SignupRequest `json:"response,omitempty"`
+}

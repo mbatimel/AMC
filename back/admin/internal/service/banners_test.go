@@ -50,7 +50,7 @@ func validBannerInput() models.BannerInput {
 }
 
 func newBannerService(storage *fakeStorage, objects *fakeBannerObjectStorage) *service {
-	return NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, WithObjectStorage(objects, 1024))
+	return NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, nil, WithObjectStorage(objects, 1024))
 }
 
 func TestCreateBannerWithImage(t *testing.T) {

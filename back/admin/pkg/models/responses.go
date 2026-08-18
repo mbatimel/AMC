@@ -66,3 +66,21 @@ type BannersSettings struct {
 type DeleteBannerResponse struct {
 	Deleted bool `json:"deleted"`
 }
+
+type SignupRequest struct {
+	ID           uuid.UUID  `json:"id"`
+	Company      string     `json:"company"`
+	INN          string     `json:"inn"`
+	Contact      string     `json:"contact"`
+	Email        string     `json:"email"`
+	Phone        string     `json:"phone"`
+	Type         string     `json:"type"`
+	Status       string     `json:"status"`
+	RejectReason string     `json:"reject_reason"`
+	CreatedAt    time.Time  `json:"created_at"`
+	DecidedAt    *time.Time `json:"decided_at,omitempty"`
+}
+
+type ListSignupRequestsResponse struct {
+	Items []SignupRequest `json:"items"`
+}

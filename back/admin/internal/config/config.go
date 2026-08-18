@@ -18,6 +18,12 @@ type Config struct {
 	BindAddr         string
 	AccessURL        string
 	AuthURL          string
+	UsersURL         string
+	SMTPHost         string
+	SMTPPort         string
+	SMTPUsername     string
+	SMTPPassword     string
+	SMTPFrom         string
 	S3Endpoint       string
 	S3PublicEndpoint string
 	S3AccessKey      string
@@ -38,6 +44,12 @@ func LoadConfig() Config {
 		BindAddr:         GetEnv("BIND_ADDR", ":8083"),
 		AccessURL:        os.Getenv("ACCESS_URL"),
 		AuthURL:          os.Getenv("AUTH_URL"),
+		UsersURL:         os.Getenv("USERS_URL"),
+		SMTPHost:         os.Getenv("SMTP_HOST"),
+		SMTPPort:         GetEnv("SMTP_PORT", "587"),
+		SMTPUsername:     os.Getenv("SMTP_USERNAME"),
+		SMTPPassword:     os.Getenv("SMTP_PASSWORD"),
+		SMTPFrom:         os.Getenv("SMTP_FROM"),
 		S3Endpoint:       os.Getenv("S3_ENDPOINT"),
 		S3PublicEndpoint: os.Getenv("S3_PUBLIC_ENDPOINT"),
 		S3AccessKey:      os.Getenv("S3_ACCESS_KEY"),
@@ -58,6 +70,13 @@ func LoadConfig() Config {
 	if cfg.AuthURL == "" {
 		cfg.AuthURL = "http://localhost:8081"
 		log.Warn().Msg("AUTH_URL must be specified")
+	}
+	if cfg.UsersURL == "" {
+		cfg.UsersURL = "http://localhost:8083"
+		log.Warn().Msg("USERS_URL must be specified")
+	}
+	if cfg.SMTPHost == "" {
+		log.Warn().Msg("SMTP_HOST is not set, email notifications will be skipped")
 	}
 	if cfg.S3Endpoint == "" || cfg.S3PublicEndpoint == "" || cfg.S3AccessKey == "" || cfg.S3SecretKey == "" || cfg.S3Bucket == "" {
 		log.Fatal().Msg("S3_ENDPOINT, S3_PUBLIC_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY and S3_BUCKET must be specified")

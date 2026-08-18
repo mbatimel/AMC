@@ -109,3 +109,100 @@ func (m loggerAdminAPI) ListAuditLog(ctx context.Context, userID uuid.UUID, limi
 	}(time.Now())
 	return m.next.ListAuditLog(ctx, userID, limit, offset)
 }
+
+func (m loggerAdminAPI) CreateSignupRequest(ctx context.Context, company string, inn string, contact string, email string, phone string, requestType string) (response models.SignupRequest, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "createSignupRequest").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "adminAPI.createSignupRequest",
+				"request": viewer.Sprintf("%+v", requestAdminAPICreateSignupRequest{
+					Company:     company,
+					Contact:     contact,
+					Email:       email,
+					Inn:         inn,
+					Phone:       phone,
+					RequestType: requestType,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPICreateSignupRequest{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call createSignupRequest")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call createSignupRequest")
+	}(time.Now())
+	return m.next.CreateSignupRequest(ctx, company, inn, contact, email, phone, requestType)
+}
+
+func (m loggerAdminAPI) ListSignupRequests(ctx context.Context, userID uuid.UUID, status string) (response models.ListSignupRequestsResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "listSignupRequests").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "adminAPI.listSignupRequests",
+				"request": viewer.Sprintf("%+v", requestAdminAPIListSignupRequests{
+					Status: status,
+					UserID: userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIListSignupRequests{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call listSignupRequests")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call listSignupRequests")
+	}(time.Now())
+	return m.next.ListSignupRequests(ctx, userID, status)
+}
+
+func (m loggerAdminAPI) ApproveSignupRequest(ctx context.Context, userID uuid.UUID, requestID uuid.UUID) (response models.SignupRequest, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "approveSignupRequest").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "adminAPI.approveSignupRequest",
+				"request": viewer.Sprintf("%+v", requestAdminAPIApproveSignupRequest{
+					RequestID: requestID,
+					UserID:    userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIApproveSignupRequest{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call approveSignupRequest")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call approveSignupRequest")
+	}(time.Now())
+	return m.next.ApproveSignupRequest(ctx, userID, requestID)
+}
+
+func (m loggerAdminAPI) RejectSignupRequest(ctx context.Context, userID uuid.UUID, requestID uuid.UUID, reason string) (response models.SignupRequest, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "rejectSignupRequest").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "adminAPI.rejectSignupRequest",
+				"request": viewer.Sprintf("%+v", requestAdminAPIRejectSignupRequest{
+					Reason:    reason,
+					RequestID: requestID,
+					UserID:    userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIRejectSignupRequest{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call rejectSignupRequest")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call rejectSignupRequest")
+	}(time.Now())
+	return m.next.RejectSignupRequest(ctx, userID, requestID, reason)
+}

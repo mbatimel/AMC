@@ -10,12 +10,12 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-type RouteContext = { params: Promise<{ id: string }> };
-
 type PatchSignupBody = {
   rejectReason?: string;
   status: SignupRequestStatus;
 };
+
+type RouteContext = { params: Promise<{ id: string }> };
 
 export const PATCH = async (request: Request, context: RouteContext): Promise<Response> => {
   const { id } = await context.params;
@@ -26,6 +26,7 @@ export const PATCH = async (request: Request, context: RouteContext): Promise<Re
   }
 
   let found = false;
+  let alreadyDecided = false;
 
   updatePortalState((draft) => {
     const item = draft.signup_requests.find((request_) => request_.id === id);
@@ -35,6 +36,13 @@ export const PATCH = async (request: Request, context: RouteContext): Promise<Re
     }
 
     found = true;
+
+    if (item.status !== 'pending') {
+      alreadyDecided = true;
+
+      return;
+    }
+
     item.status = payload.status;
     item.reject_reason = payload.rejectReason ?? '';
 
@@ -55,6 +63,10 @@ export const PATCH = async (request: Request, context: RouteContext): Promise<Re
 
   if (!found) {
     return apiFail(404, 'Заявка не найдена');
+  }
+
+  if (alreadyDecided) {
+    return apiFail(409, 'Заявка уже обработана');
   }
 
   appendAuditEntry(

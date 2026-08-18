@@ -202,6 +202,7 @@ export const createDefaultPortalState = (): PortalState => ({
       title: 'Условия работы',
     },
   },
+  email_log: [],
   feedback: [],
   legal_docs: [
     {

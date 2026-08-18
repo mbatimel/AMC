@@ -69,6 +69,14 @@ export type ContentPages = {
   terms: TextPageContent;
 };
 
+export type EmailLogEntry = {
+  created_at: string;
+  id: string;
+  subject: string;
+  text: string;
+  to: string;
+};
+
 export type HomePageContent = {
   features: string[];
   hero_button: string;
@@ -116,6 +124,7 @@ export type PortalState = {
   audit_log: AuditLogEntry[];
   banners: BannersSettings;
   content: ContentPages;
+  email_log: EmailLogEntry[];
   feedback: OrderFeedback[];
   legal_docs: LegalDoc[];
   portal_users: PortalUser[];
