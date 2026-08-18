@@ -19,9 +19,7 @@ export type CreateSignupRequestPayload = {
   type: 'individual' | 'organization';
 };
 
-export const createSignupRequest = (
-  payload: CreateSignupRequestPayload,
-): Promise<SignupRequest> =>
+export const createSignupRequest = (payload: CreateSignupRequestPayload): Promise<SignupRequest> =>
   portalRequest({
     body: payload,
     fallback: 'Не удалось отправить заявку',
@@ -47,4 +45,12 @@ export const decideSignupRequest = (
     fallback: 'Не удалось обновить заявку',
     method: 'PATCH',
     path: `/signup-requests/${id}`,
+  });
+
+export const rejectSignupRequest = (id: string, reason: string): Promise<SignupRequest> =>
+  portalRequest({
+    body: { reason },
+    fallback: 'Не удалось отклонить заявку',
+    method: 'POST',
+    path: `/signup-requests/${id}/reject`,
   });

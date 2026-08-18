@@ -47,4 +47,8 @@ func (http *httpAdminAPI) SetRoutes(route *fiber.App) {
 	route.Post("/api/v1/admin/auth/logout", http.serveLogout)
 	route.Get("/api/v1/admin/auth/session", http.serveGetSession)
 	route.Get("/api/v1/admin/audit-log", http.serveListAuditLog)
+	route.Post("/api/v1/signup-requests", http.serveCreateSignupRequest)
+	route.Get("/api/v1/admin/signup-requests", http.serveListSignupRequests)
+	route.Post("/api/v1/admin/signup-requests/:requestID/approve", http.serveApproveSignupRequest)
+	route.Post("/api/v1/admin/signup-requests/:requestID/reject", http.serveRejectSignupRequest)
 }

@@ -19,6 +19,10 @@ paths:
                     type: string
                     format: uuid
                 - in: query
+                  name: status
+                  schema:
+                    type: string
+                - in: query
                   name: paymentStatus
                   schema:
                     type: string
@@ -35,10 +39,6 @@ paths:
                   schema:
                     type: string
                     format: uuid
-                - in: query
-                  name: status
-                  schema:
-                    type: string
             responses:
                 "200":
                     description: Successful operation
@@ -143,10 +143,6 @@ paths:
                     type: string
                     format: uuid
                 - in: query
-                  name: sort
-                  schema:
-                    type: string
-                - in: query
                   name: clientID
                   schema:
                     type: string
@@ -168,6 +164,10 @@ paths:
                   schema:
                     type: number
                     format: int
+                - in: query
+                  name: sort
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: Successful operation
@@ -271,18 +271,6 @@ paths:
                     type: string
                     format: uuid
                 - in: query
-                  name: email
-                  schema:
-                    type: string
-                - in: query
-                  name: comment
-                  schema:
-                    type: string
-                - in: query
-                  name: clientID
-                  schema:
-                    type: string
-                - in: query
                   name: deliveryType
                   schema:
                     type: string
@@ -296,6 +284,18 @@ paths:
                     type: string
                 - in: query
                   name: phone
+                  schema:
+                    type: string
+                - in: query
+                  name: email
+                  schema:
+                    type: string
+                - in: query
+                  name: comment
+                  schema:
+                    type: string
+                - in: query
+                  name: clientID
                   schema:
                     type: string
             responses:
@@ -1478,6 +1478,123 @@ paths:
                                         type: string
                                         example: content.api.errors.auth.internalError
                                         description: Заголовок ошибки
+    /api/v1/orders/previously-ordered-products:
+        get:
+            tags:
+                - OrdersAPI
+            summary: Ранее заказанные товары
+            description: Возвращает уникальные товары из неотменённых заказов клиента, начиная с заказанных последними
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - in: query
+                  name: clientID
+                  schema:
+                    type: string
+                - in: query
+                  name: limit
+                  schema:
+                    type: number
+                    format: int
+                - in: query
+                  name: offset
+                  schema:
+                    type: number
+                    format: int
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.auth.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.auth.accessDenied
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.auth.internalError
+                                        description: Заголовок ошибки
     /api/v1/orders/repeat:
         post:
             tags:
@@ -1728,6 +1845,16 @@ components:
                     nullable: true
                 pagination:
                     $ref: '#/components/schemas/models.Pagination'
+        models.ListPreviouslyOrderedProductsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/models.PreviouslyOrderedProduct'
+                    nullable: true
+                pagination:
+                    $ref: '#/components/schemas/models.Pagination'
         models.Order:
             type: object
             properties:
@@ -1868,6 +1995,14 @@ components:
                 total:
                     type: number
                     format: int
+        models.PreviouslyOrderedProduct:
+            type: object
+            properties:
+                last_ordered_at:
+                    type: string
+                    format: date-time
+                product_id:
+                    type: string
         models.RepeatOrderResponse:
             type: object
             properties:
@@ -1906,6 +2041,8 @@ components:
         requestOrdersAPIGetOrderHistory:
             type: object
         requestOrdersAPIListOrders:
+            type: object
+        requestOrdersAPIListPreviouslyOrderedProducts:
             type: object
         requestOrdersAPIRepeatOrder:
             type: object
@@ -2004,6 +2141,14 @@ components:
                 response:
                     $ref: '#/components/schemas/models.ListOrdersResponse'
             description: Получение списка заказов клиента
+        responseOrdersAPIListPreviouslyOrderedProducts:
+            type: object
+            required:
+                - response
+            properties:
+                response:
+                    $ref: '#/components/schemas/models.ListPreviouslyOrderedProductsResponse'
+            description: Возвращает уникальные товары из неотменённых заказов клиента, начиная с заказанных последними
         responseOrdersAPIRepeatOrder:
             type: object
             required:

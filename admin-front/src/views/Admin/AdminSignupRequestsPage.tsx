@@ -8,15 +8,22 @@ import { SIGNUP_STATUS_LABELS } from '@/core/shared/api/signupRequests';
 
 import styles from './Admin.module.css';
 import { formatAdminDateTime } from './lib/nav';
-import { $signupRequests, $usersError, adminUsersOpened, signupDecided } from './model/users';
+import {
+  $signupRequests,
+  $usersError,
+  adminUsersOpened,
+  signupDecided,
+  signupRejected,
+} from './model/users';
 import { AdminPageHeader } from './ui/AdminPageHeader';
 
 export const AdminSignupRequestsPage = (): JSX.Element => {
-  const [requests, error, open, decide] = useUnit([
+  const [requests, error, open, decide, reject] = useUnit([
     $signupRequests,
     $usersError,
     adminUsersOpened,
     signupDecided,
+    signupRejected,
   ]);
   const [rejectingId, setRejectingId] = useState('');
   const [rejectReason, setRejectReason] = useState('');
@@ -123,7 +130,7 @@ export const AdminSignupRequestsPage = (): JSX.Element => {
                         <button
                           className={clsx(styles.smallButton, styles.smallButtonDanger)}
                           onClick={() => {
-                            decide({ id: request.id, rejectReason, status: 'rejected' });
+                            reject({ id: request.id, reason: rejectReason });
                             setRejectingId('');
                             setRejectReason('');
                           }}

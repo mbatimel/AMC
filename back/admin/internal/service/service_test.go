@@ -26,6 +26,7 @@ type fakeStorage struct {
 	updateBannerFn      func(context.Context, postgres.Banner, bool) (postgres.Banner, error)
 	deleteBannerFn      func(context.Context, uuid.UUID) error
 	updateBannerDelayFn func(context.Context, int) error
+	decideSignupFn      func(context.Context, uuid.UUID, string, string) (postgres.SignupRequest, error)
 }
 
 type auditCall struct {
@@ -89,6 +90,21 @@ func (f *fakeStorage) UpdateBannerDelay(ctx context.Context, delaySec int) error
 	return nil
 }
 
+func (f *fakeStorage) CreateSignupRequest(_ context.Context, request postgres.SignupRequest) (postgres.SignupRequest, error) {
+	return request, nil
+}
+
+func (f *fakeStorage) ListSignupRequests(_ context.Context, _ string) ([]postgres.SignupRequest, error) {
+	return []postgres.SignupRequest{}, nil
+}
+
+func (f *fakeStorage) DecideSignupRequest(ctx context.Context, id uuid.UUID, status string, rejectReason string) (postgres.SignupRequest, error) {
+	if f.decideSignupFn != nil {
+		return f.decideSignupFn(ctx, id, status, rejectReason)
+	}
+	return postgres.SignupRequest{ID: id, Email: "applicant@example.com", Status: status, RejectReason: rejectReason}, nil
+}
+
 type fakeAuthClient struct {
 	userID uuid.UUID
 	err    error
@@ -110,7 +126,7 @@ func (f *fakeAccessClient) CheckAccess(_ context.Context, _ uuid.UUID, _ int) (b
 func TestLogin_Success(t *testing.T) {
 	userID := uuid.New()
 	storage := &fakeStorage{}
-	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{userID: userID}, &fakeAccessClient{allowed: true})
+	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{userID: userID}, &fakeAccessClient{allowed: true}, nil, nil)
 
 	resp, err := svc.Login(context.Background(), "admin@volzhsky-instrument.ru", "secret")
 	if err != nil {
@@ -129,7 +145,7 @@ func TestLogin_Success(t *testing.T) {
 
 func TestLogin_NotAdmin_Forbidden(t *testing.T) {
 	storage := &fakeStorage{}
-	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{userID: uuid.New()}, &fakeAccessClient{allowed: false})
+	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{userID: uuid.New()}, &fakeAccessClient{allowed: false}, nil, nil)
 
 	_, err := svc.Login(context.Background(), "buyer@example.com", "secret")
 	if err == nil {
@@ -142,7 +158,7 @@ func TestLogin_NotAdmin_Forbidden(t *testing.T) {
 
 func TestLogin_AuthClientError(t *testing.T) {
 	storage := &fakeStorage{}
-	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{err: errors.New("boom")}, &fakeAccessClient{allowed: true})
+	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{err: errors.New("boom")}, &fakeAccessClient{allowed: true}, nil, nil)
 
 	_, err := svc.Login(context.Background(), "admin@volzhsky-instrument.ru", "wrong")
 	if err == nil {
@@ -160,7 +176,7 @@ func TestLogin_AuthClientError(t *testing.T) {
 
 func TestLogin_AuthClientInvalidCredentials_Returns401(t *testing.T) {
 	storage := &fakeStorage{}
-	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{err: &authTransport.LoginError{StatusCode: fasthttp.StatusUnauthorized}}, &fakeAccessClient{allowed: true})
+	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{err: &authTransport.LoginError{StatusCode: fasthttp.StatusUnauthorized}}, &fakeAccessClient{allowed: true}, nil, nil)
 
 	_, err := svc.Login(context.Background(), "admin@volzhsky-instrument.ru", "wrong")
 	if err == nil {
@@ -181,7 +197,7 @@ func TestLogin_AuthClientInvalidCredentials_Returns401(t *testing.T) {
 
 func TestLogin_AuthClientOtherLoginError_Returns500(t *testing.T) {
 	storage := &fakeStorage{}
-	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{err: &authTransport.LoginError{StatusCode: fasthttp.StatusInternalServerError}}, &fakeAccessClient{allowed: true})
+	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{err: &authTransport.LoginError{StatusCode: fasthttp.StatusInternalServerError}}, &fakeAccessClient{allowed: true}, nil, nil)
 
 	_, err := svc.Login(context.Background(), "admin@volzhsky-instrument.ru", "wrong")
 	if err == nil {
@@ -198,7 +214,7 @@ func TestLogin_AuthClientOtherLoginError_Returns500(t *testing.T) {
 }
 
 func TestGetSession_RequiresAdminRole(t *testing.T) {
-	svc := NewAdminApiService(zerolog.Nop(), &fakeStorage{}, &fakeAuthClient{}, &fakeAccessClient{allowed: false})
+	svc := NewAdminApiService(zerolog.Nop(), &fakeStorage{}, &fakeAuthClient{}, &fakeAccessClient{allowed: false}, nil, nil)
 
 	_, err := svc.GetSession(context.Background(), uuid.New())
 	if err == nil {
@@ -209,7 +225,7 @@ func TestGetSession_RequiresAdminRole(t *testing.T) {
 func TestListAuditLog_ReturnsItemsAndTotal(t *testing.T) {
 	entry := postgres.AuditLogEntry{ID: uuid.New(), ActorUserID: uuid.New(), ActorLabel: "Админ портала", Action: "Портал запущен"}
 	storage := &fakeStorage{entries: []postgres.AuditLogEntry{entry}, total: 1}
-	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true})
+	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, nil)
 
 	resp, err := svc.ListAuditLog(context.Background(), uuid.New(), 10, 0)
 	if err != nil {
@@ -225,7 +241,7 @@ func TestListAuditLog_ReturnsItemsAndTotal(t *testing.T) {
 
 func TestListAuditLog_ClampsLimit(t *testing.T) {
 	storage := &fakeStorage{}
-	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true})
+	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, nil)
 
 	if _, err := svc.ListAuditLog(context.Background(), uuid.New(), 0, -5); err != nil {
 		t.Fatalf("ListAuditLog() error = %v, want nil", err)

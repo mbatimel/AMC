@@ -14,7 +14,9 @@ import (
 	accessTransport "github.com/mbatimel/AMC/access/pkg/client/transport"
 	authTransport "github.com/mbatimel/AMC/auth/pkg/client/transport"
 
+	usersClient "github.com/mbatimel/AMC/admin/internal/client/users"
 	"github.com/mbatimel/AMC/admin/internal/config"
+	"github.com/mbatimel/AMC/admin/internal/mailer"
 	adminService "github.com/mbatimel/AMC/admin/internal/service"
 	postgres "github.com/mbatimel/AMC/admin/internal/storage/postgres"
 	customHandlers "github.com/mbatimel/AMC/admin/internal/transport/custom-handlers"
@@ -42,6 +44,8 @@ func main() {
 	postgresStorage := postgres.New(pool)
 	access := accessTransport.NewClientAccessAPI(cfg.AccessURL)
 	auth := authTransport.NewClientAuthAPI(cfg.AuthURL)
+	users := usersClient.New(cfg.UsersURL)
+	mail := mailer.NewSMTPMailer(log.Logger, cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword, cfg.SMTPFrom)
 	s3Client, err := objectstorage.New(objectstorage.Config{
 		Endpoint: cfg.S3Endpoint, PublicEndpoint: cfg.S3PublicEndpoint,
 		AccessKey: cfg.S3AccessKey, SecretKey: cfg.S3SecretKey,
@@ -50,7 +54,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create S3 client")
 	}
-	svc := adminService.NewAdminApiService(log.Logger, postgresStorage, auth, access, adminService.WithObjectStorage(s3Client, cfg.S3MaxFileSize))
+	svc := adminService.NewAdminApiService(log.Logger, postgresStorage, auth, access, users, mail, adminService.WithObjectStorage(s3Client, cfg.S3MaxFileSize))
 
 	bannerRoutes := customHandlers.NewBannerRoutes(log.Logger, svc, cfg.S3MaxFileSize)
 	app := externalapi.New(

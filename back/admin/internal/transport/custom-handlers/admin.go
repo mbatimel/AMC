@@ -46,6 +46,41 @@ func ListAuditLog(ctx *fiber.Ctx, svc externalapi.AdminAPI, userID uuid.UUID, li
 	})
 }
 
+func CreateSignupRequest(ctx *fiber.Ctx, svc externalapi.AdminAPI, company string, inn string, contact string, email string, phone string, requestType string) error {
+	return handle(ctx, "post", "/v1/signup-requests", "CreateSignupRequest", map[string]interface{}{
+		"email": email,
+	}, func() (interface{}, error) {
+		return svc.CreateSignupRequest(ctx.UserContext(), company, inn, contact, email, phone, requestType)
+	})
+}
+
+func ListSignupRequests(ctx *fiber.Ctx, svc externalapi.AdminAPI, userID uuid.UUID, status string) error {
+	return handle(ctx, "get", "/v1/admin/signup-requests", "ListSignupRequests", map[string]interface{}{
+		"userID": userID,
+		"status": status,
+	}, func() (interface{}, error) {
+		return svc.ListSignupRequests(ctx.UserContext(), userID, status)
+	})
+}
+
+func ApproveSignupRequest(ctx *fiber.Ctx, svc externalapi.AdminAPI, userID uuid.UUID, requestID uuid.UUID) error {
+	return handle(ctx, "post", "/v1/admin/signup-requests/:requestID/approve", "ApproveSignupRequest", map[string]interface{}{
+		"userID":    userID,
+		"requestID": requestID,
+	}, func() (interface{}, error) {
+		return svc.ApproveSignupRequest(ctx.UserContext(), userID, requestID)
+	})
+}
+
+func RejectSignupRequest(ctx *fiber.Ctx, svc externalapi.AdminAPI, userID uuid.UUID, requestID uuid.UUID, reason string) error {
+	return handle(ctx, "post", "/v1/admin/signup-requests/:requestID/reject", "RejectSignupRequest", map[string]interface{}{
+		"userID":    userID,
+		"requestID": requestID,
+	}, func() (interface{}, error) {
+		return svc.RejectSignupRequest(ctx.UserContext(), userID, requestID, reason)
+	})
+}
+
 func handle(
 	ctx *fiber.Ctx,
 	method string,

@@ -65,4 +65,45 @@ type AdminAPI interface {
 	// @tg desc=`Список действий администраторов портала без возможности удаления`
 	// @tg uuidPackage=github.com/google/uuid
 	ListAuditLog(ctx context.Context, userID uuid.UUID, limit int, offset int) (response models.ListAuditLogResponse, err error)
+
+	// CreateSignupRequest ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/signup-requests
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:CreateSignupRequest
+	// @tg summary=`Заявка на регистрацию`
+	// @tg desc=`Публичное создание заявки на регистрацию; модерируется в /v1/admin/signup-requests`
+	CreateSignupRequest(ctx context.Context, company string, inn string, contact string, email string, phone string, requestType string) (response models.SignupRequest, err error)
+
+	// ListSignupRequests ...
+	// @tg http-method=GET
+	// @tg http-path=/v1/admin/signup-requests
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-args=status|status
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:ListSignupRequests
+	// @tg summary=`Список заявок на регистрацию`
+	// @tg desc=`Возвращает заявки на регистрацию, опционально отфильтрованные по статусу`
+	// @tg uuidPackage=github.com/google/uuid
+	ListSignupRequests(ctx context.Context, userID uuid.UUID, status string) (response models.ListSignupRequestsResponse, err error)
+
+	// ApproveSignupRequest ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/admin/signup-requests/:requestID/approve
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:ApproveSignupRequest
+	// @tg summary=`Одобрение заявки`
+	// @tg desc=`Помечает заявку одобренной; аккаунт уже существует (регистрация мгновенная), ничего не создаётся`
+	// @tg uuidPackage=github.com/google/uuid
+	// @tg requestID.format=uuid
+	ApproveSignupRequest(ctx context.Context, userID uuid.UUID, requestID uuid.UUID) (response models.SignupRequest, err error)
+
+	// RejectSignupRequest ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/admin/signup-requests/:requestID/reject
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:RejectSignupRequest
+	// @tg summary=`Отклонение заявки`
+	// @tg desc=`Отклоняет заявку, удаляет аккаунт заявителя в users (если найден по email) и отправляет письмо с причиной отказа`
+	// @tg uuidPackage=github.com/google/uuid
+	// @tg requestID.format=uuid
+	RejectSignupRequest(ctx context.Context, userID uuid.UUID, requestID uuid.UUID, reason string) (response models.SignupRequest, err error)
 }

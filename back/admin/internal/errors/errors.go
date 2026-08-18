@@ -19,6 +19,7 @@ var (
 	NotImplementedError = func() *Error {
 		return New("not implemented", fasthttp.StatusNotImplemented, ErrNotImplemented)
 	}
+	ConflictError = func() *Error { return New("conflict", fasthttp.StatusConflict, ErrConflict) }
 )
 
 const (
@@ -31,4 +32,5 @@ const (
 	ErrNotFound           = "admin.errors.notFound"           // Не найдено
 	ErrNotImplemented     = "admin.errors.notImplemented"     // Метод не реализован
 	ErrInvalidCredentials = "admin.errors.invalidCredentials" // Неверный email или пароль
+	ErrConflict           = "admin.errors.conflict"           // Конфликт состояния
 )
