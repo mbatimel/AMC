@@ -95,15 +95,6 @@ func (http *httpAdminAPI) serveListAuditLog(ctx *fiber.Ctx) (err error) {
 
 	var request requestAdminAPIListAuditLog
 
-	if _limit := ctx.Query("limit"); _limit != "" {
-		var limit int
-		limit, err = strconv.Atoi(_limit)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Limit = limit
-	}
 	if _offset := ctx.Query("offset"); _offset != "" {
 		var offset int
 		offset, err = strconv.Atoi(_offset)
@@ -112,6 +103,15 @@ func (http *httpAdminAPI) serveListAuditLog(ctx *fiber.Ctx) (err error) {
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
 		request.Offset = offset
+	}
+	if _limit := ctx.Query("limit"); _limit != "" {
+		var limit int
+		limit, err = strconv.Atoi(_limit)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Limit = limit
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -231,4 +231,284 @@ func (http *httpAdminAPI) serveRejectSignupRequest(ctx *fiber.Ctx) (err error) {
 	}
 
 	return customhandlers.RejectSignupRequest(ctx, http.svc, request.UserID, request.RequestID, request.Reason)
+}
+func (http *httpAdminAPI) listLegalDocs(ctx context.Context, request requestAdminAPIListLegalDocs) (response responseAdminAPIListLegalDocs, err error) {
+
+	response.Response, err = http.svc.ListLegalDocs(ctx, request.UserID)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveListLegalDocs(ctx *fiber.Ctx) (err error) {
+
+	var request requestAdminAPIListLegalDocs
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.ListLegalDocs(ctx, http.svc, request.UserID)
+}
+func (http *httpAdminAPI) listPublicLegalDocs(ctx context.Context, request requestAdminAPIListPublicLegalDocs) (response responseAdminAPIListPublicLegalDocs, err error) {
+
+	response.Response, err = http.svc.ListPublicLegalDocs(ctx)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveListPublicLegalDocs(ctx *fiber.Ctx) (err error) {
+
+
+
+	return customhandlers.ListPublicLegalDocs(ctx, http.svc)
+}
+func (http *httpAdminAPI) createLegalDoc(ctx context.Context, request requestAdminAPICreateLegalDoc) (response responseAdminAPICreateLegalDoc, err error) {
+
+	response.Response, err = http.svc.CreateLegalDoc(ctx, request.UserID, request.Id, request.Name, request.Version, request.Summary, request.FileName, request.FileContentBase64)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveCreateLegalDoc(ctx *fiber.Ctx) (err error) {
+
+	var request requestAdminAPICreateLegalDoc
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.CreateLegalDoc(ctx, http.svc, request.UserID, request.Id, request.Name, request.Version, request.Summary, request.FileName, request.FileContentBase64)
+}
+func (http *httpAdminAPI) replaceLegalDocFile(ctx context.Context, request requestAdminAPIReplaceLegalDocFile) (response responseAdminAPIReplaceLegalDocFile, err error) {
+
+	response.Response, err = http.svc.ReplaceLegalDocFile(ctx, request.UserID, request.DocID, request.Version, request.Summary, request.FileName, request.FileContentBase64)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveReplaceLegalDocFile(ctx *fiber.Ctx) (err error) {
+
+	var request requestAdminAPIReplaceLegalDocFile
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
+
+	if _docID := ctx.Params("docID"); _docID != "" {
+		var docID string
+		docID = _docID
+		request.DocID = docID
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.ReplaceLegalDocFile(ctx, http.svc, request.UserID, request.DocID, request.Version, request.Summary, request.FileName, request.FileContentBase64)
+}
+func (http *httpAdminAPI) deleteLegalDoc(ctx context.Context, request requestAdminAPIDeleteLegalDoc) (response responseAdminAPIDeleteLegalDoc, err error) {
+
+	response.Response, err = http.svc.DeleteLegalDoc(ctx, request.UserID, request.DocID)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveDeleteLegalDoc(ctx *fiber.Ctx) (err error) {
+
+	var request requestAdminAPIDeleteLegalDoc
+
+	if _docID := ctx.Params("docID"); _docID != "" {
+		var docID string
+		docID = _docID
+		request.DocID = docID
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.DeleteLegalDoc(ctx, http.svc, request.UserID, request.DocID)
+}
+func (http *httpAdminAPI) listLegalDocVersions(ctx context.Context, request requestAdminAPIListLegalDocVersions) (response responseAdminAPIListLegalDocVersions, err error) {
+
+	response.Response, err = http.svc.ListLegalDocVersions(ctx, request.UserID, request.DocID)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveListLegalDocVersions(ctx *fiber.Ctx) (err error) {
+
+	var request requestAdminAPIListLegalDocVersions
+
+	if _docID := ctx.Params("docID"); _docID != "" {
+		var docID string
+		docID = _docID
+		request.DocID = docID
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.ListLegalDocVersions(ctx, http.svc, request.UserID, request.DocID)
+}
+func (http *httpAdminAPI) listCertificates(ctx context.Context, request requestAdminAPIListCertificates) (response responseAdminAPIListCertificates, err error) {
+
+	response.Response, err = http.svc.ListCertificates(ctx, request.UserID)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveListCertificates(ctx *fiber.Ctx) (err error) {
+
+	var request requestAdminAPIListCertificates
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.ListCertificates(ctx, http.svc, request.UserID)
+}
+func (http *httpAdminAPI) listPublicCertificates(ctx context.Context, request requestAdminAPIListPublicCertificates) (response responseAdminAPIListPublicCertificates, err error) {
+
+	response.Response, err = http.svc.ListPublicCertificates(ctx)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveListPublicCertificates(ctx *fiber.Ctx) (err error) {
+
+
+
+	return customhandlers.ListPublicCertificates(ctx, http.svc)
+}
+func (http *httpAdminAPI) createCertificate(ctx context.Context, request requestAdminAPICreateCertificate) (response responseAdminAPICreateCertificate, err error) {
+
+	response.Response, err = http.svc.CreateCertificate(ctx, request.UserID, request.Title, request.SortOrder, request.IsActive, request.FileName, request.FileContentBase64)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveCreateCertificate(ctx *fiber.Ctx) (err error) {
+
+	var request requestAdminAPICreateCertificate
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.CreateCertificate(ctx, http.svc, request.UserID, request.Title, request.SortOrder, request.IsActive, request.FileName, request.FileContentBase64)
+}
+func (http *httpAdminAPI) updateCertificate(ctx context.Context, request requestAdminAPIUpdateCertificate) (response responseAdminAPIUpdateCertificate, err error) {
+
+	response.Response, err = http.svc.UpdateCertificate(ctx, request.UserID, request.CertID, request.Title, request.SortOrder, request.IsActive, request.FileName, request.FileContentBase64)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveUpdateCertificate(ctx *fiber.Ctx) (err error) {
+
+	var request requestAdminAPIUpdateCertificate
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
+
+	if _certID := ctx.Params("certID"); _certID != "" {
+		var certID uuid.UUID
+		certID, _ = uuid.Parse(_certID)
+		request.CertID = certID
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.UpdateCertificate(ctx, http.svc, request.UserID, request.CertID, request.Title, request.SortOrder, request.IsActive, request.FileName, request.FileContentBase64)
+}
+func (http *httpAdminAPI) deleteCertificate(ctx context.Context, request requestAdminAPIDeleteCertificate) (response responseAdminAPIDeleteCertificate, err error) {
+
+	response.Response, err = http.svc.DeleteCertificate(ctx, request.UserID, request.CertID)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveDeleteCertificate(ctx *fiber.Ctx) (err error) {
+
+	var request requestAdminAPIDeleteCertificate
+
+	if _certID := ctx.Params("certID"); _certID != "" {
+		var certID uuid.UUID
+		certID, _ = uuid.Parse(_certID)
+		request.CertID = certID
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.DeleteCertificate(ctx, http.svc, request.UserID, request.CertID)
 }

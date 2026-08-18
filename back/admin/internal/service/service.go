@@ -41,6 +41,17 @@ type Storage interface {
 	CreateSignupRequest(ctx context.Context, request postgres.SignupRequest) (postgres.SignupRequest, error)
 	ListSignupRequests(ctx context.Context, status string) ([]postgres.SignupRequest, error)
 	DecideSignupRequest(ctx context.Context, id uuid.UUID, status string, rejectReason string) (postgres.SignupRequest, error)
+	ListLegalDocs(ctx context.Context) ([]postgres.LegalDoc, error)
+	GetLegalDoc(ctx context.Context, docID string) (postgres.LegalDoc, error)
+	CreateLegalDoc(ctx context.Context, doc postgres.LegalDoc, version postgres.LegalDocVersion) (postgres.LegalDoc, error)
+	ReplaceLegalDocFile(ctx context.Context, docID string, version postgres.LegalDocVersion) (postgres.LegalDoc, error)
+	ListLegalDocVersions(ctx context.Context, docID string) ([]postgres.LegalDocVersion, error)
+	DeleteLegalDoc(ctx context.Context, docID string) error
+	ListCertificates(ctx context.Context, visibleOnly bool) ([]postgres.Certificate, error)
+	GetCertificate(ctx context.Context, certID uuid.UUID) (postgres.Certificate, error)
+	CreateCertificate(ctx context.Context, cert postgres.Certificate) (postgres.Certificate, error)
+	UpdateCertificate(ctx context.Context, cert postgres.Certificate, replaceFile bool) (postgres.Certificate, error)
+	DeleteCertificate(ctx context.Context, certID uuid.UUID) error
 }
 
 // AuthClient is implemented by auth/pkg/client/transport.ClientAuthAPI.
