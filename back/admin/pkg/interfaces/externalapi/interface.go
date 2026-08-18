@@ -106,4 +106,112 @@ type AdminAPI interface {
 	// @tg uuidPackage=github.com/google/uuid
 	// @tg requestID.format=uuid
 	RejectSignupRequest(ctx context.Context, userID uuid.UUID, requestID uuid.UUID, reason string) (response models.SignupRequest, err error)
+
+	// ListLegalDocs ...
+	// @tg http-method=GET
+	// @tg http-path=/v1/admin/legal-docs
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:ListLegalDocs
+	// @tg summary=`Список документов и соглашений`
+	// @tg desc=`Возвращает перечень юридических документов (админка)`
+	// @tg uuidPackage=github.com/google/uuid
+	ListLegalDocs(ctx context.Context, userID uuid.UUID) (response models.ListLegalDocsResponse, err error)
+
+	// ListPublicLegalDocs ...
+	// @tg http-method=GET
+	// @tg http-path=/v1/legal-docs
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:ListPublicLegalDocs
+	// @tg summary=`Публичный список документов и соглашений`
+	// @tg desc=`Возвращает перечень юридических документов для витрины портала`
+	ListPublicLegalDocs(ctx context.Context) (response models.ListLegalDocsResponse, err error)
+
+	// CreateLegalDoc ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/admin/legal-docs
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:CreateLegalDoc
+	// @tg summary=`Добавление документа`
+	// @tg desc=`Добавляет новый документ в перечень «Документы и соглашения» вместе с первой версией файла (fileContentBase64 — файл, закодированный в base64)`
+	// @tg uuidPackage=github.com/google/uuid
+	CreateLegalDoc(ctx context.Context, userID uuid.UUID, id string, name string, version string, summary string, fileName string, fileContentBase64 string) (response models.LegalDoc, err error)
+
+	// ReplaceLegalDocFile ...
+	// @tg http-method=PATCH
+	// @tg http-path=/v1/admin/legal-docs/:docID
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:ReplaceLegalDocFile
+	// @tg summary=`Замена файла документа`
+	// @tg desc=`Загружает новую версию файла документа («Заменить»); прежние версии сохраняются в истории (fileContentBase64 — файл, закодированный в base64)`
+	// @tg uuidPackage=github.com/google/uuid
+	ReplaceLegalDocFile(ctx context.Context, userID uuid.UUID, docID string, version string, summary string, fileName string, fileContentBase64 string) (response models.LegalDoc, err error)
+
+	// DeleteLegalDoc ...
+	// @tg http-method=DELETE
+	// @tg http-path=/v1/admin/legal-docs/:docID
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:DeleteLegalDoc
+	// @tg summary=`Удаление документа`
+	// @tg desc=`Удаляет документ из перечня «Документы и соглашения» вместе со всей историей версий и файлами`
+	// @tg uuidPackage=github.com/google/uuid
+	DeleteLegalDoc(ctx context.Context, userID uuid.UUID, docID string) (response models.DeleteLegalDocResponse, err error)
+
+	// ListLegalDocVersions ...
+	// @tg http-method=GET
+	// @tg http-path=/v1/admin/legal-docs/:docID/versions
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:ListLegalDocVersions
+	// @tg summary=`История версий документа`
+	// @tg desc=`Возвращает историю версий документа («История»)`
+	// @tg uuidPackage=github.com/google/uuid
+	ListLegalDocVersions(ctx context.Context, userID uuid.UUID, docID string) (response models.ListLegalDocVersionsResponse, err error)
+
+	// ListCertificates ...
+	// @tg http-method=GET
+	// @tg http-path=/v1/admin/certificates
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:ListCertificates
+	// @tg summary=`Список сертификатов`
+	// @tg desc=`Возвращает перечень сертификатов (админка)`
+	// @tg uuidPackage=github.com/google/uuid
+	ListCertificates(ctx context.Context, userID uuid.UUID) (response models.ListCertificatesResponse, err error)
+
+	// ListPublicCertificates ...
+	// @tg http-method=GET
+	// @tg http-path=/v1/certificates
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:ListPublicCertificates
+	// @tg summary=`Публичный список сертификатов`
+	// @tg desc=`Возвращает активные сертификаты для витрины портала`
+	ListPublicCertificates(ctx context.Context) (response models.ListCertificatesResponse, err error)
+
+	// CreateCertificate ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/admin/certificates
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:CreateCertificate
+	// @tg summary=`Добавление сертификата`
+	// @tg desc=`Добавляет сертификат с прикреплённым файлом (fileContentBase64 — файл, закодированный в base64)`
+	// @tg uuidPackage=github.com/google/uuid
+	CreateCertificate(ctx context.Context, userID uuid.UUID, title string, sortOrder int, isActive bool, fileName string, fileContentBase64 string) (response models.Certificate, err error)
+
+	// UpdateCertificate ...
+	// @tg http-method=PATCH
+	// @tg http-path=/v1/admin/certificates/:certID
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:UpdateCertificate
+	// @tg summary=`Изменение сертификата`
+	// @tg desc=`Обновляет сертификат; при непустых fileName/fileContentBase64 заменяет прикреплённый файл`
+	// @tg uuidPackage=github.com/google/uuid
+	// @tg certID.format=uuid
+	UpdateCertificate(ctx context.Context, userID uuid.UUID, certID uuid.UUID, title string, sortOrder int, isActive bool, fileName string, fileContentBase64 string) (response models.Certificate, err error)
+
+	// DeleteCertificate ...
+	// @tg http-method=DELETE
+	// @tg http-path=/v1/admin/certificates/:certID
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:DeleteCertificate
+	// @tg summary=`Удаление сертификата`
+	// @tg desc=`Удаляет сертификат и прикреплённый файл`
+	// @tg uuidPackage=github.com/google/uuid
+	// @tg certID.format=uuid
+	DeleteCertificate(ctx context.Context, userID uuid.UUID, certID uuid.UUID) (response models.DeleteCertificateResponse, err error)
 }

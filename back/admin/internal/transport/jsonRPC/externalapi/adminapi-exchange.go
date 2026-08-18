@@ -80,3 +80,114 @@ type requestAdminAPIRejectSignupRequest struct {
 type responseAdminAPIRejectSignupRequest struct {
 	Response models.SignupRequest `json:"response,omitempty"`
 }
+
+type requestAdminAPIListLegalDocs struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+}
+
+type responseAdminAPIListLegalDocs struct {
+	Response models.ListLegalDocsResponse `json:"response,omitempty"`
+}
+
+// Formal exchange type, please do not delete.
+type requestAdminAPIListPublicLegalDocs struct{}
+
+type responseAdminAPIListPublicLegalDocs struct {
+	Response models.ListLegalDocsResponse `json:"response,omitempty"`
+}
+
+type requestAdminAPICreateLegalDoc struct {
+	UserID            uuid.UUID `json:"userID,omitempty"`
+	Id                string    `json:"id,omitempty"`
+	Name              string    `json:"name,omitempty"`
+	Version           string    `json:"version,omitempty"`
+	Summary           string    `json:"summary,omitempty"`
+	FileName          string    `json:"fileName,omitempty"`
+	FileContentBase64 string    `json:"fileContentBase64,omitempty"`
+}
+
+type responseAdminAPICreateLegalDoc struct {
+	Response models.LegalDoc `json:"response,omitempty"`
+}
+
+type requestAdminAPIReplaceLegalDocFile struct {
+	UserID            uuid.UUID `json:"userID,omitempty"`
+	DocID             string    `json:"docID,omitempty"`
+	Version           string    `json:"version,omitempty"`
+	Summary           string    `json:"summary,omitempty"`
+	FileName          string    `json:"fileName,omitempty"`
+	FileContentBase64 string    `json:"fileContentBase64,omitempty"`
+}
+
+type responseAdminAPIReplaceLegalDocFile struct {
+	Response models.LegalDoc `json:"response,omitempty"`
+}
+
+type requestAdminAPIDeleteLegalDoc struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+	DocID  string    `json:"docID,omitempty"`
+}
+
+type responseAdminAPIDeleteLegalDoc struct {
+	Response models.DeleteLegalDocResponse `json:"response,omitempty"`
+}
+
+type requestAdminAPIListLegalDocVersions struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+	DocID  string    `json:"docID,omitempty"`
+}
+
+type responseAdminAPIListLegalDocVersions struct {
+	Response models.ListLegalDocVersionsResponse `json:"response,omitempty"`
+}
+
+type requestAdminAPIListCertificates struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+}
+
+type responseAdminAPIListCertificates struct {
+	Response models.ListCertificatesResponse `json:"response,omitempty"`
+}
+
+// Formal exchange type, please do not delete.
+type requestAdminAPIListPublicCertificates struct{}
+
+type responseAdminAPIListPublicCertificates struct {
+	Response models.ListCertificatesResponse `json:"response,omitempty"`
+}
+
+type requestAdminAPICreateCertificate struct {
+	UserID            uuid.UUID `json:"userID,omitempty"`
+	Title             string    `json:"title,omitempty"`
+	SortOrder         int       `json:"sortOrder,omitempty"`
+	IsActive          bool      `json:"isActive,omitempty"`
+	FileName          string    `json:"fileName,omitempty"`
+	FileContentBase64 string    `json:"fileContentBase64,omitempty"`
+}
+
+type responseAdminAPICreateCertificate struct {
+	Response models.Certificate `json:"response,omitempty"`
+}
+
+type requestAdminAPIUpdateCertificate struct {
+	UserID            uuid.UUID `json:"userID,omitempty"`
+	CertID            uuid.UUID `json:"certID,omitempty"`
+	Title             string    `json:"title,omitempty"`
+	SortOrder         int       `json:"sortOrder,omitempty"`
+	IsActive          bool      `json:"isActive,omitempty"`
+	FileName          string    `json:"fileName,omitempty"`
+	FileContentBase64 string    `json:"fileContentBase64,omitempty"`
+}
+
+type responseAdminAPIUpdateCertificate struct {
+	Response models.Certificate `json:"response,omitempty"`
+}
+
+type requestAdminAPIDeleteCertificate struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+	CertID uuid.UUID `json:"certID,omitempty"`
+}
+
+type responseAdminAPIDeleteCertificate struct {
+	Response models.DeleteCertificateResponse `json:"response,omitempty"`
+}

@@ -206,3 +206,262 @@ func (m loggerAdminAPI) RejectSignupRequest(ctx context.Context, userID uuid.UUI
 	}(time.Now())
 	return m.next.RejectSignupRequest(ctx, userID, requestID, reason)
 }
+
+func (m loggerAdminAPI) ListLegalDocs(ctx context.Context, userID uuid.UUID) (response models.ListLegalDocsResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "listLegalDocs").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method":   "adminAPI.listLegalDocs",
+				"request":  viewer.Sprintf("%+v", requestAdminAPIListLegalDocs{UserID: userID}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIListLegalDocs{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call listLegalDocs")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call listLegalDocs")
+	}(time.Now())
+	return m.next.ListLegalDocs(ctx, userID)
+}
+
+func (m loggerAdminAPI) ListPublicLegalDocs(ctx context.Context) (response models.ListLegalDocsResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "listPublicLegalDocs").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method":   "adminAPI.listPublicLegalDocs",
+				"request":  viewer.Sprintf("%+v", requestAdminAPIListPublicLegalDocs{}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIListPublicLegalDocs{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call listPublicLegalDocs")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call listPublicLegalDocs")
+	}(time.Now())
+	return m.next.ListPublicLegalDocs(ctx)
+}
+
+func (m loggerAdminAPI) CreateLegalDoc(ctx context.Context, userID uuid.UUID, id string, name string, version string, summary string, fileName string, fileContentBase64 string) (response models.LegalDoc, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "createLegalDoc").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "adminAPI.createLegalDoc",
+				"request": viewer.Sprintf("%+v", requestAdminAPICreateLegalDoc{
+					FileContentBase64: fileContentBase64,
+					FileName:          fileName,
+					Id:                id,
+					Name:              name,
+					Summary:           summary,
+					UserID:            userID,
+					Version:           version,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPICreateLegalDoc{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call createLegalDoc")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call createLegalDoc")
+	}(time.Now())
+	return m.next.CreateLegalDoc(ctx, userID, id, name, version, summary, fileName, fileContentBase64)
+}
+
+func (m loggerAdminAPI) ReplaceLegalDocFile(ctx context.Context, userID uuid.UUID, docID string, version string, summary string, fileName string, fileContentBase64 string) (response models.LegalDoc, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "replaceLegalDocFile").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "adminAPI.replaceLegalDocFile",
+				"request": viewer.Sprintf("%+v", requestAdminAPIReplaceLegalDocFile{
+					DocID:             docID,
+					FileContentBase64: fileContentBase64,
+					FileName:          fileName,
+					Summary:           summary,
+					UserID:            userID,
+					Version:           version,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIReplaceLegalDocFile{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call replaceLegalDocFile")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call replaceLegalDocFile")
+	}(time.Now())
+	return m.next.ReplaceLegalDocFile(ctx, userID, docID, version, summary, fileName, fileContentBase64)
+}
+
+func (m loggerAdminAPI) DeleteLegalDoc(ctx context.Context, userID uuid.UUID, docID string) (response models.DeleteLegalDocResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "deleteLegalDoc").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "adminAPI.deleteLegalDoc",
+				"request": viewer.Sprintf("%+v", requestAdminAPIDeleteLegalDoc{
+					DocID:  docID,
+					UserID: userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIDeleteLegalDoc{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call deleteLegalDoc")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call deleteLegalDoc")
+	}(time.Now())
+	return m.next.DeleteLegalDoc(ctx, userID, docID)
+}
+
+func (m loggerAdminAPI) ListLegalDocVersions(ctx context.Context, userID uuid.UUID, docID string) (response models.ListLegalDocVersionsResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "listLegalDocVersions").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "adminAPI.listLegalDocVersions",
+				"request": viewer.Sprintf("%+v", requestAdminAPIListLegalDocVersions{
+					DocID:  docID,
+					UserID: userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIListLegalDocVersions{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call listLegalDocVersions")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call listLegalDocVersions")
+	}(time.Now())
+	return m.next.ListLegalDocVersions(ctx, userID, docID)
+}
+
+func (m loggerAdminAPI) ListCertificates(ctx context.Context, userID uuid.UUID) (response models.ListCertificatesResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "listCertificates").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method":   "adminAPI.listCertificates",
+				"request":  viewer.Sprintf("%+v", requestAdminAPIListCertificates{UserID: userID}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIListCertificates{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call listCertificates")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call listCertificates")
+	}(time.Now())
+	return m.next.ListCertificates(ctx, userID)
+}
+
+func (m loggerAdminAPI) ListPublicCertificates(ctx context.Context) (response models.ListCertificatesResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "listPublicCertificates").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method":   "adminAPI.listPublicCertificates",
+				"request":  viewer.Sprintf("%+v", requestAdminAPIListPublicCertificates{}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIListPublicCertificates{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call listPublicCertificates")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call listPublicCertificates")
+	}(time.Now())
+	return m.next.ListPublicCertificates(ctx)
+}
+
+func (m loggerAdminAPI) CreateCertificate(ctx context.Context, userID uuid.UUID, title string, sortOrder int, isActive bool, fileName string, fileContentBase64 string) (response models.Certificate, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "createCertificate").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "adminAPI.createCertificate",
+				"request": viewer.Sprintf("%+v", requestAdminAPICreateCertificate{
+					FileContentBase64: fileContentBase64,
+					FileName:          fileName,
+					IsActive:          isActive,
+					SortOrder:         sortOrder,
+					Title:             title,
+					UserID:            userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPICreateCertificate{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call createCertificate")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call createCertificate")
+	}(time.Now())
+	return m.next.CreateCertificate(ctx, userID, title, sortOrder, isActive, fileName, fileContentBase64)
+}
+
+func (m loggerAdminAPI) UpdateCertificate(ctx context.Context, userID uuid.UUID, certID uuid.UUID, title string, sortOrder int, isActive bool, fileName string, fileContentBase64 string) (response models.Certificate, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "updateCertificate").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "adminAPI.updateCertificate",
+				"request": viewer.Sprintf("%+v", requestAdminAPIUpdateCertificate{
+					CertID:            certID,
+					FileContentBase64: fileContentBase64,
+					FileName:          fileName,
+					IsActive:          isActive,
+					SortOrder:         sortOrder,
+					Title:             title,
+					UserID:            userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIUpdateCertificate{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call updateCertificate")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call updateCertificate")
+	}(time.Now())
+	return m.next.UpdateCertificate(ctx, userID, certID, title, sortOrder, isActive, fileName, fileContentBase64)
+}
+
+func (m loggerAdminAPI) DeleteCertificate(ctx context.Context, userID uuid.UUID, certID uuid.UUID) (response models.DeleteCertificateResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "deleteCertificate").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "adminAPI.deleteCertificate",
+				"request": viewer.Sprintf("%+v", requestAdminAPIDeleteCertificate{
+					CertID: certID,
+					UserID: userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIDeleteCertificate{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call deleteCertificate")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call deleteCertificate")
+	}(time.Now())
+	return m.next.DeleteCertificate(ctx, userID, certID)
+}

@@ -17,6 +17,17 @@ type AdminAPICreateSignupRequest func(ctx context.Context, company string, inn s
 type AdminAPIListSignupRequests func(ctx context.Context, userID uuid.UUID, status string) (response models.ListSignupRequestsResponse, err error)
 type AdminAPIApproveSignupRequest func(ctx context.Context, userID uuid.UUID, requestID uuid.UUID) (response models.SignupRequest, err error)
 type AdminAPIRejectSignupRequest func(ctx context.Context, userID uuid.UUID, requestID uuid.UUID, reason string) (response models.SignupRequest, err error)
+type AdminAPIListLegalDocs func(ctx context.Context, userID uuid.UUID) (response models.ListLegalDocsResponse, err error)
+type AdminAPIListPublicLegalDocs func(ctx context.Context) (response models.ListLegalDocsResponse, err error)
+type AdminAPICreateLegalDoc func(ctx context.Context, userID uuid.UUID, id string, name string, version string, summary string, fileName string, fileContentBase64 string) (response models.LegalDoc, err error)
+type AdminAPIReplaceLegalDocFile func(ctx context.Context, userID uuid.UUID, docID string, version string, summary string, fileName string, fileContentBase64 string) (response models.LegalDoc, err error)
+type AdminAPIDeleteLegalDoc func(ctx context.Context, userID uuid.UUID, docID string) (response models.DeleteLegalDocResponse, err error)
+type AdminAPIListLegalDocVersions func(ctx context.Context, userID uuid.UUID, docID string) (response models.ListLegalDocVersionsResponse, err error)
+type AdminAPIListCertificates func(ctx context.Context, userID uuid.UUID) (response models.ListCertificatesResponse, err error)
+type AdminAPIListPublicCertificates func(ctx context.Context) (response models.ListCertificatesResponse, err error)
+type AdminAPICreateCertificate func(ctx context.Context, userID uuid.UUID, title string, sortOrder int, isActive bool, fileName string, fileContentBase64 string) (response models.Certificate, err error)
+type AdminAPIUpdateCertificate func(ctx context.Context, userID uuid.UUID, certID uuid.UUID, title string, sortOrder int, isActive bool, fileName string, fileContentBase64 string) (response models.Certificate, err error)
+type AdminAPIDeleteCertificate func(ctx context.Context, userID uuid.UUID, certID uuid.UUID) (response models.DeleteCertificateResponse, err error)
 
 type MiddlewareAdminAPI func(next externalapi.AdminAPI) externalapi.AdminAPI
 
@@ -28,3 +39,14 @@ type MiddlewareAdminAPICreateSignupRequest func(next AdminAPICreateSignupRequest
 type MiddlewareAdminAPIListSignupRequests func(next AdminAPIListSignupRequests) AdminAPIListSignupRequests
 type MiddlewareAdminAPIApproveSignupRequest func(next AdminAPIApproveSignupRequest) AdminAPIApproveSignupRequest
 type MiddlewareAdminAPIRejectSignupRequest func(next AdminAPIRejectSignupRequest) AdminAPIRejectSignupRequest
+type MiddlewareAdminAPIListLegalDocs func(next AdminAPIListLegalDocs) AdminAPIListLegalDocs
+type MiddlewareAdminAPIListPublicLegalDocs func(next AdminAPIListPublicLegalDocs) AdminAPIListPublicLegalDocs
+type MiddlewareAdminAPICreateLegalDoc func(next AdminAPICreateLegalDoc) AdminAPICreateLegalDoc
+type MiddlewareAdminAPIReplaceLegalDocFile func(next AdminAPIReplaceLegalDocFile) AdminAPIReplaceLegalDocFile
+type MiddlewareAdminAPIDeleteLegalDoc func(next AdminAPIDeleteLegalDoc) AdminAPIDeleteLegalDoc
+type MiddlewareAdminAPIListLegalDocVersions func(next AdminAPIListLegalDocVersions) AdminAPIListLegalDocVersions
+type MiddlewareAdminAPIListCertificates func(next AdminAPIListCertificates) AdminAPIListCertificates
+type MiddlewareAdminAPIListPublicCertificates func(next AdminAPIListPublicCertificates) AdminAPIListPublicCertificates
+type MiddlewareAdminAPICreateCertificate func(next AdminAPICreateCertificate) AdminAPICreateCertificate
+type MiddlewareAdminAPIUpdateCertificate func(next AdminAPIUpdateCertificate) AdminAPIUpdateCertificate
+type MiddlewareAdminAPIDeleteCertificate func(next AdminAPIDeleteCertificate) AdminAPIDeleteCertificate

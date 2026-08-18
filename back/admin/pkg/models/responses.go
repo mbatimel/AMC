@@ -84,3 +84,57 @@ type SignupRequest struct {
 type ListSignupRequestsResponse struct {
 	Items []SignupRequest `json:"items"`
 }
+
+type LegalDoc struct {
+	ID             string    `json:"id"`
+	Name           string    `json:"name"`
+	CurrentVersion string    `json:"current_version"`
+	FileURL        string    `json:"file_url"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type LegalDocVersion struct {
+	ID        uuid.UUID `json:"id"`
+	Version   string    `json:"version"`
+	Summary   string    `json:"summary"`
+	Author    string    `json:"author"`
+	FileURL   string    `json:"file_url"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type ListLegalDocsResponse struct {
+	Items []LegalDoc `json:"items"`
+}
+
+type ListLegalDocVersionsResponse struct {
+	Items []LegalDocVersion `json:"items"`
+}
+
+type DeleteLegalDocResponse struct {
+	Deleted bool `json:"deleted"`
+}
+
+type CertificateInput struct {
+	Title     string     `json:"title"`
+	SortOrder int        `json:"sort_order"`
+	IsActive  bool       `json:"is_active"`
+	File      *ImageFile `json:"-"`
+}
+
+type Certificate struct {
+	ID        uuid.UUID `json:"id"`
+	Title     string    `json:"title"`
+	SortOrder int       `json:"sort_order"`
+	IsActive  bool      `json:"is_active"`
+	FileURL   string    `json:"file_url"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type ListCertificatesResponse struct {
+	Items []Certificate `json:"items"`
+}
+
+type DeleteCertificateResponse struct {
+	Deleted bool `json:"deleted"`
+}

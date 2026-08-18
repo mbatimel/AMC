@@ -10,15 +10,26 @@ import (
 )
 
 type serverAdminAPI struct {
-	svc                  externalapi.AdminAPI
-	login                AdminAPILogin
-	logout               AdminAPILogout
-	getSession           AdminAPIGetSession
-	listAuditLog         AdminAPIListAuditLog
-	createSignupRequest  AdminAPICreateSignupRequest
-	listSignupRequests   AdminAPIListSignupRequests
-	approveSignupRequest AdminAPIApproveSignupRequest
-	rejectSignupRequest  AdminAPIRejectSignupRequest
+	svc                    externalapi.AdminAPI
+	login                  AdminAPILogin
+	logout                 AdminAPILogout
+	getSession             AdminAPIGetSession
+	listAuditLog           AdminAPIListAuditLog
+	createSignupRequest    AdminAPICreateSignupRequest
+	listSignupRequests     AdminAPIListSignupRequests
+	approveSignupRequest   AdminAPIApproveSignupRequest
+	rejectSignupRequest    AdminAPIRejectSignupRequest
+	listLegalDocs          AdminAPIListLegalDocs
+	listPublicLegalDocs    AdminAPIListPublicLegalDocs
+	createLegalDoc         AdminAPICreateLegalDoc
+	replaceLegalDocFile    AdminAPIReplaceLegalDocFile
+	deleteLegalDoc         AdminAPIDeleteLegalDoc
+	listLegalDocVersions   AdminAPIListLegalDocVersions
+	listCertificates       AdminAPIListCertificates
+	listPublicCertificates AdminAPIListPublicCertificates
+	createCertificate      AdminAPICreateCertificate
+	updateCertificate      AdminAPIUpdateCertificate
+	deleteCertificate      AdminAPIDeleteCertificate
 }
 
 type MiddlewareSetAdminAPI interface {
@@ -31,6 +42,17 @@ type MiddlewareSetAdminAPI interface {
 	WrapListSignupRequests(m MiddlewareAdminAPIListSignupRequests)
 	WrapApproveSignupRequest(m MiddlewareAdminAPIApproveSignupRequest)
 	WrapRejectSignupRequest(m MiddlewareAdminAPIRejectSignupRequest)
+	WrapListLegalDocs(m MiddlewareAdminAPIListLegalDocs)
+	WrapListPublicLegalDocs(m MiddlewareAdminAPIListPublicLegalDocs)
+	WrapCreateLegalDoc(m MiddlewareAdminAPICreateLegalDoc)
+	WrapReplaceLegalDocFile(m MiddlewareAdminAPIReplaceLegalDocFile)
+	WrapDeleteLegalDoc(m MiddlewareAdminAPIDeleteLegalDoc)
+	WrapListLegalDocVersions(m MiddlewareAdminAPIListLegalDocVersions)
+	WrapListCertificates(m MiddlewareAdminAPIListCertificates)
+	WrapListPublicCertificates(m MiddlewareAdminAPIListPublicCertificates)
+	WrapCreateCertificate(m MiddlewareAdminAPICreateCertificate)
+	WrapUpdateCertificate(m MiddlewareAdminAPIUpdateCertificate)
+	WrapDeleteCertificate(m MiddlewareAdminAPIDeleteCertificate)
 
 	WithMetrics()
 	WithLog()
@@ -38,15 +60,26 @@ type MiddlewareSetAdminAPI interface {
 
 func newServerAdminAPI(svc externalapi.AdminAPI) *serverAdminAPI {
 	return &serverAdminAPI{
-		approveSignupRequest: svc.ApproveSignupRequest,
-		createSignupRequest:  svc.CreateSignupRequest,
-		getSession:           svc.GetSession,
-		listAuditLog:         svc.ListAuditLog,
-		listSignupRequests:   svc.ListSignupRequests,
-		login:                svc.Login,
-		logout:               svc.Logout,
-		rejectSignupRequest:  svc.RejectSignupRequest,
-		svc:                  svc,
+		approveSignupRequest:   svc.ApproveSignupRequest,
+		createCertificate:      svc.CreateCertificate,
+		createLegalDoc:         svc.CreateLegalDoc,
+		createSignupRequest:    svc.CreateSignupRequest,
+		deleteCertificate:      svc.DeleteCertificate,
+		deleteLegalDoc:         svc.DeleteLegalDoc,
+		getSession:             svc.GetSession,
+		listAuditLog:           svc.ListAuditLog,
+		listCertificates:       svc.ListCertificates,
+		listLegalDocVersions:   svc.ListLegalDocVersions,
+		listLegalDocs:          svc.ListLegalDocs,
+		listPublicCertificates: svc.ListPublicCertificates,
+		listPublicLegalDocs:    svc.ListPublicLegalDocs,
+		listSignupRequests:     svc.ListSignupRequests,
+		login:                  svc.Login,
+		logout:                 svc.Logout,
+		rejectSignupRequest:    svc.RejectSignupRequest,
+		replaceLegalDocFile:    svc.ReplaceLegalDocFile,
+		svc:                    svc,
+		updateCertificate:      svc.UpdateCertificate,
 	}
 }
 
@@ -60,6 +93,17 @@ func (srv *serverAdminAPI) Wrap(m MiddlewareAdminAPI) {
 	srv.listSignupRequests = srv.svc.ListSignupRequests
 	srv.approveSignupRequest = srv.svc.ApproveSignupRequest
 	srv.rejectSignupRequest = srv.svc.RejectSignupRequest
+	srv.listLegalDocs = srv.svc.ListLegalDocs
+	srv.listPublicLegalDocs = srv.svc.ListPublicLegalDocs
+	srv.createLegalDoc = srv.svc.CreateLegalDoc
+	srv.replaceLegalDocFile = srv.svc.ReplaceLegalDocFile
+	srv.deleteLegalDoc = srv.svc.DeleteLegalDoc
+	srv.listLegalDocVersions = srv.svc.ListLegalDocVersions
+	srv.listCertificates = srv.svc.ListCertificates
+	srv.listPublicCertificates = srv.svc.ListPublicCertificates
+	srv.createCertificate = srv.svc.CreateCertificate
+	srv.updateCertificate = srv.svc.UpdateCertificate
+	srv.deleteCertificate = srv.svc.DeleteCertificate
 }
 
 func (srv *serverAdminAPI) Login(ctx context.Context, email string, password string) (response models.LoginResponse, err error) {
@@ -94,6 +138,50 @@ func (srv *serverAdminAPI) RejectSignupRequest(ctx context.Context, userID uuid.
 	return srv.rejectSignupRequest(ctx, userID, requestID, reason)
 }
 
+func (srv *serverAdminAPI) ListLegalDocs(ctx context.Context, userID uuid.UUID) (response models.ListLegalDocsResponse, err error) {
+	return srv.listLegalDocs(ctx, userID)
+}
+
+func (srv *serverAdminAPI) ListPublicLegalDocs(ctx context.Context) (response models.ListLegalDocsResponse, err error) {
+	return srv.listPublicLegalDocs(ctx)
+}
+
+func (srv *serverAdminAPI) CreateLegalDoc(ctx context.Context, userID uuid.UUID, id string, name string, version string, summary string, fileName string, fileContentBase64 string) (response models.LegalDoc, err error) {
+	return srv.createLegalDoc(ctx, userID, id, name, version, summary, fileName, fileContentBase64)
+}
+
+func (srv *serverAdminAPI) ReplaceLegalDocFile(ctx context.Context, userID uuid.UUID, docID string, version string, summary string, fileName string, fileContentBase64 string) (response models.LegalDoc, err error) {
+	return srv.replaceLegalDocFile(ctx, userID, docID, version, summary, fileName, fileContentBase64)
+}
+
+func (srv *serverAdminAPI) DeleteLegalDoc(ctx context.Context, userID uuid.UUID, docID string) (response models.DeleteLegalDocResponse, err error) {
+	return srv.deleteLegalDoc(ctx, userID, docID)
+}
+
+func (srv *serverAdminAPI) ListLegalDocVersions(ctx context.Context, userID uuid.UUID, docID string) (response models.ListLegalDocVersionsResponse, err error) {
+	return srv.listLegalDocVersions(ctx, userID, docID)
+}
+
+func (srv *serverAdminAPI) ListCertificates(ctx context.Context, userID uuid.UUID) (response models.ListCertificatesResponse, err error) {
+	return srv.listCertificates(ctx, userID)
+}
+
+func (srv *serverAdminAPI) ListPublicCertificates(ctx context.Context) (response models.ListCertificatesResponse, err error) {
+	return srv.listPublicCertificates(ctx)
+}
+
+func (srv *serverAdminAPI) CreateCertificate(ctx context.Context, userID uuid.UUID, title string, sortOrder int, isActive bool, fileName string, fileContentBase64 string) (response models.Certificate, err error) {
+	return srv.createCertificate(ctx, userID, title, sortOrder, isActive, fileName, fileContentBase64)
+}
+
+func (srv *serverAdminAPI) UpdateCertificate(ctx context.Context, userID uuid.UUID, certID uuid.UUID, title string, sortOrder int, isActive bool, fileName string, fileContentBase64 string) (response models.Certificate, err error) {
+	return srv.updateCertificate(ctx, userID, certID, title, sortOrder, isActive, fileName, fileContentBase64)
+}
+
+func (srv *serverAdminAPI) DeleteCertificate(ctx context.Context, userID uuid.UUID, certID uuid.UUID) (response models.DeleteCertificateResponse, err error) {
+	return srv.deleteCertificate(ctx, userID, certID)
+}
+
 func (srv *serverAdminAPI) WrapLogin(m MiddlewareAdminAPILogin) {
 	srv.login = m(srv.login)
 }
@@ -124,6 +212,50 @@ func (srv *serverAdminAPI) WrapApproveSignupRequest(m MiddlewareAdminAPIApproveS
 
 func (srv *serverAdminAPI) WrapRejectSignupRequest(m MiddlewareAdminAPIRejectSignupRequest) {
 	srv.rejectSignupRequest = m(srv.rejectSignupRequest)
+}
+
+func (srv *serverAdminAPI) WrapListLegalDocs(m MiddlewareAdminAPIListLegalDocs) {
+	srv.listLegalDocs = m(srv.listLegalDocs)
+}
+
+func (srv *serverAdminAPI) WrapListPublicLegalDocs(m MiddlewareAdminAPIListPublicLegalDocs) {
+	srv.listPublicLegalDocs = m(srv.listPublicLegalDocs)
+}
+
+func (srv *serverAdminAPI) WrapCreateLegalDoc(m MiddlewareAdminAPICreateLegalDoc) {
+	srv.createLegalDoc = m(srv.createLegalDoc)
+}
+
+func (srv *serverAdminAPI) WrapReplaceLegalDocFile(m MiddlewareAdminAPIReplaceLegalDocFile) {
+	srv.replaceLegalDocFile = m(srv.replaceLegalDocFile)
+}
+
+func (srv *serverAdminAPI) WrapDeleteLegalDoc(m MiddlewareAdminAPIDeleteLegalDoc) {
+	srv.deleteLegalDoc = m(srv.deleteLegalDoc)
+}
+
+func (srv *serverAdminAPI) WrapListLegalDocVersions(m MiddlewareAdminAPIListLegalDocVersions) {
+	srv.listLegalDocVersions = m(srv.listLegalDocVersions)
+}
+
+func (srv *serverAdminAPI) WrapListCertificates(m MiddlewareAdminAPIListCertificates) {
+	srv.listCertificates = m(srv.listCertificates)
+}
+
+func (srv *serverAdminAPI) WrapListPublicCertificates(m MiddlewareAdminAPIListPublicCertificates) {
+	srv.listPublicCertificates = m(srv.listPublicCertificates)
+}
+
+func (srv *serverAdminAPI) WrapCreateCertificate(m MiddlewareAdminAPICreateCertificate) {
+	srv.createCertificate = m(srv.createCertificate)
+}
+
+func (srv *serverAdminAPI) WrapUpdateCertificate(m MiddlewareAdminAPIUpdateCertificate) {
+	srv.updateCertificate = m(srv.updateCertificate)
+}
+
+func (srv *serverAdminAPI) WrapDeleteCertificate(m MiddlewareAdminAPIDeleteCertificate) {
+	srv.deleteCertificate = m(srv.deleteCertificate)
 }
 
 func (srv *serverAdminAPI) WithMetrics() {

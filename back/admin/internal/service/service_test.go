@@ -27,6 +27,21 @@ type fakeStorage struct {
 	deleteBannerFn      func(context.Context, uuid.UUID) error
 	updateBannerDelayFn func(context.Context, int) error
 	decideSignupFn      func(context.Context, uuid.UUID, string, string) (postgres.SignupRequest, error)
+
+	legalDocs              map[string]postgres.LegalDoc
+	legalDocVersions       map[string][]postgres.LegalDocVersion
+	createLegalDocFn       func(context.Context, postgres.LegalDoc, postgres.LegalDocVersion) (postgres.LegalDoc, error)
+	getLegalDocFn          func(context.Context, string) (postgres.LegalDoc, error)
+	replaceLegalDocFileFn  func(context.Context, string, postgres.LegalDocVersion) (postgres.LegalDoc, error)
+	deleteLegalDocFn       func(context.Context, string) error
+	listLegalDocVersionsFn func(context.Context, string) ([]postgres.LegalDocVersion, error)
+
+	certificates        map[uuid.UUID]postgres.Certificate
+	listCertificatesFn  func(context.Context, bool) ([]postgres.Certificate, error)
+	getCertificateFn    func(context.Context, uuid.UUID) (postgres.Certificate, error)
+	createCertificateFn func(context.Context, postgres.Certificate) (postgres.Certificate, error)
+	updateCertificateFn func(context.Context, postgres.Certificate, bool) (postgres.Certificate, error)
+	deleteCertificateFn func(context.Context, uuid.UUID) error
 }
 
 type auditCall struct {
@@ -103,6 +118,94 @@ func (f *fakeStorage) DecideSignupRequest(ctx context.Context, id uuid.UUID, sta
 		return f.decideSignupFn(ctx, id, status, rejectReason)
 	}
 	return postgres.SignupRequest{ID: id, Email: "applicant@example.com", Status: status, RejectReason: rejectReason}, nil
+}
+
+func (f *fakeStorage) ListLegalDocs(_ context.Context) ([]postgres.LegalDoc, error) {
+	items := make([]postgres.LegalDoc, 0, len(f.legalDocs))
+	for _, doc := range f.legalDocs {
+		items = append(items, doc)
+	}
+	return items, nil
+}
+
+func (f *fakeStorage) GetLegalDoc(ctx context.Context, docID string) (postgres.LegalDoc, error) {
+	if f.getLegalDocFn != nil {
+		return f.getLegalDocFn(ctx, docID)
+	}
+	if doc, ok := f.legalDocs[docID]; ok {
+		return doc, nil
+	}
+	return postgres.LegalDoc{}, postgres.ErrLegalDocNotFound
+}
+
+func (f *fakeStorage) CreateLegalDoc(ctx context.Context, doc postgres.LegalDoc, version postgres.LegalDocVersion) (postgres.LegalDoc, error) {
+	if f.createLegalDocFn != nil {
+		return f.createLegalDocFn(ctx, doc, version)
+	}
+	return doc, nil
+}
+
+func (f *fakeStorage) ReplaceLegalDocFile(ctx context.Context, docID string, version postgres.LegalDocVersion) (postgres.LegalDoc, error) {
+	if f.replaceLegalDocFileFn != nil {
+		return f.replaceLegalDocFileFn(ctx, docID, version)
+	}
+	return postgres.LegalDoc{ID: docID, CurrentVersion: version.Version, ObjectKey: version.ObjectKey}, nil
+}
+
+func (f *fakeStorage) ListLegalDocVersions(ctx context.Context, docID string) ([]postgres.LegalDocVersion, error) {
+	if f.listLegalDocVersionsFn != nil {
+		return f.listLegalDocVersionsFn(ctx, docID)
+	}
+	return f.legalDocVersions[docID], nil
+}
+
+func (f *fakeStorage) DeleteLegalDoc(ctx context.Context, docID string) error {
+	if f.deleteLegalDocFn != nil {
+		return f.deleteLegalDocFn(ctx, docID)
+	}
+	return nil
+}
+
+func (f *fakeStorage) ListCertificates(ctx context.Context, visibleOnly bool) ([]postgres.Certificate, error) {
+	if f.listCertificatesFn != nil {
+		return f.listCertificatesFn(ctx, visibleOnly)
+	}
+	items := make([]postgres.Certificate, 0, len(f.certificates))
+	for _, cert := range f.certificates {
+		items = append(items, cert)
+	}
+	return items, nil
+}
+
+func (f *fakeStorage) GetCertificate(ctx context.Context, certID uuid.UUID) (postgres.Certificate, error) {
+	if f.getCertificateFn != nil {
+		return f.getCertificateFn(ctx, certID)
+	}
+	if cert, ok := f.certificates[certID]; ok {
+		return cert, nil
+	}
+	return postgres.Certificate{}, postgres.ErrCertificateNotFound
+}
+
+func (f *fakeStorage) CreateCertificate(ctx context.Context, cert postgres.Certificate) (postgres.Certificate, error) {
+	if f.createCertificateFn != nil {
+		return f.createCertificateFn(ctx, cert)
+	}
+	return cert, nil
+}
+
+func (f *fakeStorage) UpdateCertificate(ctx context.Context, cert postgres.Certificate, replaceFile bool) (postgres.Certificate, error) {
+	if f.updateCertificateFn != nil {
+		return f.updateCertificateFn(ctx, cert, replaceFile)
+	}
+	return cert, nil
+}
+
+func (f *fakeStorage) DeleteCertificate(ctx context.Context, certID uuid.UUID) error {
+	if f.deleteCertificateFn != nil {
+		return f.deleteCertificateFn(ctx, certID)
+	}
+	return nil
 }
 
 type fakeAuthClient struct {
