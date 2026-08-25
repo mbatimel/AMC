@@ -3,6 +3,7 @@ module github.com/mbatimel/AMC/integrations
 go 1.25.0
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/rs/zerolog v1.35.1
 	github.com/valyala/fasthttp v1.72.0
 )
