@@ -195,6 +195,25 @@ services:
         condition: service_completed_successfully
     networks: [amc_net]
 
+  onec-sync:
+    image: ghcr.io/mbatimel/amc-onec-sync:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      PG_HOST: postgres
+      PG_PORT: "5432"
+      PG_DB: ${PG_DB}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      HEALTH_ADDR: ":9096"
+      ONEC_BASE_URL: ${ONEC_BASE_URL}
+      ONEC_USER: ${ONEC_USER}
+      ONEC_PASSWORD: ${ONEC_PASSWORD}
+      SYNC_INTERVAL: "24h"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    networks: [amc_net]
+
   front:
     image: ghcr.io/mbatimel/amc-front:${IMAGE_TAG}
     restart: unless-stopped

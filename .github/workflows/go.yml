@@ -20,6 +20,7 @@ jobs:
           - back/access
           - back/admin
           - back/auth
+          - back/integrations
           - back/migrations
           - back/orders
           - back/products
