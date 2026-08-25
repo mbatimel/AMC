@@ -67,3 +67,25 @@ func TestLoadConfig_CustomSyncInterval(t *testing.T) {
 		t.Errorf("expected SyncInterval=1h, got %s", cfg.SyncInterval)
 	}
 }
+
+func TestLoadConfig_DefaultRequestTimeout(t *testing.T) {
+	requiredEnv(t)
+	os.Unsetenv("ONEC_REQUEST_TIMEOUT")
+
+	cfg := LoadConfig()
+
+	if cfg.OnecRequestTimeout != 30*time.Second {
+		t.Errorf("expected default OnecRequestTimeout=30s, got %s", cfg.OnecRequestTimeout)
+	}
+}
+
+func TestLoadConfig_CustomRequestTimeout(t *testing.T) {
+	requiredEnv(t)
+	setEnv(t, "ONEC_REQUEST_TIMEOUT", "5s")
+
+	cfg := LoadConfig()
+
+	if cfg.OnecRequestTimeout != 5*time.Second {
+		t.Errorf("expected OnecRequestTimeout=5s, got %s", cfg.OnecRequestTimeout)
+	}
+}

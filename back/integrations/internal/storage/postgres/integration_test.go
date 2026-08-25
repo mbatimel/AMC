@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -47,7 +49,7 @@ func TestStorageIntegration(t *testing.T) {
 	if err = storage.AddSyncLog(ctx, jobID, systemID, models.SyncLogInfo, "test log"); err != nil {
 		t.Fatalf("add sync log: %v", err)
 	}
-	if err = storage.FinishSyncJob(ctx, jobID, "success"); err != nil {
+	if err = storage.FinishSyncJob(ctx, jobID, "success", ""); err != nil {
 		t.Fatalf("finish sync job: %v", err)
 	}
 
@@ -126,5 +128,46 @@ func TestStorageIntegration(t *testing.T) {
 	}
 	if stockCount != 1 || quantity != 8 {
 		t.Fatalf("expected exactly 1 stock row with quantity=8, got count=%d quantity=%v", stockCount, quantity)
+	}
+}
+
+func TestUpsertProduct_DuplicateSKU_WrapsErrDuplicateSKUWithDetail(t *testing.T) {
+	dsn := os.Getenv("INTEGRATIONS_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("INTEGRATIONS_TEST_DATABASE_URL is not set")
+	}
+
+	ctx := context.Background()
+	pool, err := pgxpool.Connect(ctx, dsn)
+	if err != nil {
+		t.Fatalf("connect test database: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	storage := New(pool)
+
+	sku := "DUP-SKU-" + uuid.New().String()[:8]
+
+	if _, err = storage.UpsertProduct(ctx, models.ProductInput{
+		OneCGUID: uuid.New(),
+		SKU:      sku,
+		Name:     "Товар первый",
+	}); err != nil {
+		t.Fatalf("upsert first product: %v", err)
+	}
+
+	_, err = storage.UpsertProduct(ctx, models.ProductInput{
+		OneCGUID: uuid.New(), // другой one_c_guid — конфликт именно по sku
+		SKU:      sku,
+		Name:     "Товар второй",
+	})
+	if err == nil {
+		t.Fatal("expected error on duplicate sku upsert")
+	}
+	if !errors.Is(err, ErrDuplicateSKU) {
+		t.Fatalf("expected errors.Is(err, ErrDuplicateSKU) to be true, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), sku) {
+		t.Fatalf("expected error message to contain the conflicting sku %q, got: %v", sku, err)
 	}
 }

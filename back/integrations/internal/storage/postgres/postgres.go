@@ -17,6 +17,11 @@ var ErrDuplicateSKU = errors.New("duplicate sku")
 
 const uniqueViolationCode = "23505"
 
+// skuConstraintName — имя unique-констрейнта на products.sku, автоматически
+// сгенерированное Postgres для `sku VARCHAR(255) UNIQUE`
+// (см. back/migrations/pkg/migrations/data/20260705171939_catalog.sql).
+const skuConstraintName = "products_sku_key"
+
 //go:embed sql/*.sql
 var queries embed.FS
 
@@ -65,8 +70,14 @@ func (s *Storage) CreateSyncJob(ctx context.Context, systemID uuid.UUID) (uuid.U
 	return id, nil
 }
 
-func (s *Storage) FinishSyncJob(ctx context.Context, jobID uuid.UUID, status string) error {
-	if _, err := s.pool.Exec(ctx, sqlFinishSyncJob, jobID, status); err != nil {
+func (s *Storage) FinishSyncJob(ctx context.Context, jobID uuid.UUID, status string, lastError string) error {
+	// Пустая строка означает "ошибок на уровне шага не было" — храним NULL,
+	// а не пустую строку, чтобы last_error оставался значимым полем.
+	var lastErrorArg interface{}
+	if lastError != "" {
+		lastErrorArg = lastError
+	}
+	if _, err := s.pool.Exec(ctx, sqlFinishSyncJob, jobID, status, lastErrorArg); err != nil {
 		return fmt.Errorf("finish sync job: %w", err)
 	}
 	return nil
@@ -107,8 +118,8 @@ func (s *Storage) UpsertProduct(ctx context.Context, in models.ProductInput) (uu
 	err := s.pool.QueryRow(ctx, sqlUpsertProduct, in.OneCGUID, in.CategoryID, in.SKU, in.Name).Scan(&id)
 	if err != nil {
 		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
-			return uuid.Nil, ErrDuplicateSKU
+		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode && pgErr.ConstraintName == skuConstraintName {
+			return uuid.Nil, fmt.Errorf("%w (constraint=%s): %s", ErrDuplicateSKU, pgErr.ConstraintName, pgErr.Detail)
 		}
 		return uuid.Nil, fmt.Errorf("upsert product: %w", err)
 	}

@@ -16,6 +16,17 @@ const (
 	systemName = "1С:Управление торговлей 10.3 (UT)"
 )
 
+// totalSyncSteps — количество шагов синхронизации (categories, warehouses,
+// products, prices, stock). Если ВСЕ шаги провалились на уровне запроса к
+// 1С (Fetch* вернул ошибку), финальный статус — "failed".
+const totalSyncSteps = 5
+
+// maxSkippedMessages — максимум отдельных сообщений о пропущенных
+// элементах, которые шаг пишет в sync_logs. При превышении лишние
+// сообщения схлопываются в одну итоговую запись, чтобы патологический
+// прогон не создавал десятки тысяч строк лога.
+const maxSkippedMessages = 100
+
 type OnecClient interface {
 	FetchCategories(ctx context.Context) ([]onec.CategoryDTO, error)
 	FetchWarehouses(ctx context.Context) ([]onec.WarehouseDTO, error)
@@ -27,7 +38,7 @@ type OnecClient interface {
 type Storage interface {
 	UpsertIntegrationSystem(ctx context.Context, code, name string) (uuid.UUID, error)
 	CreateSyncJob(ctx context.Context, systemID uuid.UUID) (uuid.UUID, error)
-	FinishSyncJob(ctx context.Context, jobID uuid.UUID, status string) error
+	FinishSyncJob(ctx context.Context, jobID uuid.UUID, status string, lastError string) error
 	AddSyncLog(ctx context.Context, jobID, systemID uuid.UUID, level models.SyncLogLevel, message string) error
 
 	UpsertCategory(ctx context.Context, in models.CategoryInput) (uuid.UUID, error)
@@ -59,16 +70,29 @@ func (s *Service) RunSync(ctx context.Context) error {
 	}
 
 	hadErrors := false
+	stepFailures := 0
+	firstStepError := ""
 	logStep := func(level models.SyncLogLevel, message string) {
 		if logErr := s.storage.AddSyncLog(ctx, jobID, systemID, level, message); logErr != nil {
 			s.logger.Error().Err(logErr).Msg("failed to write sync log")
 		}
 	}
+	// recordStepFailure отмечает провал ЦЕЛОГО шага (Fetch* вернул ошибку,
+	// т.е. 1С недоступна для этой сущности), в отличие от отдельных
+	// item-level пропусков внутри успешно выполненного шага.
+	recordStepFailure := func(message string) {
+		hadErrors = true
+		stepFailures++
+		if firstStepError == "" {
+			firstStepError = message
+		}
+	}
 
 	categoryIDs, skipped, err := s.syncCategories(ctx)
 	if err != nil {
-		logStep(models.SyncLogError, "categories: "+err.Error())
-		hadErrors = true
+		msg := "categories: " + err.Error()
+		logStep(models.SyncLogError, msg)
+		recordStepFailure(msg)
 		categoryIDs = map[uuid.UUID]uuid.UUID{}
 	}
 	for _, msg := range skipped {
@@ -78,8 +102,9 @@ func (s *Service) RunSync(ctx context.Context) error {
 
 	warehouseIDs, skipped, err := s.syncWarehouses(ctx)
 	if err != nil {
-		logStep(models.SyncLogError, "warehouses: "+err.Error())
-		hadErrors = true
+		msg := "warehouses: " + err.Error()
+		logStep(models.SyncLogError, msg)
+		recordStepFailure(msg)
 		warehouseIDs = map[uuid.UUID]uuid.UUID{}
 	}
 	for _, msg := range skipped {
@@ -89,8 +114,9 @@ func (s *Service) RunSync(ctx context.Context) error {
 
 	productIDs, skipped, err := s.syncProducts(ctx, categoryIDs)
 	if err != nil {
-		logStep(models.SyncLogError, "products: "+err.Error())
-		hadErrors = true
+		msg := "products: " + err.Error()
+		logStep(models.SyncLogError, msg)
+		recordStepFailure(msg)
 		productIDs = map[uuid.UUID]uuid.UUID{}
 	}
 	for _, msg := range skipped {
@@ -99,8 +125,9 @@ func (s *Service) RunSync(ctx context.Context) error {
 	}
 
 	if skipped, err = s.syncPrices(ctx, productIDs); err != nil {
-		logStep(models.SyncLogError, "prices: "+err.Error())
-		hadErrors = true
+		msg := "prices: " + err.Error()
+		logStep(models.SyncLogError, msg)
+		recordStepFailure(msg)
 	}
 	for _, msg := range skipped {
 		logStep(models.SyncLogWarn, msg)
@@ -108,8 +135,9 @@ func (s *Service) RunSync(ctx context.Context) error {
 	}
 
 	if skipped, err = s.syncStock(ctx, productIDs, warehouseIDs); err != nil {
-		logStep(models.SyncLogError, "stock: "+err.Error())
-		hadErrors = true
+		msg := "stock: " + err.Error()
+		logStep(models.SyncLogError, msg)
+		recordStepFailure(msg)
 	}
 	for _, msg := range skipped {
 		logStep(models.SyncLogWarn, msg)
@@ -117,10 +145,32 @@ func (s *Service) RunSync(ctx context.Context) error {
 	}
 
 	status := "success"
-	if hadErrors {
+	switch {
+	case stepFailures == totalSyncSteps:
+		status = "failed"
+	case hadErrors:
 		status = "partial"
 	}
-	return s.storage.FinishSyncJob(ctx, jobID, status)
+
+	lastError := ""
+	if stepFailures > 0 {
+		lastError = firstStepError
+	}
+
+	return s.storage.FinishSyncJob(ctx, jobID, status, lastError)
+}
+
+// capSkipped ограничивает количество отдельных сообщений о пропущенных
+// элементах, которые шаг возвращает для записи в sync_logs. Если сообщений
+// больше maxSkippedMessages, лишние схлопываются в одну итоговую запись.
+func capSkipped(skipped []string) []string {
+	if len(skipped) <= maxSkippedMessages {
+		return skipped
+	}
+	capped := make([]string, 0, maxSkippedMessages+1)
+	capped = append(capped, skipped[:maxSkippedMessages]...)
+	capped = append(capped, fmt.Sprintf("... and %d more skipped (truncated)", len(skipped)-maxSkippedMessages))
+	return capped
 }
 
 func (s *Service) syncCategories(ctx context.Context) (map[uuid.UUID]uuid.UUID, []string, error) {
@@ -154,11 +204,12 @@ func (s *Service) syncCategories(ctx context.Context) (map[uuid.UUID]uuid.UUID, 
 		if !ok {
 			continue
 		}
-		if err = s.storage.SetCategoryParent(ctx, ids[oneCGUID], parentID); err != nil {
-			return nil, skipped, fmt.Errorf("set category parent %s: %w", oneCGUID, err)
+		if setErr := s.storage.SetCategoryParent(ctx, ids[oneCGUID], parentID); setErr != nil {
+			skipped = append(skipped, fmt.Sprintf("category %s: set parent: %s", oneCGUID, setErr))
+			continue
 		}
 	}
-	return ids, skipped, nil
+	return ids, capSkipped(skipped), nil
 }
 
 func (s *Service) syncWarehouses(ctx context.Context) (map[uuid.UUID]uuid.UUID, []string, error) {
@@ -181,7 +232,7 @@ func (s *Service) syncWarehouses(ctx context.Context) (map[uuid.UUID]uuid.UUID, 
 		}
 		ids[in.OneCGUID] = id
 	}
-	return ids, skipped, nil
+	return ids, capSkipped(skipped), nil
 }
 
 func (s *Service) syncProducts(ctx context.Context, categoryIDs map[uuid.UUID]uuid.UUID) (map[uuid.UUID]uuid.UUID, []string, error) {
@@ -204,7 +255,7 @@ func (s *Service) syncProducts(ctx context.Context, categoryIDs map[uuid.UUID]uu
 		}
 		ids[in.OneCGUID] = id
 	}
-	return ids, skipped, nil
+	return ids, capSkipped(skipped), nil
 }
 
 func (s *Service) syncPrices(ctx context.Context, productIDs map[uuid.UUID]uuid.UUID) ([]string, error) {
@@ -213,6 +264,7 @@ func (s *Service) syncPrices(ctx context.Context, productIDs map[uuid.UUID]uuid.
 		return nil, err
 	}
 	var skipped []string
+	droppedUnknownProduct := 0
 	for _, dto := range dtos {
 		in, ok, mapErr := mapPrice(dto, productIDs)
 		if mapErr != nil {
@@ -220,13 +272,17 @@ func (s *Service) syncPrices(ctx context.Context, productIDs map[uuid.UUID]uuid.
 			continue
 		}
 		if !ok {
+			droppedUnknownProduct++
 			continue
 		}
 		if upsertErr := s.storage.UpsertProductPrice(ctx, in); upsertErr != nil {
 			skipped = append(skipped, fmt.Sprintf("price for product %s: %s", dto.ProductKey, upsertErr))
 		}
 	}
-	return skipped, nil
+	if droppedUnknownProduct > 0 {
+		skipped = append(skipped, fmt.Sprintf("prices: %d rows skipped, referenced product not found in this run", droppedUnknownProduct))
+	}
+	return capSkipped(skipped), nil
 }
 
 func (s *Service) syncStock(ctx context.Context, productIDs, warehouseIDs map[uuid.UUID]uuid.UUID) ([]string, error) {
@@ -235,6 +291,8 @@ func (s *Service) syncStock(ctx context.Context, productIDs, warehouseIDs map[uu
 		return nil, err
 	}
 	var skipped []string
+	droppedUnknownProduct := 0
+	droppedUnknownWarehouse := 0
 	for _, dto := range dtos {
 		in, ok, mapErr := mapStock(dto, productIDs, warehouseIDs)
 		if mapErr != nil {
@@ -242,11 +300,29 @@ func (s *Service) syncStock(ctx context.Context, productIDs, warehouseIDs map[uu
 			continue
 		}
 		if !ok {
+			// mapStock уже успешно распарсил оба ref'а (иначе mapErr != nil
+			// выше), поэтому здесь можно безопасно игнорировать ошибку парсинга.
+			if productRef, parseErr := uuid.Parse(dto.ProductKey); parseErr == nil {
+				if _, known := productIDs[productRef]; !known {
+					droppedUnknownProduct++
+				}
+			}
+			if warehouseRef, parseErr := uuid.Parse(dto.WarehouseKey); parseErr == nil {
+				if _, known := warehouseIDs[warehouseRef]; !known {
+					droppedUnknownWarehouse++
+				}
+			}
 			continue
 		}
 		if upsertErr := s.storage.UpsertStockBalance(ctx, in); upsertErr != nil {
 			skipped = append(skipped, fmt.Sprintf("stock for product %s warehouse %s: %s", dto.ProductKey, dto.WarehouseKey, upsertErr))
 		}
 	}
-	return skipped, nil
+	if droppedUnknownProduct > 0 {
+		skipped = append(skipped, fmt.Sprintf("stock: %d rows skipped, referenced product not found in this run", droppedUnknownProduct))
+	}
+	if droppedUnknownWarehouse > 0 {
+		skipped = append(skipped, fmt.Sprintf("stock: %d rows skipped, referenced warehouse not found in this run", droppedUnknownWarehouse))
+	}
+	return capSkipped(skipped), nil
 }

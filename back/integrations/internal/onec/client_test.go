@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -23,7 +24,7 @@ func TestFetchCategories_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := New(server.URL, "user", "pass", testLogger())
+	c := New(server.URL, "user", "pass", 5*time.Second, testLogger())
 	got, err := c.FetchCategories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -39,7 +40,7 @@ func TestFetchCategories_NonOKStatus(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := New(server.URL, "user", "pass", testLogger())
+	c := New(server.URL, "user", "pass", 5*time.Second, testLogger())
 	_, err := c.FetchCategories(context.Background())
 	if err == nil {
 		t.Fatal("expected error on non-200 status")
@@ -52,7 +53,7 @@ func TestFetchCategories_MalformedJSON(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := New(server.URL, "user", "pass", testLogger())
+	c := New(server.URL, "user", "pass", 5*time.Second, testLogger())
 	_, err := c.FetchCategories(context.Background())
 	if err == nil {
 		t.Fatal("expected error on malformed json")
@@ -65,7 +66,7 @@ func TestFetchWarehouses_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := New(server.URL, "user", "pass", testLogger())
+	c := New(server.URL, "user", "pass", 5*time.Second, testLogger())
 	got, err := c.FetchWarehouses(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -81,7 +82,7 @@ func TestFetchProducts_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := New(server.URL, "user", "pass", testLogger())
+	c := New(server.URL, "user", "pass", 5*time.Second, testLogger())
 	got, err := c.FetchProducts(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -97,7 +98,7 @@ func TestFetchPrices_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := New(server.URL, "user", "pass", testLogger())
+	c := New(server.URL, "user", "pass", 5*time.Second, testLogger())
 	got, err := c.FetchPrices(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -113,7 +114,7 @@ func TestFetchStock_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := New(server.URL, "user", "pass", testLogger())
+	c := New(server.URL, "user", "pass", 5*time.Second, testLogger())
 	got, err := c.FetchStock(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

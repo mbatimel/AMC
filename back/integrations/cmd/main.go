@@ -33,7 +33,7 @@ func main() {
 	defer pool.Close()
 
 	storageImpl := postgres.New(pool)
-	onecClient := onec.New(cfg.OnecBaseURL, cfg.OnecUser, cfg.OnecPassword, log.Logger)
+	onecClient := onec.New(cfg.OnecBaseURL, cfg.OnecUser, cfg.OnecPassword, cfg.OnecRequestTimeout, log.Logger)
 	svc := service.New(log.Logger, onecClient, storageImpl)
 
 	healthServer := transportHTTP.NewHealthServer()

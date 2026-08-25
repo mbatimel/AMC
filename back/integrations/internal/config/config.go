@@ -20,6 +20,8 @@ type Config struct {
 	OnecUser     string
 	OnecPassword string
 	SyncInterval time.Duration
+
+	OnecRequestTimeout time.Duration
 }
 
 func LoadConfig() Config {
@@ -34,6 +36,8 @@ func LoadConfig() Config {
 		OnecUser:     os.Getenv("ONEC_USER"),
 		OnecPassword: os.Getenv("ONEC_PASSWORD"),
 		SyncInterval: getEnvDuration("SYNC_INTERVAL", 24*time.Hour),
+
+		OnecRequestTimeout: getEnvDuration("ONEC_REQUEST_TIMEOUT", 30*time.Second),
 	}
 	if cfg.PGDB == "" || cfg.PGUser == "" || cfg.PGPassword == "" {
 		log.Fatal().Msg("PG_DB, PG_USER and PG_PASSWORD must be specified")
