@@ -185,6 +185,72 @@ func TestRunSync_DuplicateSKU_SkippedButOthersContinue(t *testing.T) {
 	}
 }
 
+func TestRunSync_BadCategory_SkippedButOthersContinue(t *testing.T) {
+	onecClient := &fakeOnecClient{
+		categories: []onec.CategoryDTO{
+			{RefKey: "not-a-guid", Description: "Broken"},
+			{RefKey: parentGUID, ParentKey: zeroGUID, Description: "Инструмент"},
+		},
+	}
+	storage := newFakeStorage()
+	svc := New(zerolog.Nop(), onecClient, storage)
+
+	if err := svc.RunSync(context.Background()); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if storage.finalStatus != "partial" {
+		t.Fatalf("expected partial, got %s", storage.finalStatus)
+	}
+	if len(storage.categoryIDs) != 1 {
+		t.Fatalf("expected 1 category synced, got %d", len(storage.categoryIDs))
+	}
+	if _, ok := storage.categoryIDs[uuid.MustParse(parentGUID)]; !ok {
+		t.Fatalf("expected valid category to still be synced, got %v", storage.categoryIDs)
+	}
+	found := false
+	for _, l := range storage.logs {
+		if strings.Contains(l, "not-a-guid") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected sync log about bad category ref, got %v", storage.logs)
+	}
+}
+
+func TestRunSync_BadWarehouse_SkippedButOthersContinue(t *testing.T) {
+	onecClient := &fakeOnecClient{
+		warehouses: []onec.WarehouseDTO{
+			{RefKey: "not-a-guid", Description: "Broken"},
+			{RefKey: warehouseGUID, Description: "Склад №1"},
+		},
+	}
+	storage := newFakeStorage()
+	svc := New(zerolog.Nop(), onecClient, storage)
+
+	if err := svc.RunSync(context.Background()); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if storage.finalStatus != "partial" {
+		t.Fatalf("expected partial, got %s", storage.finalStatus)
+	}
+	if len(storage.warehouseIDs) != 1 {
+		t.Fatalf("expected 1 warehouse synced, got %d", len(storage.warehouseIDs))
+	}
+	if _, ok := storage.warehouseIDs[uuid.MustParse(warehouseGUID)]; !ok {
+		t.Fatalf("expected valid warehouse to still be synced, got %v", storage.warehouseIDs)
+	}
+	found := false
+	for _, l := range storage.logs {
+		if strings.Contains(l, "not-a-guid") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected sync log about bad warehouse ref, got %v", storage.logs)
+	}
+}
+
 func TestRunSync_CategoriesFetchError_ContinuesOtherSteps(t *testing.T) {
 	onecClient := &fakeOnecClient{
 		categoriesErr: errors.New("network down"),

@@ -65,18 +65,26 @@ func (s *Service) RunSync(ctx context.Context) error {
 		}
 	}
 
-	categoryIDs, err := s.syncCategories(ctx)
+	categoryIDs, skipped, err := s.syncCategories(ctx)
 	if err != nil {
 		logStep(models.SyncLogError, "categories: "+err.Error())
 		hadErrors = true
 		categoryIDs = map[uuid.UUID]uuid.UUID{}
 	}
+	for _, msg := range skipped {
+		logStep(models.SyncLogWarn, msg)
+		hadErrors = true
+	}
 
-	warehouseIDs, err := s.syncWarehouses(ctx)
+	warehouseIDs, skipped, err := s.syncWarehouses(ctx)
 	if err != nil {
 		logStep(models.SyncLogError, "warehouses: "+err.Error())
 		hadErrors = true
 		warehouseIDs = map[uuid.UUID]uuid.UUID{}
+	}
+	for _, msg := range skipped {
+		logStep(models.SyncLogWarn, msg)
+		hadErrors = true
 	}
 
 	productIDs, skipped, err := s.syncProducts(ctx, categoryIDs)
@@ -115,22 +123,25 @@ func (s *Service) RunSync(ctx context.Context) error {
 	return s.storage.FinishSyncJob(ctx, jobID, status)
 }
 
-func (s *Service) syncCategories(ctx context.Context) (map[uuid.UUID]uuid.UUID, error) {
+func (s *Service) syncCategories(ctx context.Context) (map[uuid.UUID]uuid.UUID, []string, error) {
 	dtos, err := s.onec.FetchCategories(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ids := make(map[uuid.UUID]uuid.UUID, len(dtos))
 	parents := make(map[uuid.UUID]*uuid.UUID, len(dtos))
+	var skipped []string
 	for _, dto := range dtos {
 		in, parentGUID, mapErr := mapCategory(dto)
 		if mapErr != nil {
-			return nil, mapErr
+			skipped = append(skipped, fmt.Sprintf("category %s: %s", dto.RefKey, mapErr))
+			continue
 		}
 		id, upsertErr := s.storage.UpsertCategory(ctx, in)
 		if upsertErr != nil {
-			return nil, fmt.Errorf("upsert category %s: %w", in.OneCGUID, upsertErr)
+			skipped = append(skipped, fmt.Sprintf("category %s: %s", in.OneCGUID, upsertErr))
+			continue
 		}
 		ids[in.OneCGUID] = id
 		parents[in.OneCGUID] = parentGUID
@@ -144,30 +155,33 @@ func (s *Service) syncCategories(ctx context.Context) (map[uuid.UUID]uuid.UUID, 
 			continue
 		}
 		if err = s.storage.SetCategoryParent(ctx, ids[oneCGUID], parentID); err != nil {
-			return nil, fmt.Errorf("set category parent %s: %w", oneCGUID, err)
+			return nil, skipped, fmt.Errorf("set category parent %s: %w", oneCGUID, err)
 		}
 	}
-	return ids, nil
+	return ids, skipped, nil
 }
 
-func (s *Service) syncWarehouses(ctx context.Context) (map[uuid.UUID]uuid.UUID, error) {
+func (s *Service) syncWarehouses(ctx context.Context) (map[uuid.UUID]uuid.UUID, []string, error) {
 	dtos, err := s.onec.FetchWarehouses(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	ids := make(map[uuid.UUID]uuid.UUID, len(dtos))
+	var skipped []string
 	for _, dto := range dtos {
 		in, mapErr := mapWarehouse(dto)
 		if mapErr != nil {
-			return nil, mapErr
+			skipped = append(skipped, fmt.Sprintf("warehouse %s: %s", dto.RefKey, mapErr))
+			continue
 		}
 		id, upsertErr := s.storage.UpsertWarehouse(ctx, in)
 		if upsertErr != nil {
-			return nil, fmt.Errorf("upsert warehouse %s: %w", in.OneCGUID, upsertErr)
+			skipped = append(skipped, fmt.Sprintf("warehouse %s: %s", in.OneCGUID, upsertErr))
+			continue
 		}
 		ids[in.OneCGUID] = id
 	}
-	return ids, nil
+	return ids, skipped, nil
 }
 
 func (s *Service) syncProducts(ctx context.Context, categoryIDs map[uuid.UUID]uuid.UUID) (map[uuid.UUID]uuid.UUID, []string, error) {
