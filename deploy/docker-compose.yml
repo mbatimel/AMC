@@ -108,9 +108,12 @@ services:
       PG_PASSWORD: ${PG_PASSWORD}
       ACCESS_URL: "http://access:8080"
       NDS_VALUE: ${NDS_VALUE}
+      INTEGRATIONS_URL: "http://onec-orders-api:8090"
     depends_on:
       migrations:
         condition: service_completed_successfully
+      onec-orders-api:
+        condition: service_started
     networks: [amc_net]
 
   users:
@@ -214,6 +217,30 @@ services:
         condition: service_completed_successfully
     networks: [amc_net]
 
+  onec-orders-api:
+    image: ghcr.io/mbatimel/amc-onec-orders-api:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      PG_HOST: postgres
+      PG_PORT: "5432"
+      PG_DB: ${PG_DB}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      ONEC_ORDERS_BIND_ADDR: ":8090"
+      ONEC_ORDERS_BASE_URL: ${ONEC_ORDERS_BASE_URL}
+      ONEC_ORDERS_USER: ${ONEC_ORDERS_USER}
+      ONEC_ORDERS_PASSWORD: ${ONEC_ORDERS_PASSWORD}
+      ONEC_ORDERS_REQUEST_TIMEOUT: "15s"
+      ONEC_WEBHOOK_API_KEY: ${ONEC_WEBHOOK_API_KEY}
+      ORDERS_URL: "http://orders:8082"
+      ORDERS_SYSTEM_USER_ID: "00000000-0000-0000-0000-0000000a0ec1"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      access:
+        condition: service_started
+    networks: [amc_net]
+
   front:
     image: ghcr.io/mbatimel/amc-front:${IMAGE_TAG}
     restart: unless-stopped
@@ -286,6 +313,7 @@ services:
       - front
       - swagger-ui
       - admin-front
+      - onec-orders-api
     networks: [amc_net]
 
 volumes:
