@@ -23,6 +23,7 @@ type OrdersAPIRepeatOrder func(ctx context.Context, orderID uuid.UUID, userID uu
 type OrdersAPIGetOrderDocuments func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderDocumentsResponse, err error)
 type OrdersAPIGetOrderHistory func(ctx context.Context, orderID uuid.UUID, userID uuid.UUID) (response models.GetOrderHistoryResponse, err error)
 type OrdersAPIUpdateOrderStatus func(ctx context.Context, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error)
+type OrdersAPIGetOrderStatus func(ctx context.Context, userID uuid.UUID, orderID uuid.UUID) (response models.GetOrderStatusResponse, err error)
 type OrdersAPIGetCities func(ctx context.Context) (response []models.GetCities, err error)
 
 type MiddlewareOrdersAPI func(next externalapi.OrdersAPI) externalapi.OrdersAPI
@@ -41,4 +42,5 @@ type MiddlewareOrdersAPIRepeatOrder func(next OrdersAPIRepeatOrder) OrdersAPIRep
 type MiddlewareOrdersAPIGetOrderDocuments func(next OrdersAPIGetOrderDocuments) OrdersAPIGetOrderDocuments
 type MiddlewareOrdersAPIGetOrderHistory func(next OrdersAPIGetOrderHistory) OrdersAPIGetOrderHistory
 type MiddlewareOrdersAPIUpdateOrderStatus func(next OrdersAPIUpdateOrderStatus) OrdersAPIUpdateOrderStatus
+type MiddlewareOrdersAPIGetOrderStatus func(next OrdersAPIGetOrderStatus) OrdersAPIGetOrderStatus
 type MiddlewareOrdersAPIGetCities func(next OrdersAPIGetCities) OrdersAPIGetCities

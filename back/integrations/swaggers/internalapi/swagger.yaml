@@ -1,0 +1,172 @@
+openapi: 3.0.0
+info:
+    title: onec-orders-api
+    version: 0.0.1
+servers:
+    - {}
+paths:
+    /api/v1/onec/orders/status:
+        post:
+            tags:
+                - OnecOrdersAPI
+            summary: Статус заказа от 1С
+            description: Приём вебхука 1С о смене стадии заказа; в v1 допустим только status=delivered
+            parameters:
+                - in: header
+                  name: X-Onec-Api-Key
+                  required: true
+                  schema:
+                    type: string
+                - in: query
+                  name: status
+                  schema:
+                    type: string
+                - in: query
+                  name: onecDocumentNumber
+                  schema:
+                    type: string
+                - in: query
+                  name: comment
+                  schema:
+                    type: string
+                - in: query
+                  name: clientOrderID
+                  schema:
+                    type: string
+                    format: uuid
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: integrations.errors.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: integrations.errors.unauthorized
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 404, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: integrations.errors.notFound
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 409, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: integrations.errors.conflict
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: integrations.errors.internalError
+                                        description: Заголовок ошибки
+components:
+    schemas:
+        requestOnecOrdersAPIOnecOrderStatusWebhook:
+            type: object
+        responseOnecOrdersAPIOnecOrderStatusWebhook:
+            type: object
+            required:
+                - ok
+            properties:
+                ok:
+                    type: boolean
+            description: Приём вебхука 1С о смене стадии заказа; в v1 допустим только status=delivered

@@ -6,6 +6,113 @@ servers:
     - {}
 paths:
     /api/v1/admin/orders/status:
+        get:
+            tags:
+                - OrdersAPI
+            summary: Статус заказа
+            description: 'Узкая admin-ручка: только текущий статус заказа, используется системными вызовами (например вебхуком 1С) для проверки допустимости перехода перед PATCH'
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - in: query
+                  name: orderID
+                  schema:
+                    type: string
+                    format: uuid
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.auth.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.auth.accessDenied
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.auth.internalError
+                                        description: Заголовок ошибки
         patch:
             tags:
                 - OrdersAPI
@@ -271,18 +378,6 @@ paths:
                     type: string
                     format: uuid
                 - in: query
-                  name: deliveryType
-                  schema:
-                    type: string
-                - in: query
-                  name: deliveryAddress
-                  schema:
-                    type: string
-                - in: query
-                  name: contactName
-                  schema:
-                    type: string
-                - in: query
                   name: phone
                   schema:
                     type: string
@@ -296,6 +391,18 @@ paths:
                     type: string
                 - in: query
                   name: clientID
+                  schema:
+                    type: string
+                - in: query
+                  name: deliveryType
+                  schema:
+                    type: string
+                - in: query
+                  name: deliveryAddress
+                  schema:
+                    type: string
+                - in: query
+                  name: contactName
                   schema:
                     type: string
             responses:
@@ -957,11 +1064,11 @@ paths:
                     type: string
                     format: uuid
                 - in: query
-                  name: clientID
+                  name: cartItemID
                   schema:
                     type: string
                 - in: query
-                  name: cartItemID
+                  name: clientID
                   schema:
                     type: string
             responses:
@@ -1492,16 +1599,16 @@ paths:
                     type: string
                     format: uuid
                 - in: query
+                  name: offset
+                  schema:
+                    type: number
+                    format: int
+                - in: query
                   name: clientID
                   schema:
                     type: string
                 - in: query
                   name: limit
-                  schema:
-                    type: number
-                    format: int
-                - in: query
-                  name: offset
                   schema:
                     type: number
                     format: int
@@ -1835,6 +1942,11 @@ components:
             properties:
                 order:
                     $ref: '#/components/schemas/models.Order'
+        models.GetOrderStatusResponse:
+            type: object
+            properties:
+                status:
+                    type: string
         models.ListOrdersResponse:
             type: object
             properties:
@@ -2040,6 +2152,8 @@ components:
             type: object
         requestOrdersAPIGetOrderHistory:
             type: object
+        requestOrdersAPIGetOrderStatus:
+            type: object
         requestOrdersAPIListOrders:
             type: object
         requestOrdersAPIListPreviouslyOrderedProducts:
@@ -2133,6 +2247,14 @@ components:
                 response:
                     $ref: '#/components/schemas/models.GetOrderHistoryResponse'
             description: Получение истории изменения заказа
+        responseOrdersAPIGetOrderStatus:
+            type: object
+            required:
+                - response
+            properties:
+                response:
+                    $ref: '#/components/schemas/models.GetOrderStatusResponse'
+            description: 'Узкая admin-ручка: только текущий статус заказа, используется системными вызовами (например вебхуком 1С) для проверки допустимости перехода перед PATCH'
         responseOrdersAPIListOrders:
             type: object
             required:

@@ -57,5 +57,6 @@ func (http *httpOrdersAPI) SetRoutes(route *fiber.App) {
 	route.Get("/api/v1/orders/documents", http.serveGetOrderDocuments)
 	route.Get("/api/v1/orders/history", http.serveGetOrderHistory)
 	route.Patch("/api/v1/admin/orders/status", http.serveUpdateOrderStatus)
+	route.Get("/api/v1/admin/orders/status", http.serveGetOrderStatus)
 	route.Get("/api/v1/orders/cities", http.serveGetCities)
 }
