@@ -528,3 +528,51 @@ func (s *Storage) GetOrderDocumentsByOrderID(ctx context.Context, orderID uuid.U
 	}
 	return items, nil
 }
+
+type ProductOnecRef struct {
+	OneCGUID uuid.NullUUID
+	SKU      string
+}
+
+func (s *Storage) GetProductOnecRefs(ctx context.Context, productIDs []uuid.UUID) (map[uuid.UUID]ProductOnecRef, error) {
+	result := make(map[uuid.UUID]ProductOnecRef, len(productIDs))
+	if len(productIDs) == 0 {
+		return result, nil
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, one_c_guid, sku FROM products WHERE id = ANY($1)
+	`, productIDs)
+	if err != nil {
+		return nil, fmt.Errorf("get product onec refs: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id uuid.UUID
+		var ref ProductOnecRef
+		if err = rows.Scan(&id, &ref.OneCGUID, &ref.SKU); err != nil {
+			return nil, fmt.Errorf("get product onec refs: scan: %w", err)
+		}
+		result[id] = ref
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("get product onec refs: %w", err)
+	}
+	return result, nil
+}
+
+type CounterpartyOnecRef struct {
+	OneCGUID uuid.NullUUID
+	INN      string
+	Name     string
+}
+
+func (s *Storage) GetCounterpartyOnecRef(ctx context.Context, counterpartyID uuid.UUID) (CounterpartyOnecRef, error) {
+	var ref CounterpartyOnecRef
+	err := s.pool.QueryRow(ctx, `
+		SELECT one_c_guid, COALESCE(inn, ''), COALESCE(name, '') FROM counterparties WHERE id = $1
+	`, counterpartyID).Scan(&ref.OneCGUID, &ref.INN, &ref.Name)
+	if err != nil {
+		return CounterpartyOnecRef{}, fmt.Errorf("get counterparty onec ref: %w", err)
+	}
+	return ref, nil
+}

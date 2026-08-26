@@ -503,3 +503,71 @@ func TestResolveProductPrice_Promotion(t *testing.T) {
 		t.Fatalf("expected 800 at threshold, got %v", atThreshold)
 	}
 }
+
+func TestGetProductOnecRefs(t *testing.T) {
+	pool := testPool(t)
+	defer pool.Close()
+
+	ctx := context.Background()
+	storage := New(pool)
+
+	guid := uuid.New()
+	var productID uuid.UUID
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO products (one_c_guid, sku, name, is_active) VALUES ($1, $2, 'Товар', TRUE) RETURNING id
+	`, guid, "REF-TEST-"+guid.String()[:8]).Scan(&productID); err != nil {
+		t.Fatalf("insert product: %v", err)
+	}
+	var productIDNoGUID uuid.UUID
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO products (sku, name, is_active) VALUES ($1, 'Товар без GUID', TRUE) RETURNING id
+	`, "REF-TEST-NOGUID-"+uuid.New().String()[:8]).Scan(&productIDNoGUID); err != nil {
+		t.Fatalf("insert product without guid: %v", err)
+	}
+
+	t.Cleanup(func() {
+		pool.Exec(ctx, `DELETE FROM products WHERE id IN ($1, $2)`, productID, productIDNoGUID)
+	})
+
+	refs, err := storage.GetProductOnecRefs(ctx, []uuid.UUID{productID, productIDNoGUID})
+	if err != nil {
+		t.Fatalf("GetProductOnecRefs: %v", err)
+	}
+	if len(refs) != 2 {
+		t.Fatalf("expected 2 refs, got %d: %+v", len(refs), refs)
+	}
+	if !refs[productID].OneCGUID.Valid || refs[productID].OneCGUID.UUID != guid {
+		t.Fatalf("expected productID to have onec guid %s, got %+v", guid, refs[productID])
+	}
+	if refs[productIDNoGUID].OneCGUID.Valid {
+		t.Fatalf("expected productIDNoGUID to have no onec guid, got %+v", refs[productIDNoGUID])
+	}
+}
+
+func TestGetCounterpartyOnecRef(t *testing.T) {
+	pool := testPool(t)
+	defer pool.Close()
+
+	ctx := context.Background()
+	storage := New(pool)
+
+	guid := uuid.New()
+	var counterpartyID uuid.UUID
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO counterparties (one_c_guid, inn, name) VALUES ($1, '7701234567', 'ООО Рефтест') RETURNING id
+	`, guid).Scan(&counterpartyID); err != nil {
+		t.Fatalf("insert counterparty: %v", err)
+	}
+
+	t.Cleanup(func() {
+		pool.Exec(ctx, `DELETE FROM counterparties WHERE id = $1`, counterpartyID)
+	})
+
+	ref, err := storage.GetCounterpartyOnecRef(ctx, counterpartyID)
+	if err != nil {
+		t.Fatalf("GetCounterpartyOnecRef: %v", err)
+	}
+	if !ref.OneCGUID.Valid || ref.OneCGUID.UUID != guid || ref.INN != "7701234567" || ref.Name != "ООО Рефтест" {
+		t.Fatalf("unexpected ref: %+v", ref)
+	}
+}
