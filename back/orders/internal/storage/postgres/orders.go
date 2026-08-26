@@ -576,3 +576,15 @@ func (s *Storage) GetCounterpartyOnecRef(ctx context.Context, counterpartyID uui
 	}
 	return ref, nil
 }
+
+func (s *Storage) GetOrderStatus(ctx context.Context, orderID uuid.UUID) (string, error) {
+	var status string
+	err := s.pool.QueryRow(ctx, `SELECT status FROM orders WHERE id = $1`, orderID).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrOrderNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("get order status: %w", err)
+	}
+	return status, nil
+}

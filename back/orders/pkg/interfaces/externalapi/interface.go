@@ -6,6 +6,7 @@
 package externalapi
 
 //go:generate tg transport --services . --out ../../../internal/transport/jsonRPC/externalapi --outSwagger ../../../swaggers/externalapi/swagger.yaml
+//go:generate tg client --services . --outPath ../../client/transport -go
 import (
 	"context"
 
@@ -200,6 +201,17 @@ type OrdersAPI interface {
 	// @tg desc=`Администраторское изменение статуса заказа и оплаты`
 	// @tg uuidPackage=github.com/google/uuid
 	UpdateOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error)
+
+	// GetOrderStatus returns just the order's current status.
+	// @tg http-method=GET
+	// @tg http-path=/v1/admin/orders/status
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-args=orderID|orderID
+	// @tg http-response=github.com/mbatimel/AMC/orders/internal/transport/custom-handlers:GetOrderStatus
+	// @tg summary=`Статус заказа`
+	// @tg desc=`Узкая admin-ручка: только текущий статус заказа, используется системными вызовами (например вебхуком 1С) для проверки допустимости перехода перед PATCH`
+	// @tg uuidPackage=github.com/google/uuid
+	GetOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID) (response models.GetOrderStatusResponse, err error)
 
 	// GetCities ...
 	// @tg http-method=GET

@@ -33,6 +33,15 @@ type clientResolutionStorage struct {
 	counterpartyExistsCalls int
 	userHasClientCalls      int
 	getCartCounterpartyID   uuid.NullUUID
+	orderStatus             string
+	orderStatusErr          error
+}
+
+func (s *clientResolutionStorage) GetOrderStatus(context.Context, uuid.UUID) (string, error) {
+	if s.orderStatusErr != nil {
+		return "", s.orderStatusErr
+	}
+	return s.orderStatus, nil
 }
 
 func (s *clientResolutionStorage) GetActiveClient(context.Context, uuid.UUID) (uuid.UUID, error) {

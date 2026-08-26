@@ -544,6 +544,40 @@ func TestGetProductOnecRefs(t *testing.T) {
 	}
 }
 
+func TestGetOrderStatus(t *testing.T) {
+	dsn := os.Getenv("TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("TEST_DATABASE_URL is not set")
+	}
+	ctx := context.Background()
+	pool, err := pgxpool.Connect(ctx, dsn)
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	t.Cleanup(pool.Close)
+	storage := New(pool)
+
+	var orderID uuid.UUID
+	if err = pool.QueryRow(ctx, `
+		INSERT INTO orders (number, status, payment_status) VALUES ($1, 'processing', 'not_paid') RETURNING id
+	`, "TEST-STATUS-"+uuid.New().String()[:8]).Scan(&orderID); err != nil {
+		t.Fatalf("insert order: %v", err)
+	}
+
+	status, err := storage.GetOrderStatus(ctx, orderID)
+	if err != nil {
+		t.Fatalf("GetOrderStatus: %v", err)
+	}
+	if status != "processing" {
+		t.Fatalf("expected status processing, got %q", status)
+	}
+
+	_, err = storage.GetOrderStatus(ctx, uuid.New())
+	if !errors.Is(err, ErrOrderNotFound) {
+		t.Fatalf("expected ErrOrderNotFound for unknown order, got %v", err)
+	}
+}
+
 func TestGetCounterpartyOnecRef(t *testing.T) {
 	pool := testPool(t)
 	defer pool.Close()

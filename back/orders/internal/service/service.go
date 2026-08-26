@@ -44,6 +44,7 @@ type Storage interface {
 	GetOrderHistory(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderHistoryRow, error)
 	CancelOrder(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.NullUUID, changedBy uuid.UUID, comment string) (postgres.OrderDetailRow, error)
 	UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy uuid.UUID) (postgres.OrderDetailRow, error)
+	GetOrderStatus(ctx context.Context, orderID uuid.UUID) (string, error)
 }
 
 const (
@@ -961,4 +962,18 @@ func (s *service) UpdateOrderStatus(ctx context.Context, userID uuid.UUID, order
 	}
 
 	return models.UpdateOrderStatusResponse{Order: order}, nil
+}
+
+func (s *service) GetOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID) (response models.GetOrderStatusResponse, err error) {
+	if err = s.checkAdminAccess(ctx, userID); err != nil {
+		return response, err
+	}
+	status, err := s.storage.GetOrderStatus(ctx, orderID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrOrderNotFound) {
+			return response, customErrors.NotFoundError()
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+	return models.GetOrderStatusResponse{Status: status}, nil
 }
