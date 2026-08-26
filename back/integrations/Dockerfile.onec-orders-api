@@ -1,0 +1,26 @@
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /src
+
+COPY back/access ./access
+COPY back/orders ./orders
+COPY back/integrations/go.mod back/integrations/go.sum ./integrations/
+WORKDIR /src/integrations
+RUN go mod download
+
+COPY back/integrations/ ./
+
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
+    -o /out/onec-orders-api ./cmd/onec-orders-api
+
+FROM alpine:3.20
+
+RUN apk add --no-cache ca-certificates && \
+    adduser -D -H -u 10001 app
+
+COPY --from=builder /out/onec-orders-api /usr/local/bin/onec-orders-api
+
+USER app
+EXPOSE 8090
+
+ENTRYPOINT ["/usr/local/bin/onec-orders-api"]
