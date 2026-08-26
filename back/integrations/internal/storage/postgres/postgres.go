@@ -44,6 +44,7 @@ func query(name string) string {
 var (
 	sqlUpsertIntegrationSystem = query("upsertIntegrationSystem.sql")
 	sqlCreateSyncJob           = query("createSyncJob.sql")
+	sqlCreateIntegrationJob    = query("createIntegrationJob.sql")
 	sqlFinishSyncJob           = query("finishSyncJob.sql")
 	sqlAddSyncLog              = query("addSyncLog.sql")
 	sqlUpsertCategory          = query("upsertCategory.sql")
@@ -74,6 +75,14 @@ func (s *Storage) CreateSyncJob(ctx context.Context, systemID uuid.UUID) (uuid.U
 	var id uuid.UUID
 	if err := s.pool.QueryRow(ctx, sqlCreateSyncJob, systemID).Scan(&id); err != nil {
 		return uuid.Nil, fmt.Errorf("create sync job: %w", err)
+	}
+	return id, nil
+}
+
+func (s *Storage) CreateIntegrationJob(ctx context.Context, systemID uuid.UUID, direction, entityType string) (uuid.UUID, error) {
+	var id uuid.UUID
+	if err := s.pool.QueryRow(ctx, sqlCreateIntegrationJob, systemID, direction, entityType).Scan(&id); err != nil {
+		return uuid.Nil, fmt.Errorf("create integration job: %w", err)
 	}
 	return id, nil
 }

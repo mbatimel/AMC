@@ -373,3 +373,35 @@ func anyErr(errs []error) bool {
 	}
 	return false
 }
+
+func TestCreateIntegrationJob(t *testing.T) {
+	dsn := os.Getenv("INTEGRATIONS_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("INTEGRATIONS_TEST_DATABASE_URL is not set")
+	}
+	ctx := context.Background()
+	pool, err := pgxpool.Connect(ctx, dsn)
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	t.Cleanup(pool.Close)
+	storage := New(pool)
+
+	systemID, err := storage.UpsertIntegrationSystem(ctx, "onec_orders_test", "1С заказы тест")
+	if err != nil {
+		t.Fatalf("upsert system: %v", err)
+	}
+
+	jobID, err := storage.CreateIntegrationJob(ctx, systemID, "outbound", "order_create")
+	if err != nil {
+		t.Fatalf("CreateIntegrationJob: %v", err)
+	}
+
+	var direction, entityType, status string
+	if err = pool.QueryRow(ctx, `SELECT direction, entity_type, status FROM sync_jobs WHERE id = $1`, jobID).Scan(&direction, &entityType, &status); err != nil {
+		t.Fatalf("read back job: %v", err)
+	}
+	if direction != "outbound" || entityType != "order_create" || status != "running" {
+		t.Fatalf("unexpected job row: direction=%s entityType=%s status=%s", direction, entityType, status)
+	}
+}
