@@ -89,3 +89,28 @@ func TestLoadConfig_CustomRequestTimeout(t *testing.T) {
 		t.Errorf("expected OnecRequestTimeout=5s, got %s", cfg.OnecRequestTimeout)
 	}
 }
+
+func TestLoadConfig_OnecOrdersFields(t *testing.T) {
+	requiredEnv(t)
+	setEnv(t, "ONEC_ORDERS_BASE_URL", "http://onec-host/hs/amc-integration")
+	setEnv(t, "ONEC_ORDERS_USER", "pushuser")
+	setEnv(t, "ONEC_ORDERS_PASSWORD", "pushpass")
+	setEnv(t, "ONEC_WEBHOOK_API_KEY", "webhook-secret")
+	setEnv(t, "ORDERS_URL", "http://orders:8082")
+	setEnv(t, "ORDERS_SYSTEM_USER_ID", "00000000-0000-0000-0000-0000000a0ec1")
+
+	cfg := LoadConfig()
+
+	if cfg.OnecOrdersBaseURL != "http://onec-host/hs/amc-integration" {
+		t.Fatalf("unexpected OnecOrdersBaseURL: %s", cfg.OnecOrdersBaseURL)
+	}
+	if cfg.OnecWebhookAPIKey != "webhook-secret" {
+		t.Fatalf("unexpected OnecWebhookAPIKey: %s", cfg.OnecWebhookAPIKey)
+	}
+	if cfg.OrdersSystemUserID.String() != "00000000-0000-0000-0000-0000000a0ec1" {
+		t.Fatalf("unexpected OrdersSystemUserID: %s", cfg.OrdersSystemUserID)
+	}
+	if cfg.OnecOrdersRequestTimeout != 15*time.Second {
+		t.Fatalf("expected default timeout 15s, got %s", cfg.OnecOrdersRequestTimeout)
+	}
+}

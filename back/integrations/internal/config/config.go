@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -22,6 +23,15 @@ type Config struct {
 	SyncInterval time.Duration
 
 	OnecRequestTimeout time.Duration
+
+	OnecOrdersBindAddr       string
+	OnecOrdersBaseURL        string
+	OnecOrdersUser           string
+	OnecOrdersPassword       string
+	OnecOrdersRequestTimeout time.Duration
+	OnecWebhookAPIKey        string
+	OrdersURL                string
+	OrdersSystemUserID       uuid.UUID
 }
 
 func LoadConfig() Config {
@@ -45,6 +55,22 @@ func LoadConfig() Config {
 	if cfg.OnecBaseURL == "" || cfg.OnecUser == "" || cfg.OnecPassword == "" {
 		log.Fatal().Msg("ONEC_BASE_URL, ONEC_USER and ONEC_PASSWORD must be specified")
 	}
+
+	cfg.OnecOrdersBindAddr = GetEnv("ONEC_ORDERS_BIND_ADDR", ":8090")
+	cfg.OnecOrdersBaseURL = os.Getenv("ONEC_ORDERS_BASE_URL")
+	cfg.OnecOrdersUser = os.Getenv("ONEC_ORDERS_USER")
+	cfg.OnecOrdersPassword = os.Getenv("ONEC_ORDERS_PASSWORD")
+	cfg.OnecOrdersRequestTimeout = getEnvDuration("ONEC_ORDERS_REQUEST_TIMEOUT", 15*time.Second)
+	cfg.OnecWebhookAPIKey = os.Getenv("ONEC_WEBHOOK_API_KEY")
+	cfg.OrdersURL = os.Getenv("ORDERS_URL")
+	if raw := os.Getenv("ORDERS_SYSTEM_USER_ID"); raw != "" {
+		parsed, parseErr := uuid.Parse(raw)
+		if parseErr != nil {
+			log.Fatal().Err(parseErr).Msg("invalid ORDERS_SYSTEM_USER_ID")
+		}
+		cfg.OrdersSystemUserID = parsed
+	}
+
 	return cfg
 }
 
