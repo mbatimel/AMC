@@ -35,7 +35,14 @@ type Storage interface {
 
 	GetVolumeDiscountPercent(ctx context.Context, counterpartyID uuid.NullUUID, priceGroupID uuid.NullUUID, subtotal float64) (float64, error)
 
-	CreateOrder(ctx context.Context, params postgres.CreateOrderParams) (postgres.CreatedOrder, error)
+	GetProductOnecRefs(ctx context.Context, productIDs []uuid.UUID) (map[uuid.UUID]postgres.ProductOnecRef, error)
+	GetCounterpartyOnecRef(ctx context.Context, counterpartyID uuid.UUID) (postgres.CounterpartyOnecRef, error)
+
+	CreateOrder(
+		ctx context.Context,
+		params postgres.CreateOrderParams,
+		pushToOnec func(ctx context.Context, orderID uuid.UUID, orderNumber string) (onecGUID uuid.UUID, onecNumber string, err error),
+	) (postgres.CreatedOrder, error)
 	ListOrders(ctx context.Context, params postgres.ListOrdersParams) ([]postgres.OrderRow, int, error)
 	ListPreviouslyOrderedProducts(ctx context.Context, params postgres.ListPreviouslyOrderedProductsParams) ([]postgres.PreviouslyOrderedProductRow, int, error)
 	GetOrderByID(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, counterpartyID uuid.NullUUID) (postgres.OrderDetailRow, error)
@@ -62,14 +69,16 @@ type service struct {
 	storage      Storage
 	accessClient AccessClient
 	vatRate      float64
+	onecPusher   OnecPusher
 }
 
-func NewOrdersApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient, vatRate float64) externalapi.OrdersAPI {
+func NewOrdersApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient, vatRate float64, onecPusher OnecPusher) externalapi.OrdersAPI {
 	return &service{
 		logger:       logger,
 		storage:      storage,
 		accessClient: accessClient,
 		vatRate:      vatRate,
+		onecPusher:   onecPusher,
 	}
 }
 
@@ -508,6 +517,35 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 		})
 	}
 
+	productIDs := make([]uuid.UUID, 0, len(cartRows))
+	for _, row := range cartRows {
+		productIDs = append(productIDs, row.ProductID)
+	}
+	productRefs, err := s.storage.GetProductOnecRefs(ctx, productIDs)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+	var counterpartyRef postgres.CounterpartyOnecRef
+	if counterpartyID.Valid {
+		counterpartyRef, err = s.storage.GetCounterpartyOnecRef(ctx, counterpartyID.UUID)
+		if err != nil {
+			return response, customErrors.InternalServerError().SetOuterError(err)
+		}
+	}
+
+	pushItems := make([]OnecOrderItem, 0, len(cartRows))
+	for _, row := range cartRows {
+		ref := productRefs[row.ProductID]
+		pushItems = append(pushItems, OnecOrderItem{
+			OneCGUID: ref.OneCGUID,
+			SKU:      row.SKU,
+			Name:     row.ProductName,
+			Qty:      row.Qty,
+			Price:    row.Price,
+			VATRate:  s.vatRate,
+		})
+	}
+
 	created, err := s.storage.CreateOrder(ctx, postgres.CreateOrderParams{
 		UserID:            userID,
 		CounterpartyID:    counterpartyID,
@@ -521,6 +559,21 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 		VATTotal:          totals.VATTotal,
 		Total:             totals.Total,
 		Items:             orderItems,
+	}, func(ctx context.Context, orderID uuid.UUID, orderNumber string) (uuid.UUID, string, error) {
+		return s.onecPusher.PushOrder(ctx, OnecPushOrder{
+			ClientOrderID:    orderID,
+			OrderNumber:      orderNumber,
+			CounterpartyGUID: counterpartyRef.OneCGUID,
+			CounterpartyINN:  counterpartyRef.INN,
+			CounterpartyName: counterpartyRef.Name,
+			DeliveryType:     deliveryType,
+			DeliveryAddress:  deliveryAddress,
+			ContactName:      contactName,
+			Phone:            phone,
+			Email:            email,
+			Comment:          comment,
+			Items:            pushItems,
+		})
 	})
 	if err != nil {
 		return response, customErrors.InternalServerError().SetOuterError(err)
@@ -542,7 +595,7 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 		Phone:           phone,
 		Email:           email,
 		Comment:         comment,
-		Status:          "new",
+		Status:          created.Status,
 		PaymentStatus:   "not_paid",
 		CreatedAt:       created.CreatedAt,
 	}

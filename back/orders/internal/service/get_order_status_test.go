@@ -22,7 +22,7 @@ func (denyAccess) CheckAccess(context.Context, uuid.UUID, int) (bool, error) {
 
 func TestGetOrderStatus_AdminAllowed(t *testing.T) {
 	storage := &clientResolutionStorage{orderStatus: "processing"}
-	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20)
+	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, nil)
 
 	resp, err := svc.GetOrderStatus(context.Background(), uuid.New(), uuid.New())
 	if err != nil {
@@ -35,7 +35,7 @@ func TestGetOrderStatus_AdminAllowed(t *testing.T) {
 
 func TestGetOrderStatus_NonAdminForbidden(t *testing.T) {
 	storage := &clientResolutionStorage{orderStatus: "processing"}
-	svc := NewOrdersApiService(zerolog.Nop(), storage, denyAccess{}, 20)
+	svc := NewOrdersApiService(zerolog.Nop(), storage, denyAccess{}, 20, nil)
 
 	_, err := svc.GetOrderStatus(context.Background(), uuid.New(), uuid.New())
 	var custErr *customErrors.Error
@@ -46,7 +46,7 @@ func TestGetOrderStatus_NonAdminForbidden(t *testing.T) {
 
 func TestGetOrderStatus_NotFound(t *testing.T) {
 	storage := &clientResolutionStorage{orderStatusErr: postgres.ErrOrderNotFound}
-	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20)
+	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, nil)
 
 	_, err := svc.GetOrderStatus(context.Background(), uuid.New(), uuid.New())
 	var custErr *customErrors.Error

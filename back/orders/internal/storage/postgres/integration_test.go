@@ -242,6 +242,8 @@ func TestCreateOrderAndListOrders(t *testing.T) {
 				LineTotal:       2000,
 			},
 		},
+	}, func(ctx context.Context, orderID uuid.UUID, orderNumber string) (uuid.UUID, string, error) {
+		return uuid.New(), "TEST-ONEC-1", nil
 	})
 	if err != nil {
 		t.Fatalf("CreateOrder: %v", err)
@@ -275,7 +277,7 @@ func TestCreateOrderAndListOrders(t *testing.T) {
 	if total != 1 || len(rows) != 1 {
 		t.Fatalf("expected 1 order in list, got total=%d rows=%d", total, len(rows))
 	}
-	if rows[0].ID != orderID || rows[0].Status != "new" || rows[0].PaymentStatus != "not_paid" {
+	if rows[0].ID != orderID || rows[0].Status != "processing" || rows[0].PaymentStatus != "not_paid" {
 		t.Fatalf("unexpected order row: %+v", rows[0])
 	}
 }
@@ -386,6 +388,8 @@ func TestCartAndOrderRoundTripWithoutCounterparty(t *testing.T) {
 		Items: []OrderItemInput{
 			{ProductID: productID, SKU: "no-client-sku", Name: "no-client product", Quantity: 1, UnitPrice: 300, VATRate: 22, LineTotal: 300},
 		},
+	}, func(ctx context.Context, orderID uuid.UUID, orderNumber string) (uuid.UUID, string, error) {
+		return uuid.New(), "TEST-ONEC-2", nil
 	})
 	if err != nil {
 		t.Fatalf("CreateOrder: %v", err)
@@ -604,4 +608,115 @@ func TestGetCounterpartyOnecRef(t *testing.T) {
 	if !ref.OneCGUID.Valid || ref.OneCGUID.UUID != guid || ref.INN != "7701234567" || ref.Name != "ООО Рефтест" {
 		t.Fatalf("unexpected ref: %+v", ref)
 	}
+}
+
+func TestCreateOrder_PushSucceeds_StatusProcessingAndOnecFieldsSet(t *testing.T) {
+	dsn := os.Getenv("TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("TEST_DATABASE_URL is not set")
+	}
+	ctx := context.Background()
+	pool, err := pgxpool.Connect(ctx, dsn)
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	t.Cleanup(pool.Close)
+	storage := New(pool)
+
+	cartID := mustInsertEmptyCart(t, ctx, pool) // см. Step 1a ниже
+	onecGUID := uuid.New()
+
+	created, err := storage.CreateOrder(ctx, CreateOrderParams{
+		CartID: cartID,
+		Items:  nil,
+	}, func(ctx context.Context, orderID uuid.UUID, orderNumber string) (uuid.UUID, string, error) {
+		if orderNumber == "" {
+			t.Fatalf("expected non-empty order number in callback")
+		}
+		return onecGUID, "УТ-00001", nil
+	})
+	if err != nil {
+		t.Fatalf("CreateOrder: %v", err)
+	}
+	if created.Status != "processing" {
+		t.Fatalf("expected status processing, got %q", created.Status)
+	}
+
+	var status string
+	var storedGUID uuid.UUID
+	if err = pool.QueryRow(ctx, `SELECT status, one_c_guid FROM orders WHERE id = $1`, created.ID).Scan(&status, &storedGUID); err != nil {
+		t.Fatalf("read back order: %v", err)
+	}
+	if status != "processing" || storedGUID != onecGUID {
+		t.Fatalf("expected processing/%s, got %s/%s", onecGUID, status, storedGUID)
+	}
+
+	var historyCount int
+	if err = pool.QueryRow(ctx, `SELECT count(*) FROM order_status_history WHERE order_id = $1`, created.ID).Scan(&historyCount); err != nil {
+		t.Fatalf("count history: %v", err)
+	}
+	if historyCount != 2 {
+		t.Fatalf("expected 2 history rows (new, processing), got %d", historyCount)
+	}
+}
+
+func TestCreateOrder_PushFails_WholeTransactionRolledBack(t *testing.T) {
+	dsn := os.Getenv("TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("TEST_DATABASE_URL is not set")
+	}
+	ctx := context.Background()
+	pool, err := pgxpool.Connect(ctx, dsn)
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	t.Cleanup(pool.Close)
+	storage := New(pool)
+
+	cartID := mustInsertEmptyCart(t, ctx, pool)
+	var cartItemsBefore int
+	if err = pool.QueryRow(ctx, `SELECT count(*) FROM cart_items WHERE cart_id = $1`, cartID).Scan(&cartItemsBefore); err != nil {
+		t.Fatalf("count cart items before: %v", err)
+	}
+
+	var ordersCountBefore int
+	if err = pool.QueryRow(ctx, `SELECT count(*) FROM orders`).Scan(&ordersCountBefore); err != nil {
+		t.Fatalf("count orders before: %v", err)
+	}
+
+	pushErr := errors.New("onec unavailable")
+	_, err = storage.CreateOrder(ctx, CreateOrderParams{CartID: cartID}, func(ctx context.Context, orderID uuid.UUID, orderNumber string) (uuid.UUID, string, error) {
+		return uuid.Nil, "", pushErr
+	})
+	if !errors.Is(err, pushErr) {
+		t.Fatalf("expected wrapped pushErr, got %v", err)
+	}
+
+	var ordersCountAfter int
+	if err = pool.QueryRow(ctx, `SELECT count(*) FROM orders`).Scan(&ordersCountAfter); err != nil {
+		t.Fatalf("count orders after: %v", err)
+	}
+	if ordersCountAfter != ordersCountBefore {
+		t.Fatalf("expected no new order row after rollback, before=%d after=%d", ordersCountBefore, ordersCountAfter)
+	}
+
+	var cartItemsAfter int
+	if err = pool.QueryRow(ctx, `SELECT count(*) FROM cart_items WHERE cart_id = $1`, cartID).Scan(&cartItemsAfter); err != nil {
+		t.Fatalf("count cart items after: %v", err)
+	}
+	if cartItemsAfter != cartItemsBefore {
+		t.Fatalf("expected cart_items untouched after rollback, before=%d after=%d", cartItemsBefore, cartItemsAfter)
+	}
+}
+
+// mustInsertEmptyCart вставляет пустую корзину без привязки к пользователю/контрагенту
+// (CreateOrderParams.UserID/CounterpartyID в этих тестах нулевые — проверяется только
+// транзакционное поведение вокруг pushToOnec, не бизнес-валидация полей).
+func mustInsertEmptyCart(t *testing.T, ctx context.Context, pool *pgxpool.Pool) uuid.UUID {
+	t.Helper()
+	var cartID uuid.UUID
+	if err := pool.QueryRow(ctx, `INSERT INTO carts DEFAULT VALUES RETURNING id`).Scan(&cartID); err != nil {
+		t.Fatalf("insert cart: %v", err)
+	}
+	return cartID
 }

@@ -10,25 +10,27 @@ import (
 )
 
 type Config struct {
-	PGHost     string
-	PGPort     string
-	PGDB       string
-	PGUser     string
-	PGPassword string
-	BindAddr   string
-	AccessURL  string
-	VATRate    float64
+	PGHost          string
+	PGPort          string
+	PGDB            string
+	PGUser          string
+	PGPassword      string
+	BindAddr        string
+	AccessURL       string
+	VATRate         float64
+	IntegrationsURL string
 }
 
 func LoadConfig() Config {
 	cfg := Config{
-		PGHost:     GetEnv("PG_HOST", "localhost"),
-		PGPort:     GetEnv("PG_PORT", "5432"),
-		PGDB:       os.Getenv("PG_DB"),
-		PGUser:     os.Getenv("PG_USER"),
-		PGPassword: os.Getenv("PG_PASSWORD"),
-		BindAddr:   GetEnv("BIND_ADDR", ":8082"),
-		AccessURL:  os.Getenv("ACCESS_URL"),
+		PGHost:          GetEnv("PG_HOST", "localhost"),
+		PGPort:          GetEnv("PG_PORT", "5432"),
+		PGDB:            os.Getenv("PG_DB"),
+		PGUser:          os.Getenv("PG_USER"),
+		PGPassword:      os.Getenv("PG_PASSWORD"),
+		BindAddr:        GetEnv("BIND_ADDR", ":8082"),
+		AccessURL:       os.Getenv("ACCESS_URL"),
+		IntegrationsURL: os.Getenv("INTEGRATIONS_URL"),
 	}
 
 	if cfg.PGDB == "" || cfg.PGUser == "" || cfg.PGPassword == "" {

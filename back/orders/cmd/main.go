@@ -36,7 +36,9 @@ func main() {
 
 	postgresStorage := postgres.New(pool)
 	access := accessTransport.NewClientAccessAPI(cfg.AccessURL)
-	svc := ordersService.NewOrdersApiService(log.Logger, postgresStorage, access, cfg.VATRate)
+	// TODO(Task 14): заменить на internal/onecclient.New(cfg.IntegrationsURL)
+	var onecPusher ordersService.OnecPusher
+	svc := ordersService.NewOrdersApiService(log.Logger, postgresStorage, access, cfg.VATRate, onecPusher)
 
 	app := externalapi.New(log.Logger, externalapi.OrdersAPI(externalapi.NewOrdersAPI(svc))).WithLog().WithMetrics()
 	server := &fasthttp.Server{
