@@ -29,7 +29,7 @@ func RegisterPushOrderRoute(app *fiber.App, pusher OnecPusher, logger zerolog.Lo
 		result, err := pusher.PushOrder(ctx.UserContext(), req)
 		if err != nil {
 			logger.Error().Str("clientOrderID", req.ClientOrderID.String()).Err(err).Msg("push order to onec failed")
-			return ctx.Status(fiber.StatusBadGateway).JSON(fiber.Map{"error": err.Error()})
+			return ctx.Status(fiber.StatusBadGateway).JSON(fiber.Map{"error": "failed to push order to 1С"})
 		}
 
 		return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
