@@ -122,6 +122,48 @@ func (f *fakeStorage) UpsertStockBalance(_ context.Context, in models.StockInput
 	return nil
 }
 
+// Батч-варианты — тонкие обёртки над per-row-логикой выше: тестам важна
+// только сквозная семантика (что именно упало/прошло), а не то, одним
+// запросом это ушло в БД или несколькими.
+func (f *fakeStorage) UpsertCategoriesBatch(ctx context.Context, items []models.CategoryInput) ([]uuid.UUID, []error) {
+	ids := make([]uuid.UUID, len(items))
+	errs := make([]error, len(items))
+	for i, in := range items {
+		ids[i], errs[i] = f.UpsertCategory(ctx, in)
+	}
+	return ids, errs
+}
+func (f *fakeStorage) UpsertWarehousesBatch(ctx context.Context, items []models.WarehouseInput) ([]uuid.UUID, []error) {
+	ids := make([]uuid.UUID, len(items))
+	errs := make([]error, len(items))
+	for i, in := range items {
+		ids[i], errs[i] = f.UpsertWarehouse(ctx, in)
+	}
+	return ids, errs
+}
+func (f *fakeStorage) UpsertProductsBatch(ctx context.Context, items []models.ProductInput) ([]uuid.UUID, []error) {
+	ids := make([]uuid.UUID, len(items))
+	errs := make([]error, len(items))
+	for i, in := range items {
+		ids[i], errs[i] = f.UpsertProduct(ctx, in)
+	}
+	return ids, errs
+}
+func (f *fakeStorage) UpsertProductPricesBatch(ctx context.Context, items []models.PriceInput) []error {
+	errs := make([]error, len(items))
+	for i, in := range items {
+		errs[i] = f.UpsertProductPrice(ctx, in)
+	}
+	return errs
+}
+func (f *fakeStorage) UpsertStockBalancesBatch(ctx context.Context, items []models.StockInput) []error {
+	errs := make([]error, len(items))
+	for i, in := range items {
+		errs[i] = f.UpsertStockBalance(ctx, in)
+	}
+	return errs
+}
+
 const (
 	parentGUID    = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	childGUID     = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
@@ -380,14 +422,10 @@ func TestSyncCategories_TruncatesSkippedAt100(t *testing.T) {
 	for i := 0; i < 150; i++ {
 		dtos = append(dtos, onec.CategoryDTO{RefKey: fmt.Sprintf("not-a-guid-%d", i), Description: "bad"})
 	}
-	onecClient := &fakeOnecClient{categories: dtos}
 	storage := newFakeStorage()
-	svc := New(zerolog.Nop(), onecClient, storage)
+	svc := New(zerolog.Nop(), &fakeOnecClient{categories: dtos}, storage)
 
-	_, skipped, err := svc.syncCategories(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	_, skipped := svc.processCategories(context.Background(), dtos)
 	if len(skipped) != 101 {
 		t.Fatalf("expected 100 messages + 1 truncation summary, got %d: %v", len(skipped), skipped)
 	}
@@ -398,20 +436,15 @@ func TestSyncCategories_TruncatesSkippedAt100(t *testing.T) {
 }
 
 func TestSyncCategories_SetParentFails_KeepsAllCategoryIDs(t *testing.T) {
-	onecClient := &fakeOnecClient{
-		categories: []onec.CategoryDTO{
-			{RefKey: parentGUID, ParentKey: zeroGUID, Description: "Инструмент"},
-			{RefKey: childGUID, ParentKey: parentGUID, Description: "Дрели"},
-		},
+	dtos := []onec.CategoryDTO{
+		{RefKey: parentGUID, ParentKey: zeroGUID, Description: "Инструмент"},
+		{RefKey: childGUID, ParentKey: parentGUID, Description: "Дрели"},
 	}
 	storage := newFakeStorage()
 	storage.failSetParent = true
-	svc := New(zerolog.Nop(), onecClient, storage)
+	svc := New(zerolog.Nop(), &fakeOnecClient{categories: dtos}, storage)
 
-	ids, skipped, err := svc.syncCategories(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	ids, skipped := svc.processCategories(context.Background(), dtos)
 	if len(ids) != 2 {
 		t.Fatalf("expected both upserted category ids to survive a SetCategoryParent failure, got %d: %v", len(ids), ids)
 	}

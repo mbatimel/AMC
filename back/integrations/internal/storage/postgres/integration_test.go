@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -170,4 +171,205 @@ func TestUpsertProduct_DuplicateSKU_WrapsErrDuplicateSKUWithDetail(t *testing.T)
 	if !strings.Contains(err.Error(), sku) {
 		t.Fatalf("expected error message to contain the conflicting sku %q, got: %v", sku, err)
 	}
+}
+
+func TestUpsertCategoriesBatch_IdempotentAndAlignedWithInput(t *testing.T) {
+	dsn := os.Getenv("INTEGRATIONS_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("INTEGRATIONS_TEST_DATABASE_URL is not set")
+	}
+
+	ctx := context.Background()
+	pool, err := pgxpool.Connect(ctx, dsn)
+	if err != nil {
+		t.Fatalf("connect test database: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	storage := New(pool)
+
+	items := []models.CategoryInput{
+		{OneCGUID: uuid.New(), Name: "Batch A"},
+		{OneCGUID: uuid.New(), Name: "Batch B"},
+		{OneCGUID: uuid.New(), Name: "Batch C"},
+	}
+
+	ids, errs := storage.UpsertCategoriesBatch(ctx, items)
+	for i, e := range errs {
+		if e != nil {
+			t.Fatalf("item %d: unexpected error: %v", i, e)
+		}
+		if ids[i] == uuid.Nil {
+			t.Fatalf("item %d: expected non-nil id", i)
+		}
+	}
+
+	// Повторный батч с изменёнными именами по тем же one_c_guid — id должны
+	// сохраниться, имена обновиться (тот же контракт, что и у ON CONFLICT
+	// DO UPDATE в single-row варианте).
+	renamed := make([]models.CategoryInput, len(items))
+	for i, in := range items {
+		renamed[i] = models.CategoryInput{OneCGUID: in.OneCGUID, Name: in.Name + " renamed"}
+	}
+	ids2, errs2 := storage.UpsertCategoriesBatch(ctx, renamed)
+	for i, e := range errs2 {
+		if e != nil {
+			t.Fatalf("repeat item %d: unexpected error: %v", i, e)
+		}
+		if ids2[i] != ids[i] {
+			t.Fatalf("repeat item %d: expected same id %s, got %s", i, ids[i], ids2[i])
+		}
+	}
+
+	var name string
+	if err = pool.QueryRow(ctx, `SELECT name FROM categories WHERE id = $1`, ids[1]).Scan(&name); err != nil {
+		t.Fatalf("read back category: %v", err)
+	}
+	if name != "Batch B renamed" {
+		t.Fatalf("expected updated name %q, got %q", "Batch B renamed", name)
+	}
+}
+
+func TestUpsertProductsBatch_DuplicateSKUInChunk_FallsBackAndIsolatesFailure(t *testing.T) {
+	dsn := os.Getenv("INTEGRATIONS_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("INTEGRATIONS_TEST_DATABASE_URL is not set")
+	}
+
+	ctx := context.Background()
+	pool, err := pgxpool.Connect(ctx, dsn)
+	if err != nil {
+		t.Fatalf("connect test database: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	storage := New(pool)
+
+	sku := "DUP-SKU-BATCH-" + uuid.New().String()[:8]
+	items := []models.ProductInput{
+		{OneCGUID: uuid.New(), SKU: sku, Name: "Первый"},
+		{OneCGUID: uuid.New(), SKU: sku, Name: "Второй (дубль sku)"},
+		{OneCGUID: uuid.New(), SKU: "OK-SKU-" + uuid.New().String()[:8], Name: "Третий"},
+	}
+
+	ids, errs := storage.UpsertProductsBatch(ctx, items)
+
+	// Мульти-строчный INSERT падает целиком (проверено вручную через psql —
+	// ON CONFLICT конфликтует по one_c_guid, а sku — отдельный unique-констрейнт,
+	// не покрытый conflict target'ом), поэтому чанк обязан откатиться на
+	// per-row обработку: ровно один из двух дублей должен успеть встать
+	// первым и получить ошибку по второму, третий (без конфликта) — пройти.
+	successCount, failCount := 0, 0
+	for i, e := range errs {
+		if e != nil {
+			failCount++
+			if !errors.Is(e, ErrDuplicateSKU) {
+				t.Fatalf("item %d: expected ErrDuplicateSKU, got: %v", i, e)
+			}
+			continue
+		}
+		successCount++
+		if ids[i] == uuid.Nil {
+			t.Fatalf("item %d: success but nil id", i)
+		}
+	}
+	if successCount != 2 || failCount != 1 {
+		t.Fatalf("expected 2 successes and 1 duplicate-sku failure, got successes=%d failures=%d (errs=%v)", successCount, failCount, errs)
+	}
+}
+
+func TestUpsertProductPricesBatch_And_StockBalancesBatch_Idempotent(t *testing.T) {
+	dsn := os.Getenv("INTEGRATIONS_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("INTEGRATIONS_TEST_DATABASE_URL is not set")
+	}
+
+	ctx := context.Background()
+	pool, err := pgxpool.Connect(ctx, dsn)
+	if err != nil {
+		t.Fatalf("connect test database: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	storage := New(pool)
+
+	warehouseID, err := storage.UpsertWarehouse(ctx, models.WarehouseInput{OneCGUID: uuid.New(), Name: "Склад batch"})
+	if err != nil {
+		t.Fatalf("upsert warehouse: %v", err)
+	}
+
+	var productIDs []uuid.UUID
+	for i := 0; i < 3; i++ {
+		id, upsertErr := storage.UpsertProduct(ctx, models.ProductInput{
+			OneCGUID: uuid.New(),
+			SKU:      fmt.Sprintf("BATCH-PRICE-SKU-%s-%d", uuid.New().String()[:8], i),
+			Name:     "Товар для batch price/stock",
+		})
+		if upsertErr != nil {
+			t.Fatalf("upsert product %d: %v", i, upsertErr)
+		}
+		productIDs = append(productIDs, id)
+	}
+
+	priceItems := make([]models.PriceInput, len(productIDs))
+	stockItems := make([]models.StockInput, len(productIDs))
+	for i, pid := range productIDs {
+		priceItems[i] = models.PriceInput{ProductID: pid, PriceType: "base", Price: float64(100 + i)}
+		stockItems[i] = models.StockInput{ProductID: pid, WarehouseID: warehouseID, Quantity: float64(i)}
+	}
+
+	if errs := storage.UpsertProductPricesBatch(ctx, priceItems); anyErr(errs) {
+		t.Fatalf("unexpected price batch errors: %v", errs)
+	}
+	if errs := storage.UpsertStockBalancesBatch(ctx, stockItems); anyErr(errs) {
+		t.Fatalf("unexpected stock batch errors: %v", errs)
+	}
+
+	// Повтор тем же ключом (product_id+price_type / product_id+warehouse_id)
+	// с новыми значениями — должен обновить, а не задублировать строки.
+	for i := range priceItems {
+		priceItems[i].Price += 1
+		stockItems[i].Quantity += 10
+	}
+	if errs := storage.UpsertProductPricesBatch(ctx, priceItems); anyErr(errs) {
+		t.Fatalf("unexpected price batch errors (repeat): %v", errs)
+	}
+	if errs := storage.UpsertStockBalancesBatch(ctx, stockItems); anyErr(errs) {
+		t.Fatalf("unexpected stock batch errors (repeat): %v", errs)
+	}
+
+	for i, pid := range productIDs {
+		var priceCount int
+		var price float64
+		if err = pool.QueryRow(ctx,
+			`SELECT count(*), max(price) FROM product_prices WHERE product_id = $1 AND price_type = 'base'`,
+			pid,
+		).Scan(&priceCount, &price); err != nil {
+			t.Fatalf("count product prices for item %d: %v", i, err)
+		}
+		if priceCount != 1 || price != priceItems[i].Price {
+			t.Fatalf("item %d: expected exactly 1 price row with price=%v, got count=%d price=%v", i, priceItems[i].Price, priceCount, price)
+		}
+
+		var stockCount int
+		var qty float64
+		if err = pool.QueryRow(ctx,
+			`SELECT count(*), max(quantity) FROM stock_balances WHERE product_id = $1 AND warehouse_id = $2`,
+			pid, warehouseID,
+		).Scan(&stockCount, &qty); err != nil {
+			t.Fatalf("count stock balances for item %d: %v", i, err)
+		}
+		if stockCount != 1 || qty != stockItems[i].Quantity {
+			t.Fatalf("item %d: expected exactly 1 stock row with quantity=%v, got count=%d quantity=%v", i, stockItems[i].Quantity, stockCount, qty)
+		}
+	}
+}
+
+func anyErr(errs []error) bool {
+	for _, e := range errs {
+		if e != nil {
+			return true
+		}
+	}
+	return false
 }
