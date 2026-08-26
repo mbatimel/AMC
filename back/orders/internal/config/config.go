@@ -40,6 +40,9 @@ func LoadConfig() Config {
 		cfg.AccessURL = "http://localhost:8080"
 		log.Warn().Msg("ACCESS_URL must be specified")
 	}
+	if cfg.IntegrationsURL == "" {
+		log.Fatal().Msg("INTEGRATIONS_URL must be specified")
+	}
 
 	vatRateStr := GetEnv("NDS_VALUE", "22")
 	vatRate, err := strconv.ParseFloat(vatRateStr, 64)

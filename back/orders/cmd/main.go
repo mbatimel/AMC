@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -11,6 +12,7 @@ import (
 
 	accessTransport "github.com/mbatimel/AMC/access/pkg/client/transport"
 	"github.com/mbatimel/AMC/orders/internal/config"
+	"github.com/mbatimel/AMC/orders/internal/onecclient"
 	ordersService "github.com/mbatimel/AMC/orders/internal/service"
 	postgres "github.com/mbatimel/AMC/orders/internal/storage/postgres"
 	transportHttp "github.com/mbatimel/AMC/orders/internal/transport/http"
@@ -36,8 +38,7 @@ func main() {
 
 	postgresStorage := postgres.New(pool)
 	access := accessTransport.NewClientAccessAPI(cfg.AccessURL)
-	// TODO(Task 14): заменить на internal/onecclient.New(cfg.IntegrationsURL)
-	var onecPusher ordersService.OnecPusher
+	onecPusher := onecclient.New(cfg.IntegrationsURL, 15*time.Second)
 	svc := ordersService.NewOrdersApiService(log.Logger, postgresStorage, access, cfg.VATRate, onecPusher)
 
 	app := externalapi.New(log.Logger, externalapi.OrdersAPI(externalapi.NewOrdersAPI(svc))).WithLog().WithMetrics()
