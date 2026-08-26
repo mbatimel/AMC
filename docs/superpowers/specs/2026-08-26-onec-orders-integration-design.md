@@ -130,27 +130,50 @@ func (s *Storage) CreateOrder(
 одного, потому что у них разный lifecycle (тикер vs request/response) — как и
 остальные сервисы в репо (один `cmd` = один бинарник = один docker-сервис).
 
+**Важное ограничение `tg` (проверено экспериментально: пробный запуск
+`tg transport` на интерфейсе с параметром-структурой и с `[]struct` ломает
+кодогенерацию — тип параметра теряется, `tg` умеет только скалярные типы и
+слайсы скалярных типов).** `PushOrder` несёт массив позиций заказа (SKU/qty/
+price на каждую) — это не выражается как `tg`-аргумент. Поэтому только
+`OnecOrderStatusWebhook` (все поля — скаляры) идёт через `tg`; `PushOrder`
+регистрируется вручную как fiber-роут на ТОМ ЖЕ `*fiber.App`, что отдаёт
+`tg`-сгенерированный сервер (`Server.Fiber()` — публичный метод
+сгенерированного `Server`, уже используется в `orders/cmd/main.go` через
+`app.Fiber().Handler()`) — один процесс, один порт, оба пути.
+
 Интерфейс `back/integrations/pkg/interfaces/internalAPI/interface.go` —
 `@tg`-аннотированный, по образцу `back/access/pkg/interfaces/internalAPI`
-(codegen транспорта + Go-клиента через `go:generate tg transport`/`tg client`):
+(codegen транспорта через `go:generate tg transport`; `tg client` для этого
+интерфейса не нужен — вызывающая сторона (1С) не Go-клиент):
 
 ```go
 // @tg http-prefix=/api
 type OnecOrdersAPI interface {
-    // PushOrder — вызывает только orders, по внутренней docker-сети
-    // (amc_net), в nginx НЕ публикуется.
-    // @tg http-method=POST
-    // @tg http-path=/v1/onec-orders/push
-    PushOrder(ctx context.Context, clientOrderID uuid.UUID, orderNumber string, payload OrderPushPayload) (onecGUID uuid.UUID, onecNumber string, err error)
-
     // OnecOrderStatusWebhook — вызывает 1С снаружи, публикуется в nginx
     // (`/api/v1/onec/`).
     // @tg http-method=POST
     // @tg http-path=/v1/onec/orders/status
     // @tg http-headers=apiKey|X-Onec-Api-Key
-    OnecOrderStatusWebhook(ctx context.Context, apiKey string, clientOrderID uuid.UUID, status string, comment string) (ok bool, err error)
+    // @tg http-args=clientOrderID|clientOrderID
+    // @tg http-args=status|status
+    // @tg http-args=onecDocumentNumber|onecDocumentNumber
+    // @tg http-args=comment|comment
+    OnecOrderStatusWebhook(ctx context.Context, apiKey string, clientOrderID uuid.UUID, status string, onecDocumentNumber string, comment string) (ok bool, err error)
 }
 ```
+
+`PushOrder` (ручной fiber-хендлер, `internal/transport/http/onecorders.go`):
+`POST /api/v1/onec-orders/push`, тело — JSON (`encoding/json`, обычный
+`fiber.Ctx.BodyParser`), не публикуется в nginx (недостижим снаружи docker-
+сети `amc_net`). Как и у `orders→access` (`CheckAccess` без какого-либо
+auth-заголовка, см. сгенерированный клиент access) — дополнительной
+авторизации поверх сетевой изоляции не добавляем, тот же уровень доверия,
+что у остальных внутренних вызовов сервис-к-сервису в этом репо.
+
+На стороне `orders` — свой маленький HTTP-клиент
+`back/orders/internal/onecclient/client.go` (fasthttp, JSON, без auth —
+симметрично серверной стороне), а не `tg`-клиент — по той же причине
+(массив items).
 
 `PushOrder`: строит запрос к 1С через `internal/onecorders/client.go`,
 логирует попытку в `sync_jobs`/`sync_logs` (`direction='outbound'`,
@@ -167,8 +190,13 @@ type OnecOrdersAPI interface {
    `"delivered"`; попытка передать `cancelled`/`new`/`processing`/что угодно
    ещё — 400, запись в `sync_logs` `level=warn`). Список расширяется без
    новых ручек — правкой этой карты и спеки.
-3. Читает текущий статус заказа (`GET /api/v1/orders/id`, тем же
-   системным пользователем — см. п.4) **до** применения перехода, потому что
+3. Читает текущий статус заказа — новая узкая admin-гейтед ручка
+   `GetOrderStatus(ctx, userID, orderID uuid.UUID) (status string, err error)`
+   в `orders` (не переиспользуем buyer-ориентированный `GetOrder` — он резолвит
+   `counterpartyID` по связке "пользователь→клиент", что не имеет смысла для
+   системного аккаунта без привязанных клиентов; `GetOrderStatus` гейтится
+   тем же `checkAdminAccess`, что и `UpdateOrderStatus`, отдаёт только статус)
+   — **до** применения перехода, потому что
    `UpdateOrderStatus` сам по себе не проверяет допустимость перехода (это
    admin-ручка для произвольных ручных правок статуса, не state machine):
    - заказ уже `delivered` — `ok=true`, no-op, повторной записи в историю не
