@@ -610,6 +610,98 @@ func TestGetCounterpartyOnecRef(t *testing.T) {
 	}
 }
 
+// createOrderFixture holds the minimal set of REAL rows storage.CreateOrder
+// needs. Every one of them exists to satisfy a foreign key: orders.user_id and
+// order_status_history.changed_by → users(id), orders.delivery_address_id →
+// counterparty_addresses(id), orders.contact_id → counterparty_contacts(id),
+// order_items.product_id → products(id), cart_items.cart_id → carts(id).
+// Passing uuid.Nil for any of them (the Go zero value is an all-zeros UUID, not
+// SQL NULL) fails the very first INSERT with an FK violation.
+//
+// CreateOrder does not touch pricing, so the categories/units/price_groups/
+// volume_discounts chain TestCartRoundTrip needs is deliberately skipped here.
+type createOrderFixture struct {
+	userID     uuid.UUID
+	addressID  uuid.UUID
+	contactID  uuid.UUID
+	cartID     uuid.UUID
+	productID  uuid.UUID
+	productSKU string
+}
+
+// mustCreateOrderFixture seeds those rows plus ONE cart item, so the cart is not
+// empty: an empty cart makes the rollback test's cart_items assertion vacuous
+// ("still empty" passes without the DELETE FROM cart_items ever having run).
+func mustCreateOrderFixture(t *testing.T, ctx context.Context, pool *pgxpool.Pool) createOrderFixture {
+	t.Helper()
+
+	mustScan := func(sql string, args ...interface{}) uuid.UUID {
+		var id uuid.UUID
+		if err := pool.QueryRow(ctx, sql, args...).Scan(&id); err != nil {
+			t.Fatalf("fixture insert failed (%s): %v", sql, err)
+		}
+		return id
+	}
+
+	fixture := createOrderFixture{productSKU: uuid.NewString()}
+	fixture.userID = mustScan(`INSERT INTO users (email) VALUES ($1) RETURNING id`, uuid.NewString()+"@test.local")
+	fixture.addressID = mustScan(`INSERT INTO counterparty_addresses DEFAULT VALUES RETURNING id`)
+	fixture.contactID = mustScan(`INSERT INTO counterparty_contacts DEFAULT VALUES RETURNING id`)
+	fixture.productID = mustScan(`INSERT INTO products (sku, name) VALUES ($1, 'test') RETURNING id`, fixture.productSKU)
+	fixture.cartID = mustScan(`INSERT INTO carts (user_id) VALUES ($1) RETURNING id`, fixture.userID)
+
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO cart_items (cart_id, product_id, quantity, price) VALUES ($1, $2, 1, 100)`,
+		fixture.cartID, fixture.productID,
+	); err != nil {
+		t.Fatalf("insert cart item: %v", err)
+	}
+
+	t.Cleanup(func() {
+		pool.Exec(ctx, `DELETE FROM order_status_history WHERE order_id IN (SELECT id FROM orders WHERE user_id = $1)`, fixture.userID)
+		pool.Exec(ctx, `DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id = $1)`, fixture.userID)
+		pool.Exec(ctx, `DELETE FROM orders WHERE user_id = $1`, fixture.userID)
+		pool.Exec(ctx, `DELETE FROM cart_items WHERE cart_id = $1`, fixture.cartID)
+		pool.Exec(ctx, `DELETE FROM carts WHERE id = $1`, fixture.cartID)
+		pool.Exec(ctx, `DELETE FROM products WHERE id = $1`, fixture.productID)
+		pool.Exec(ctx, `DELETE FROM counterparty_addresses WHERE id = $1`, fixture.addressID)
+		pool.Exec(ctx, `DELETE FROM counterparty_contacts WHERE id = $1`, fixture.contactID)
+		pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, fixture.userID)
+	})
+
+	return fixture
+}
+
+func (f createOrderFixture) params() CreateOrderParams {
+	return CreateOrderParams{
+		UserID:            f.userID,
+		CartID:            f.cartID,
+		DeliveryMethod:    "delivery",
+		DeliveryAddressID: f.addressID,
+		ContactID:         f.contactID,
+		Comment:           "integration test",
+		Subtotal:          100,
+		Total:             100,
+		Items: []OrderItemInput{{
+			ProductID: f.productID,
+			SKU:       f.productSKU,
+			Name:      "test",
+			Quantity:  1,
+			UnitPrice: 100,
+			LineTotal: 100,
+		}},
+	}
+}
+
+func countCartItems(t *testing.T, ctx context.Context, pool *pgxpool.Pool, cartID uuid.UUID) int {
+	t.Helper()
+	var count int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM cart_items WHERE cart_id = $1`, cartID).Scan(&count); err != nil {
+		t.Fatalf("count cart items: %v", err)
+	}
+	return count
+}
+
 func TestCreateOrder_PushSucceeds_StatusProcessingAndOnecFieldsSet(t *testing.T) {
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
@@ -623,18 +715,19 @@ func TestCreateOrder_PushSucceeds_StatusProcessingAndOnecFieldsSet(t *testing.T)
 	t.Cleanup(pool.Close)
 	storage := New(pool)
 
-	cartID := mustInsertEmptyCart(t, ctx, pool) // см. Step 1a ниже
+	fixture := mustCreateOrderFixture(t, ctx, pool)
+	if got := countCartItems(t, ctx, pool, fixture.cartID); got != 1 {
+		t.Fatalf("fixture should start with exactly 1 cart item, got %d", got)
+	}
 	onecGUID := uuid.New()
 
-	created, err := storage.CreateOrder(ctx, CreateOrderParams{
-		CartID: cartID,
-		Items:  nil,
-	}, func(ctx context.Context, orderID uuid.UUID, orderNumber string) (uuid.UUID, string, error) {
-		if orderNumber == "" {
-			t.Fatalf("expected non-empty order number in callback")
-		}
-		return onecGUID, "УТ-00001", nil
-	})
+	created, err := storage.CreateOrder(ctx, fixture.params(),
+		func(ctx context.Context, orderID uuid.UUID, orderNumber string) (uuid.UUID, string, error) {
+			if orderNumber == "" {
+				t.Errorf("expected non-empty order number in callback")
+			}
+			return onecGUID, "УТ-00001", nil
+		})
 	if err != nil {
 		t.Fatalf("CreateOrder: %v", err)
 	}
@@ -651,12 +744,25 @@ func TestCreateOrder_PushSucceeds_StatusProcessingAndOnecFieldsSet(t *testing.T)
 		t.Fatalf("expected processing/%s, got %s/%s", onecGUID, status, storedGUID)
 	}
 
+	var itemCount int
+	if err = pool.QueryRow(ctx, `SELECT count(*) FROM order_items WHERE order_id = $1`, created.ID).Scan(&itemCount); err != nil {
+		t.Fatalf("count order items: %v", err)
+	}
+	if itemCount != 1 {
+		t.Fatalf("expected 1 order item, got %d", itemCount)
+	}
+
 	var historyCount int
 	if err = pool.QueryRow(ctx, `SELECT count(*) FROM order_status_history WHERE order_id = $1`, created.ID).Scan(&historyCount); err != nil {
 		t.Fatalf("count history: %v", err)
 	}
 	if historyCount != 2 {
 		t.Fatalf("expected 2 history rows (new, processing), got %d", historyCount)
+	}
+
+	// The committed transaction must have cleared the cart.
+	if got := countCartItems(t, ctx, pool, fixture.cartID); got != 0 {
+		t.Fatalf("expected cart to be cleared after a successful order, still has %d item(s)", got)
 	}
 }
 
@@ -673,10 +779,11 @@ func TestCreateOrder_PushFails_WholeTransactionRolledBack(t *testing.T) {
 	t.Cleanup(pool.Close)
 	storage := New(pool)
 
-	cartID := mustInsertEmptyCart(t, ctx, pool)
-	var cartItemsBefore int
-	if err = pool.QueryRow(ctx, `SELECT count(*) FROM cart_items WHERE cart_id = $1`, cartID).Scan(&cartItemsBefore); err != nil {
-		t.Fatalf("count cart items before: %v", err)
+	fixture := mustCreateOrderFixture(t, ctx, pool)
+
+	cartItemsBefore := countCartItems(t, ctx, pool, fixture.cartID)
+	if cartItemsBefore != 1 {
+		t.Fatalf("fixture should start with exactly 1 cart item, got %d", cartItemsBefore)
 	}
 
 	var ordersCountBefore int
@@ -685,9 +792,10 @@ func TestCreateOrder_PushFails_WholeTransactionRolledBack(t *testing.T) {
 	}
 
 	pushErr := errors.New("onec unavailable")
-	_, err = storage.CreateOrder(ctx, CreateOrderParams{CartID: cartID}, func(ctx context.Context, orderID uuid.UUID, orderNumber string) (uuid.UUID, string, error) {
-		return uuid.Nil, "", pushErr
-	})
+	_, err = storage.CreateOrder(ctx, fixture.params(),
+		func(ctx context.Context, orderID uuid.UUID, orderNumber string) (uuid.UUID, string, error) {
+			return uuid.Nil, "", pushErr
+		})
 	if !errors.Is(err, pushErr) {
 		t.Fatalf("expected wrapped pushErr, got %v", err)
 	}
@@ -700,23 +808,10 @@ func TestCreateOrder_PushFails_WholeTransactionRolledBack(t *testing.T) {
 		t.Fatalf("expected no new order row after rollback, before=%d after=%d", ordersCountBefore, ordersCountAfter)
 	}
 
-	var cartItemsAfter int
-	if err = pool.QueryRow(ctx, `SELECT count(*) FROM cart_items WHERE cart_id = $1`, cartID).Scan(&cartItemsAfter); err != nil {
-		t.Fatalf("count cart items after: %v", err)
-	}
-	if cartItemsAfter != cartItemsBefore {
+	// The cart item is the point of this assertion: the transaction ran
+	// DELETE FROM cart_items before the push failed, so seeing it still here
+	// proves the DELETE was genuinely rolled back — not merely never executed.
+	if cartItemsAfter := countCartItems(t, ctx, pool, fixture.cartID); cartItemsAfter != cartItemsBefore {
 		t.Fatalf("expected cart_items untouched after rollback, before=%d after=%d", cartItemsBefore, cartItemsAfter)
 	}
-}
-
-// mustInsertEmptyCart вставляет пустую корзину без привязки к пользователю/контрагенту
-// (CreateOrderParams.UserID/CounterpartyID в этих тестах нулевые — проверяется только
-// транзакционное поведение вокруг pushToOnec, не бизнес-валидация полей).
-func mustInsertEmptyCart(t *testing.T, ctx context.Context, pool *pgxpool.Pool) uuid.UUID {
-	t.Helper()
-	var cartID uuid.UUID
-	if err := pool.QueryRow(ctx, `INSERT INTO carts DEFAULT VALUES RETURNING id`).Scan(&cartID); err != nil {
-		t.Fatalf("insert cart: %v", err)
-	}
-	return cartID
 }
