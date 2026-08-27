@@ -38,6 +38,16 @@ type clientResolutionStorage struct {
 	productOnecRefs         map[uuid.UUID]postgres.ProductOnecRef
 	counterpartyOnecRef     postgres.CounterpartyOnecRef
 	cartItems               []postgres.CartItemRow
+
+	insertedAddressID            uuid.UUID
+	insertedContactID            uuid.UUID
+	deletedAddressID             uuid.UUID
+	deletedContactID             uuid.UUID
+	deleteAddressAndContactErr   error
+	deleteAddressAndContactCalls int
+	cleanupCtxErrAtCall          error
+	cleanupCtxHadDeadline        bool
+	onCreateOrder                func()
 }
 
 func (s *clientResolutionStorage) GetProductOnecRefs(context.Context, []uuid.UUID) (map[uuid.UUID]postgres.ProductOnecRef, error) {
@@ -54,6 +64,9 @@ func (s *clientResolutionStorage) CreateOrder(
 	pushToOnec func(context.Context, uuid.UUID, string) (uuid.UUID, string, error),
 ) (postgres.CreatedOrder, error) {
 	orderID := uuid.New()
+	if s.onCreateOrder != nil {
+		s.onCreateOrder()
+	}
 	_, _, err := pushToOnec(ctx, orderID, "TEST-0001")
 	if err != nil {
 		return postgres.CreatedOrder{}, err
@@ -99,11 +112,26 @@ func (s *clientResolutionStorage) GetCartItems(context.Context, uuid.UUID) ([]po
 }
 
 func (s *clientResolutionStorage) InsertDeliveryAddress(context.Context, uuid.NullUUID, string, string) (uuid.UUID, error) {
-	return uuid.New(), nil
+	id := uuid.New()
+	s.insertedAddressID = id
+	return id, nil
 }
 
 func (s *clientResolutionStorage) InsertContact(context.Context, uuid.NullUUID, string, string, string) (uuid.UUID, error) {
-	return uuid.New(), nil
+	id := uuid.New()
+	s.insertedContactID = id
+	return id, nil
+}
+
+func (s *clientResolutionStorage) DeleteAddressAndContact(ctx context.Context, addressID uuid.UUID, contactID uuid.UUID) error {
+	s.deleteAddressAndContactCalls++
+	s.deletedAddressID = addressID
+	s.deletedContactID = contactID
+	// Captured at call time: the caller cancels the cleanup context via defer as
+	// soon as CreateOrder returns, so inspecting it afterwards proves nothing.
+	s.cleanupCtxErrAtCall = ctx.Err()
+	_, s.cleanupCtxHadDeadline = ctx.Deadline()
+	return s.deleteAddressAndContactErr
 }
 
 func (s *clientResolutionStorage) GetCounterpartyPriceGroupID(context.Context, uuid.NullUUID) (uuid.NullUUID, error) {

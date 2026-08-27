@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -23,6 +24,7 @@ type Storage interface {
 	GetCounterpartyPriceGroupID(ctx context.Context, counterpartyID uuid.NullUUID) (uuid.NullUUID, error)
 	InsertDeliveryAddress(ctx context.Context, counterpartyID uuid.NullUUID, addrType string, address string) (uuid.UUID, error)
 	InsertContact(ctx context.Context, counterpartyID uuid.NullUUID, fullName string, phone string, email string) (uuid.UUID, error)
+	DeleteAddressAndContact(ctx context.Context, addressID uuid.UUID, contactID uuid.UUID) error
 
 	GetCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID) (uuid.UUID, error)
 	GetOrCreateCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID) (uuid.UUID, error)
@@ -57,6 +59,11 @@ type Storage interface {
 const (
 	defaultOrdersLimit = 20
 	maxOrdersLimit     = 100
+
+	// orphanCleanupTimeout bounds the best-effort deletion of the address/contact
+	// rows left behind by a failed order creation. Short on purpose: the client is
+	// already waiting on an error response.
+	orphanCleanupTimeout = 5 * time.Second
 )
 
 // AccessClient is implemented by internal/access.Client.
@@ -576,6 +583,26 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 		})
 	})
 	if err != nil {
+		// InsertDeliveryAddress/InsertContact above committed on their own,
+		// outside storage.CreateOrder's transaction, so its rollback leaves them
+		// behind as orphans attached to the counterparty with no order referencing
+		// them. Clean them up best-effort; a cleanup failure is logged, never
+		// returned — the caller needs the original (push) error.
+		//
+		// The cleanup runs on a context detached from cancellation: the most
+		// common way to get here is the 1С push timing out, which leaves ctx
+		// already expired — reusing it would make the cleanup fail exactly when
+		// orphans are being produced fastest.
+		cleanupCtx, cancelCleanup := context.WithTimeout(context.WithoutCancel(ctx), orphanCleanupTimeout)
+		defer cancelCleanup()
+
+		if cleanupErr := s.storage.DeleteAddressAndContact(cleanupCtx, addressID, contactID); cleanupErr != nil {
+			s.logger.Error().
+				Err(cleanupErr).
+				Str("addressID", addressID.String()).
+				Str("contactID", contactID.String()).
+				Msg("failed to clean up orphan address/contact after failed order creation")
+		}
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
