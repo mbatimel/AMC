@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,6 +14,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"github.com/mbatimel/AMC/integrations/internal/config"
+	customErrors "github.com/mbatimel/AMC/integrations/internal/errors"
 	"github.com/mbatimel/AMC/integrations/internal/onecorders"
 	"github.com/mbatimel/AMC/integrations/internal/service"
 	"github.com/mbatimel/AMC/integrations/internal/storage/postgres"
@@ -48,7 +51,17 @@ func main() {
 
 	webhookSvc := service.NewOnecOrdersService(log.Logger, ordersClient, cfg.OrdersSystemUserID, cfg.OnecWebhookAPIKey)
 
-	app := internalapi.New(log.Logger, internalapi.OnecOrdersAPI(internalapi.NewOnecOrdersAPI(webhookSvc))).WithLog().WithMetrics()
+	// The tg-generated OnecOrdersAPI service is deliberately NOT registered
+	// here (no internalapi.OnecOrdersAPI(...) option). tg maps this method's
+	// `http-args` annotations to query-string parameters and wraps responses in
+	// the RestResponse envelope, neither of which matches the 1С contract
+	// (JSON body, bare {"ok": true}) — see docs/superpowers/specs/
+	// 2026-08-26-onec-orders-integration-1c-contract.md. internalapi.New is
+	// still used for the *fiber.App and its middleware (recover, request
+	// logging, metrics); WithLog/WithMetrics nil-guard the absent service.
+	// The route itself is hand-written below, same escape hatch as PushOrder.
+	app := internalapi.New(log.Logger).WithLog().WithMetrics()
+	transportHTTP.RegisterWebhookRoute(app.Fiber(), webhookSvc, log.Logger)
 	transportHTTP.RegisterPushOrderRoute(app.Fiber(), pushOrderAdapter{client: pushClient, storage: storageImpl}, log.Logger)
 
 	server := &fasthttp.Server{Handler: app.Fiber().Handler()}
@@ -78,12 +91,48 @@ type ordersClientAdapter struct {
 
 func (a ordersClientAdapter) GetOrderStatus(ctx context.Context, userID, orderID uuid.UUID) (string, error) {
 	resp, err := a.cli.GetOrderStatus(ctx, userID, orderID)
-	return resp.Status, err
+	if err != nil {
+		return "", mapOrdersClientError(err)
+	}
+	return resp.Status, nil
 }
 
 func (a ordersClientAdapter) UpdateOrderStatus(ctx context.Context, userID, orderID uuid.UUID, status, paymentStatus, comment, changedBy string) error {
-	_, err := a.cli.UpdateOrderStatus(ctx, userID, orderID, status, paymentStatus, comment, changedBy)
-	return err
+	if _, err := a.cli.UpdateOrderStatus(ctx, userID, orderID, status, paymentStatus, comment, changedBy); err != nil {
+		return mapOrdersClientError(err)
+	}
+	return nil
+}
+
+// mapOrdersClientError turns the generated orders client's untyped error into a
+// typed *customErrors.Error so the 1С webhook can answer with the status code
+// the contract promises (notably 404 for an unknown client_order_id, which 1С
+// must NOT retry — everything used to collapse to 500, which it does retry).
+//
+// The generated client (orders/pkg/client/transport/ordersapi-http-client.go,
+// "GENERATED — DO NOT EDIT") reports every non-200 response as a plain
+// fmt.Errorf("HTTP error: %d. URL: %s, ...") with no typed carrier, so parsing
+// that deterministic prefix is the only way to recover the upstream status.
+// If the prefix ever changes, Sscanf fails and we fall back to 500 — the safe
+// default (retryable, and honest about "we don't know").
+func mapOrdersClientError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	var statusCode int
+	if _, scanErr := fmt.Sscanf(err.Error(), "HTTP error: %d.", &statusCode); scanErr != nil {
+		statusCode = 0
+	}
+
+	switch statusCode {
+	case http.StatusNotFound:
+		return customErrors.NotFoundError().SetOuterError(err)
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return customErrors.UnauthorizedError().SetOuterError(err)
+	default:
+		return customErrors.InternalServerError().SetOuterError(err)
+	}
 }
 
 // pushOrderAdapter implements transportHTTP.OnecPusher. It pushes an order

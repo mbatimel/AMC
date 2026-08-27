@@ -14,6 +14,15 @@ import (
 )
 
 // OnecOrdersAPI
+//
+// NOTE: the generated HTTP route for OnecOrderStatusWebhook is deliberately NOT
+// wired into onec-orders-api. tg maps `http-args` to QUERY STRING parameters and
+// wraps responses in the RestResponse envelope, but the 1С contract specifies a
+// JSON body and a bare {"ok": true} response. The endpoint is hand-written in
+// internal/transport/http.RegisterWebhookRoute — change that when the contract
+// changes. These annotations (and the generated swagger) are kept as
+// documentation of intent and for potential `tg client` consumers only.
+//
 // @tg http-server metrics log
 // @tg http-prefix=/api
 // @tg 200=github.com/mbatimel/AMC/integrations/swaggers/internalapi/models:Resp200
