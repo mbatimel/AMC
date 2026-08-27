@@ -109,6 +109,10 @@ services:
       ACCESS_URL: "http://access:8080"
       NDS_VALUE: ${NDS_VALUE}
       INTEGRATIONS_URL: "http://onec-orders-api:8090"
+      # Must stay > onec-orders-api's ONEC_ORDERS_REQUEST_TIMEOUT (15s): this
+      # call wraps that one, and expiring first would roll the order back while
+      # 1С may already have created the document.
+      INTEGRATIONS_TIMEOUT: "20s"
     depends_on:
       migrations:
         condition: service_completed_successfully

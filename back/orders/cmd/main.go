@@ -4,7 +4,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -38,7 +37,9 @@ func main() {
 
 	postgresStorage := postgres.New(pool)
 	access := accessTransport.NewClientAccessAPI(cfg.AccessURL)
-	onecPusher := onecclient.New(cfg.IntegrationsURL, 15*time.Second)
+	// Must exceed the integrations service's own outbound timeout to 1С
+	// (ONEC_ORDERS_REQUEST_TIMEOUT, default 15s) — this call wraps it.
+	onecPusher := onecclient.New(cfg.IntegrationsURL, cfg.IntegrationsTimeout)
 	svc := ordersService.NewOrdersApiService(log.Logger, postgresStorage, access, cfg.VATRate, onecPusher)
 
 	app := externalapi.New(log.Logger, externalapi.OrdersAPI(externalapi.NewOrdersAPI(svc))).WithLog().WithMetrics()
