@@ -157,6 +157,15 @@ type responseOrdersAPIUpdateOrderStatus struct {
 	Response models.UpdateOrderStatusResponse `json:"response,omitempty"`
 }
 
+type requestOrdersAPIGetOrderStatus struct {
+	UserID  uuid.UUID `json:"userID,omitempty"`
+	OrderID uuid.UUID `json:"orderID,omitempty"`
+}
+
+type responseOrdersAPIGetOrderStatus struct {
+	Response models.GetOrderStatusResponse `json:"response,omitempty"`
+}
+
 // Formal exchange type, please do not delete.
 type requestOrdersAPIGetCities struct{}
 

@@ -39,10 +39,21 @@ type CreateOrderParams struct {
 type CreatedOrder struct {
 	ID        uuid.UUID
 	Number    string
+	Status    string
 	CreatedAt time.Time
 }
 
-func (s *Storage) CreateOrder(ctx context.Context, params CreateOrderParams) (CreatedOrder, error) {
+// CreateOrder inserts the order (row, items, initial status history) and clears
+// the cart, then calls pushToOnec while still inside the transaction. The push
+// happens before commit so a failed 1С push rolls back the ENTIRE order — the
+// order row, its items, status history, and the cart_items deletion — instead of
+// leaving a half-created order or an emptied cart behind. Only on push success is
+// the order marked 'processing' (with the returned 1С GUID) and committed.
+func (s *Storage) CreateOrder(
+	ctx context.Context,
+	params CreateOrderParams,
+	pushToOnec func(ctx context.Context, orderID uuid.UUID, orderNumber string) (onecGUID uuid.UUID, onecNumber string, err error),
+) (CreatedOrder, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return CreatedOrder{}, fmt.Errorf("begin tx: %w", err)
@@ -85,15 +96,31 @@ func (s *Storage) CreateOrder(ctx context.Context, params CreateOrderParams) (Cr
 		return CreatedOrder{}, fmt.Errorf("insert order status history: %w", err)
 	}
 
-	_, err = tx.Exec(ctx, `DELETE FROM cart_items WHERE cart_id = $1`, params.CartID)
-	if err != nil {
+	if _, err = tx.Exec(ctx, `DELETE FROM cart_items WHERE cart_id = $1`, params.CartID); err != nil {
 		return CreatedOrder{}, fmt.Errorf("clear cart after order: %w", err)
+	}
+
+	onecGUID, onecNumber, pushErr := pushToOnec(ctx, order.ID, order.Number)
+	if pushErr != nil {
+		return CreatedOrder{}, fmt.Errorf("push order to onec: %w", pushErr)
+	}
+
+	if _, err = tx.Exec(ctx, `
+		UPDATE orders SET status = 'processing', one_c_guid = $1, synced_to_1c_at = now() WHERE id = $2
+	`, onecGUID, order.ID); err != nil {
+		return CreatedOrder{}, fmt.Errorf("mark order synced: %w", err)
+	}
+	if _, err = tx.Exec(ctx, `
+		INSERT INTO order_status_history (order_id, old_status, new_status, payment_status, changed_by, comment)
+		VALUES ($1, 'new', 'processing', 'not_paid', NULL, $2)
+	`, order.ID, "Отправлен в 1С, документ "+onecNumber); err != nil {
+		return CreatedOrder{}, fmt.Errorf("insert processing history: %w", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {
 		return CreatedOrder{}, fmt.Errorf("commit tx: %w", err)
 	}
-
+	order.Status = "processing"
 	return order, nil
 }
 
@@ -527,4 +554,64 @@ func (s *Storage) GetOrderDocumentsByOrderID(ctx context.Context, orderID uuid.U
 		return nil, fmt.Errorf("iterate order documents: %w", err)
 	}
 	return items, nil
+}
+
+type ProductOnecRef struct {
+	OneCGUID uuid.NullUUID
+	SKU      string
+}
+
+func (s *Storage) GetProductOnecRefs(ctx context.Context, productIDs []uuid.UUID) (map[uuid.UUID]ProductOnecRef, error) {
+	result := make(map[uuid.UUID]ProductOnecRef, len(productIDs))
+	if len(productIDs) == 0 {
+		return result, nil
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, one_c_guid, sku FROM products WHERE id = ANY($1)
+	`, productIDs)
+	if err != nil {
+		return nil, fmt.Errorf("get product onec refs: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id uuid.UUID
+		var ref ProductOnecRef
+		if err = rows.Scan(&id, &ref.OneCGUID, &ref.SKU); err != nil {
+			return nil, fmt.Errorf("get product onec refs: scan: %w", err)
+		}
+		result[id] = ref
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("get product onec refs: %w", err)
+	}
+	return result, nil
+}
+
+type CounterpartyOnecRef struct {
+	OneCGUID uuid.NullUUID
+	INN      string
+	Name     string
+}
+
+func (s *Storage) GetCounterpartyOnecRef(ctx context.Context, counterpartyID uuid.UUID) (CounterpartyOnecRef, error) {
+	var ref CounterpartyOnecRef
+	err := s.pool.QueryRow(ctx, `
+		SELECT one_c_guid, COALESCE(inn, ''), COALESCE(name, '') FROM counterparties WHERE id = $1
+	`, counterpartyID).Scan(&ref.OneCGUID, &ref.INN, &ref.Name)
+	if err != nil {
+		return CounterpartyOnecRef{}, fmt.Errorf("get counterparty onec ref: %w", err)
+	}
+	return ref, nil
+}
+
+func (s *Storage) GetOrderStatus(ctx context.Context, orderID uuid.UUID) (string, error) {
+	var status string
+	err := s.pool.QueryRow(ctx, `SELECT status FROM orders WHERE id = $1`, orderID).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrOrderNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("get order status: %w", err)
+	}
+	return status, nil
 }

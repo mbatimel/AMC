@@ -22,6 +22,12 @@ jobs:
           - name: auth
             dockerfile: ./back/auth/Dockerfile
             image: ghcr.io/mbatimel/amc-auth
+          - name: integrations
+            dockerfile: ./back/integrations/Dockerfile
+            image: ghcr.io/mbatimel/amc-onec-sync
+          - name: onec-orders-api
+            dockerfile: ./back/integrations/Dockerfile.onec-orders-api
+            image: ghcr.io/mbatimel/amc-onec-orders-api
           - name: migrations
             dockerfile: ./back/migrations/Dockerfile
             image: ghcr.io/mbatimel/amc-migrations

@@ -370,6 +370,29 @@ func (m loggerOrdersAPI) UpdateOrderStatus(ctx context.Context, userID uuid.UUID
 	return m.next.UpdateOrderStatus(ctx, userID, orderID, status, paymentStatus, comment, changedBy)
 }
 
+func (m loggerOrdersAPI) GetOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID) (response models.GetOrderStatusResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "OrdersAPI").Str("method", "getOrderStatus").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method": "ordersAPI.getOrderStatus",
+				"request": viewer.Sprintf("%+v", requestOrdersAPIGetOrderStatus{
+					OrderID: orderID,
+					UserID:  userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseOrdersAPIGetOrderStatus{Response: response}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call getOrderStatus")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call getOrderStatus")
+	}(time.Now())
+	return m.next.GetOrderStatus(ctx, userID, orderID)
+}
+
 func (m loggerOrdersAPI) GetCities(ctx context.Context) (response []models.GetCities, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "OrdersAPI").Str("method", "getCities").Logger()
 	defer func(_begin time.Time) {

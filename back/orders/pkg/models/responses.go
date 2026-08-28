@@ -62,6 +62,11 @@ type GetOrderHistoryResponse struct {
 type UpdateOrderStatusResponse struct {
 	Order Order `json:"order"`
 }
+
+type GetOrderStatusResponse struct {
+	Status string `json:"status"`
+}
+
 type GetCities struct {
 	ID   uuid.UUID `json:"id"`
 	City string    `json:"city"`

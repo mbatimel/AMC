@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -23,6 +24,7 @@ type Storage interface {
 	GetCounterpartyPriceGroupID(ctx context.Context, counterpartyID uuid.NullUUID) (uuid.NullUUID, error)
 	InsertDeliveryAddress(ctx context.Context, counterpartyID uuid.NullUUID, addrType string, address string) (uuid.UUID, error)
 	InsertContact(ctx context.Context, counterpartyID uuid.NullUUID, fullName string, phone string, email string) (uuid.UUID, error)
+	DeleteAddressAndContact(ctx context.Context, addressID uuid.UUID, contactID uuid.UUID) error
 
 	GetCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID) (uuid.UUID, error)
 	GetOrCreateCart(ctx context.Context, userID uuid.UUID, counterpartyID uuid.NullUUID) (uuid.UUID, error)
@@ -35,7 +37,14 @@ type Storage interface {
 
 	GetVolumeDiscountPercent(ctx context.Context, counterpartyID uuid.NullUUID, priceGroupID uuid.NullUUID, subtotal float64) (float64, error)
 
-	CreateOrder(ctx context.Context, params postgres.CreateOrderParams) (postgres.CreatedOrder, error)
+	GetProductOnecRefs(ctx context.Context, productIDs []uuid.UUID) (map[uuid.UUID]postgres.ProductOnecRef, error)
+	GetCounterpartyOnecRef(ctx context.Context, counterpartyID uuid.UUID) (postgres.CounterpartyOnecRef, error)
+
+	CreateOrder(
+		ctx context.Context,
+		params postgres.CreateOrderParams,
+		pushToOnec func(ctx context.Context, orderID uuid.UUID, orderNumber string) (onecGUID uuid.UUID, onecNumber string, err error),
+	) (postgres.CreatedOrder, error)
 	ListOrders(ctx context.Context, params postgres.ListOrdersParams) ([]postgres.OrderRow, int, error)
 	ListPreviouslyOrderedProducts(ctx context.Context, params postgres.ListPreviouslyOrderedProductsParams) ([]postgres.PreviouslyOrderedProductRow, int, error)
 	GetOrderByID(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, counterpartyID uuid.NullUUID) (postgres.OrderDetailRow, error)
@@ -44,11 +53,17 @@ type Storage interface {
 	GetOrderHistory(ctx context.Context, orderID uuid.UUID) ([]postgres.OrderHistoryRow, error)
 	CancelOrder(ctx context.Context, orderID uuid.UUID, counterpartyID uuid.NullUUID, changedBy uuid.UUID, comment string) (postgres.OrderDetailRow, error)
 	UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy uuid.UUID) (postgres.OrderDetailRow, error)
+	GetOrderStatus(ctx context.Context, orderID uuid.UUID) (string, error)
 }
 
 const (
 	defaultOrdersLimit = 20
 	maxOrdersLimit     = 100
+
+	// orphanCleanupTimeout bounds the best-effort deletion of the address/contact
+	// rows left behind by a failed order creation. Short on purpose: the client is
+	// already waiting on an error response.
+	orphanCleanupTimeout = 5 * time.Second
 )
 
 // AccessClient is implemented by internal/access.Client.
@@ -61,14 +76,16 @@ type service struct {
 	storage      Storage
 	accessClient AccessClient
 	vatRate      float64
+	onecPusher   OnecPusher
 }
 
-func NewOrdersApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient, vatRate float64) externalapi.OrdersAPI {
+func NewOrdersApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient, vatRate float64, onecPusher OnecPusher) externalapi.OrdersAPI {
 	return &service{
 		logger:       logger,
 		storage:      storage,
 		accessClient: accessClient,
 		vatRate:      vatRate,
+		onecPusher:   onecPusher,
 	}
 }
 
@@ -507,6 +524,35 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 		})
 	}
 
+	productIDs := make([]uuid.UUID, 0, len(cartRows))
+	for _, row := range cartRows {
+		productIDs = append(productIDs, row.ProductID)
+	}
+	productRefs, err := s.storage.GetProductOnecRefs(ctx, productIDs)
+	if err != nil {
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+	var counterpartyRef postgres.CounterpartyOnecRef
+	if counterpartyID.Valid {
+		counterpartyRef, err = s.storage.GetCounterpartyOnecRef(ctx, counterpartyID.UUID)
+		if err != nil {
+			return response, customErrors.InternalServerError().SetOuterError(err)
+		}
+	}
+
+	pushItems := make([]OnecOrderItem, 0, len(cartRows))
+	for _, row := range cartRows {
+		ref := productRefs[row.ProductID]
+		pushItems = append(pushItems, OnecOrderItem{
+			OneCGUID: ref.OneCGUID,
+			SKU:      row.SKU,
+			Name:     row.ProductName,
+			Qty:      row.Qty,
+			Price:    row.Price,
+			VATRate:  s.vatRate,
+		})
+	}
+
 	created, err := s.storage.CreateOrder(ctx, postgres.CreateOrderParams{
 		UserID:            userID,
 		CounterpartyID:    counterpartyID,
@@ -520,8 +566,43 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 		VATTotal:          totals.VATTotal,
 		Total:             totals.Total,
 		Items:             orderItems,
+	}, func(ctx context.Context, orderID uuid.UUID, orderNumber string) (uuid.UUID, string, error) {
+		return s.onecPusher.PushOrder(ctx, OnecPushOrder{
+			ClientOrderID:    orderID,
+			OrderNumber:      orderNumber,
+			CounterpartyGUID: counterpartyRef.OneCGUID,
+			CounterpartyINN:  counterpartyRef.INN,
+			CounterpartyName: counterpartyRef.Name,
+			DeliveryType:     deliveryType,
+			DeliveryAddress:  deliveryAddress,
+			ContactName:      contactName,
+			Phone:            phone,
+			Email:            email,
+			Comment:          comment,
+			Items:            pushItems,
+		})
 	})
 	if err != nil {
+		// InsertDeliveryAddress/InsertContact above committed on their own,
+		// outside storage.CreateOrder's transaction, so its rollback leaves them
+		// behind as orphans attached to the counterparty with no order referencing
+		// them. Clean them up best-effort; a cleanup failure is logged, never
+		// returned — the caller needs the original (push) error.
+		//
+		// The cleanup runs on a context detached from cancellation: the most
+		// common way to get here is the 1С push timing out, which leaves ctx
+		// already expired — reusing it would make the cleanup fail exactly when
+		// orphans are being produced fastest.
+		cleanupCtx, cancelCleanup := context.WithTimeout(context.WithoutCancel(ctx), orphanCleanupTimeout)
+		defer cancelCleanup()
+
+		if cleanupErr := s.storage.DeleteAddressAndContact(cleanupCtx, addressID, contactID); cleanupErr != nil {
+			s.logger.Error().
+				Err(cleanupErr).
+				Str("addressID", addressID.String()).
+				Str("contactID", contactID.String()).
+				Msg("failed to clean up orphan address/contact after failed order creation")
+		}
 		return response, customErrors.InternalServerError().SetOuterError(err)
 	}
 
@@ -541,7 +622,7 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 		Phone:           phone,
 		Email:           email,
 		Comment:         comment,
-		Status:          "new",
+		Status:          created.Status,
 		PaymentStatus:   "not_paid",
 		CreatedAt:       created.CreatedAt,
 	}
@@ -961,4 +1042,18 @@ func (s *service) UpdateOrderStatus(ctx context.Context, userID uuid.UUID, order
 	}
 
 	return models.UpdateOrderStatusResponse{Order: order}, nil
+}
+
+func (s *service) GetOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID) (response models.GetOrderStatusResponse, err error) {
+	if err = s.checkAdminAccess(ctx, userID); err != nil {
+		return response, err
+	}
+	status, err := s.storage.GetOrderStatus(ctx, orderID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrOrderNotFound) {
+			return response, customErrors.NotFoundError()
+		}
+		return response, customErrors.InternalServerError().SetOuterError(err)
+	}
+	return models.GetOrderStatusResponse{Status: status}, nil
 }

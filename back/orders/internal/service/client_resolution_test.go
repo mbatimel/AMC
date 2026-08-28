@@ -33,6 +33,52 @@ type clientResolutionStorage struct {
 	counterpartyExistsCalls int
 	userHasClientCalls      int
 	getCartCounterpartyID   uuid.NullUUID
+	orderStatus             string
+	orderStatusErr          error
+	productOnecRefs         map[uuid.UUID]postgres.ProductOnecRef
+	counterpartyOnecRef     postgres.CounterpartyOnecRef
+	cartItems               []postgres.CartItemRow
+
+	insertedAddressID            uuid.UUID
+	insertedContactID            uuid.UUID
+	deletedAddressID             uuid.UUID
+	deletedContactID             uuid.UUID
+	deleteAddressAndContactErr   error
+	deleteAddressAndContactCalls int
+	cleanupCtxErrAtCall          error
+	cleanupCtxHadDeadline        bool
+	onCreateOrder                func()
+}
+
+func (s *clientResolutionStorage) GetProductOnecRefs(context.Context, []uuid.UUID) (map[uuid.UUID]postgres.ProductOnecRef, error) {
+	return s.productOnecRefs, nil
+}
+
+func (s *clientResolutionStorage) GetCounterpartyOnecRef(context.Context, uuid.UUID) (postgres.CounterpartyOnecRef, error) {
+	return s.counterpartyOnecRef, nil
+}
+
+func (s *clientResolutionStorage) CreateOrder(
+	ctx context.Context,
+	params postgres.CreateOrderParams,
+	pushToOnec func(context.Context, uuid.UUID, string) (uuid.UUID, string, error),
+) (postgres.CreatedOrder, error) {
+	orderID := uuid.New()
+	if s.onCreateOrder != nil {
+		s.onCreateOrder()
+	}
+	_, _, err := pushToOnec(ctx, orderID, "TEST-0001")
+	if err != nil {
+		return postgres.CreatedOrder{}, err
+	}
+	return postgres.CreatedOrder{ID: orderID, Number: "TEST-0001", Status: "processing"}, nil
+}
+
+func (s *clientResolutionStorage) GetOrderStatus(context.Context, uuid.UUID) (string, error) {
+	if s.orderStatusErr != nil {
+		return "", s.orderStatusErr
+	}
+	return s.orderStatus, nil
 }
 
 func (s *clientResolutionStorage) GetActiveClient(context.Context, uuid.UUID) (uuid.UUID, error) {
@@ -62,7 +108,30 @@ func (s *clientResolutionStorage) GetOrCreateCart(context.Context, uuid.UUID, uu
 
 func (s *clientResolutionStorage) GetCartItems(context.Context, uuid.UUID) ([]postgres.CartItemRow, error) {
 	s.getCartItemsCalls++
-	return []postgres.CartItemRow{}, nil
+	return s.cartItems, nil
+}
+
+func (s *clientResolutionStorage) InsertDeliveryAddress(context.Context, uuid.NullUUID, string, string) (uuid.UUID, error) {
+	id := uuid.New()
+	s.insertedAddressID = id
+	return id, nil
+}
+
+func (s *clientResolutionStorage) InsertContact(context.Context, uuid.NullUUID, string, string, string) (uuid.UUID, error) {
+	id := uuid.New()
+	s.insertedContactID = id
+	return id, nil
+}
+
+func (s *clientResolutionStorage) DeleteAddressAndContact(ctx context.Context, addressID uuid.UUID, contactID uuid.UUID) error {
+	s.deleteAddressAndContactCalls++
+	s.deletedAddressID = addressID
+	s.deletedContactID = contactID
+	// Captured at call time: the caller cancels the cleanup context via defer as
+	// soon as CreateOrder returns, so inspecting it afterwards proves nothing.
+	s.cleanupCtxErrAtCall = ctx.Err()
+	_, s.cleanupCtxHadDeadline = ctx.Deadline()
+	return s.deleteAddressAndContactErr
 }
 
 func (s *clientResolutionStorage) GetCounterpartyPriceGroupID(context.Context, uuid.NullUUID) (uuid.NullUUID, error) {
@@ -86,7 +155,7 @@ func (allowBuyerAccess) CheckAccess(context.Context, uuid.UUID, int) (bool, erro
 }
 
 func newClientResolutionService(storage Storage) *service {
-	return NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 0.2).(*service)
+	return NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 0.2, nil).(*service)
 }
 
 func requireOrdersError(t *testing.T, err error, status int, trKey string, causeKey, causeValue string) *customErrors.Error {

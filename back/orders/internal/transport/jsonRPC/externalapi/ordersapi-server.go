@@ -25,6 +25,7 @@ type serverOrdersAPI struct {
 	getOrderDocuments             OrdersAPIGetOrderDocuments
 	getOrderHistory               OrdersAPIGetOrderHistory
 	updateOrderStatus             OrdersAPIUpdateOrderStatus
+	getOrderStatus                OrdersAPIGetOrderStatus
 	getCities                     OrdersAPIGetCities
 }
 
@@ -44,6 +45,7 @@ type MiddlewareSetOrdersAPI interface {
 	WrapGetOrderDocuments(m MiddlewareOrdersAPIGetOrderDocuments)
 	WrapGetOrderHistory(m MiddlewareOrdersAPIGetOrderHistory)
 	WrapUpdateOrderStatus(m MiddlewareOrdersAPIUpdateOrderStatus)
+	WrapGetOrderStatus(m MiddlewareOrdersAPIGetOrderStatus)
 	WrapGetCities(m MiddlewareOrdersAPIGetCities)
 
 	WithMetrics()
@@ -62,6 +64,7 @@ func newServerOrdersAPI(svc externalapi.OrdersAPI) *serverOrdersAPI {
 		getOrder:                      svc.GetOrder,
 		getOrderDocuments:             svc.GetOrderDocuments,
 		getOrderHistory:               svc.GetOrderHistory,
+		getOrderStatus:                svc.GetOrderStatus,
 		listOrders:                    svc.ListOrders,
 		listPreviouslyOrderedProducts: svc.ListPreviouslyOrderedProducts,
 		repeatOrder:                   svc.RepeatOrder,
@@ -87,6 +90,7 @@ func (srv *serverOrdersAPI) Wrap(m MiddlewareOrdersAPI) {
 	srv.getOrderDocuments = srv.svc.GetOrderDocuments
 	srv.getOrderHistory = srv.svc.GetOrderHistory
 	srv.updateOrderStatus = srv.svc.UpdateOrderStatus
+	srv.getOrderStatus = srv.svc.GetOrderStatus
 	srv.getCities = srv.svc.GetCities
 }
 
@@ -144,6 +148,10 @@ func (srv *serverOrdersAPI) GetOrderHistory(ctx context.Context, orderID uuid.UU
 
 func (srv *serverOrdersAPI) UpdateOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID, status string, paymentStatus string, comment string, changedBy string) (response models.UpdateOrderStatusResponse, err error) {
 	return srv.updateOrderStatus(ctx, userID, orderID, status, paymentStatus, comment, changedBy)
+}
+
+func (srv *serverOrdersAPI) GetOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID) (response models.GetOrderStatusResponse, err error) {
+	return srv.getOrderStatus(ctx, userID, orderID)
 }
 
 func (srv *serverOrdersAPI) GetCities(ctx context.Context) (response []models.GetCities, err error) {
@@ -204,6 +212,10 @@ func (srv *serverOrdersAPI) WrapGetOrderHistory(m MiddlewareOrdersAPIGetOrderHis
 
 func (srv *serverOrdersAPI) WrapUpdateOrderStatus(m MiddlewareOrdersAPIUpdateOrderStatus) {
 	srv.updateOrderStatus = m(srv.updateOrderStatus)
+}
+
+func (srv *serverOrdersAPI) WrapGetOrderStatus(m MiddlewareOrdersAPIGetOrderStatus) {
+	srv.getOrderStatus = m(srv.getOrderStatus)
 }
 
 func (srv *serverOrdersAPI) WrapGetCities(m MiddlewareOrdersAPIGetCities) {

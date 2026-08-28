@@ -52,6 +52,11 @@ func (http *httpOrdersAPI) serveAddCartItem(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIAddCartItem
 
+	if _clientID := ctx.Query("clientID"); _clientID != "" {
+		var clientID string
+		clientID = _clientID
+		request.ClientID = clientID
+	}
 	if _productID := ctx.Query("productID"); _productID != "" {
 		var productID string
 		productID = _productID
@@ -65,11 +70,6 @@ func (http *httpOrdersAPI) serveAddCartItem(ctx *fiber.Ctx) (err error) {
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
 		request.Qty = qty
-	}
-	if _clientID := ctx.Query("clientID"); _clientID != "" {
-		var clientID string
-		clientID = _clientID
-		request.ClientID = clientID
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -94,6 +94,15 @@ func (http *httpOrdersAPI) serveUpdateCartItem(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIUpdateCartItem
 
+	if _qty := ctx.Query("qty"); _qty != "" {
+		var qty int
+		qty, err = strconv.Atoi(_qty)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Qty = qty
+	}
 	if _clientID := ctx.Query("clientID"); _clientID != "" {
 		var clientID string
 		clientID = _clientID
@@ -103,15 +112,6 @@ func (http *httpOrdersAPI) serveUpdateCartItem(ctx *fiber.Ctx) (err error) {
 		var cartItemID string
 		cartItemID = _cartItemID
 		request.CartItemID = cartItemID
-	}
-	if _qty := ctx.Query("qty"); _qty != "" {
-		var qty int
-		qty, err = strconv.Atoi(_qty)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Qty = qty
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -197,6 +197,11 @@ func (http *httpOrdersAPI) serveCreateOrder(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPICreateOrder
 
+	if _comment := ctx.Query("comment"); _comment != "" {
+		var comment string
+		comment = _comment
+		request.Comment = comment
+	}
 	if _clientID := ctx.Query("clientID"); _clientID != "" {
 		var clientID string
 		clientID = _clientID
@@ -226,11 +231,6 @@ func (http *httpOrdersAPI) serveCreateOrder(ctx *fiber.Ctx) (err error) {
 		var email string
 		email = _email
 		request.Email = email
-	}
-	if _comment := ctx.Query("comment"); _comment != "" {
-		var comment string
-		comment = _comment
-		request.Comment = comment
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -288,11 +288,6 @@ func (http *httpOrdersAPI) serveListOrders(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIListOrders
 
-	if _sort := ctx.Query("sort"); _sort != "" {
-		var sort string
-		sort = _sort
-		request.Sort = sort
-	}
 	if _clientID := ctx.Query("clientID"); _clientID != "" {
 		var clientID string
 		clientID = _clientID
@@ -325,6 +320,11 @@ func (http *httpOrdersAPI) serveListOrders(ctx *fiber.Ctx) (err error) {
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
 		request.Offset = offset
+	}
+	if _sort := ctx.Query("sort"); _sort != "" {
+		var sort string
+		sort = _sort
+		request.Sort = sort
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -395,15 +395,15 @@ func (http *httpOrdersAPI) serveCancelOrder(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPICancelOrder
 
-	if _orderID := ctx.Query("orderID"); _orderID != "" {
-		var orderID uuid.UUID
-		orderID, _ = uuid.Parse(_orderID)
-		request.OrderID = orderID
-	}
 	if _comment := ctx.Query("comment"); _comment != "" {
 		var comment string
 		comment = _comment
 		request.Comment = comment
+	}
+	if _orderID := ctx.Query("orderID"); _orderID != "" {
+		var orderID uuid.UUID
+		orderID, _ = uuid.Parse(_orderID)
+		request.OrderID = orderID
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -428,15 +428,15 @@ func (http *httpOrdersAPI) serveRepeatOrder(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIRepeatOrder
 
-	if _orderID := ctx.Query("orderID"); _orderID != "" {
-		var orderID uuid.UUID
-		orderID, _ = uuid.Parse(_orderID)
-		request.OrderID = orderID
-	}
 	if _clientID := ctx.Query("clientID"); _clientID != "" {
 		var clientID string
 		clientID = _clientID
 		request.ClientID = clientID
+	}
+	if _orderID := ctx.Query("orderID"); _orderID != "" {
+		var orderID uuid.UUID
+		orderID, _ = uuid.Parse(_orderID)
+		request.OrderID = orderID
 	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
@@ -517,16 +517,6 @@ func (http *httpOrdersAPI) serveUpdateOrderStatus(ctx *fiber.Ctx) (err error) {
 
 	var request requestOrdersAPIUpdateOrderStatus
 
-	if _orderID := ctx.Query("orderID"); _orderID != "" {
-		var orderID uuid.UUID
-		orderID, _ = uuid.Parse(_orderID)
-		request.OrderID = orderID
-	}
-	if _status := ctx.Query("status"); _status != "" {
-		var status string
-		status = _status
-		request.Status = status
-	}
 	if _paymentStatus := ctx.Query("paymentStatus"); _paymentStatus != "" {
 		var paymentStatus string
 		paymentStatus = _paymentStatus
@@ -542,6 +532,16 @@ func (http *httpOrdersAPI) serveUpdateOrderStatus(ctx *fiber.Ctx) (err error) {
 		changedBy = _changedBy
 		request.ChangedBy = changedBy
 	}
+	if _orderID := ctx.Query("orderID"); _orderID != "" {
+		var orderID uuid.UUID
+		orderID, _ = uuid.Parse(_orderID)
+		request.OrderID = orderID
+	}
+	if _status := ctx.Query("status"); _status != "" {
+		var status string
+		status = _status
+		request.Status = status
+	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
 		var userID uuid.UUID
@@ -550,6 +550,34 @@ func (http *httpOrdersAPI) serveUpdateOrderStatus(ctx *fiber.Ctx) (err error) {
 	}
 
 	return customhandlers.UpdateOrderStatus(ctx, http.svc, request.UserID, request.OrderID, request.Status, request.PaymentStatus, request.Comment, request.ChangedBy)
+}
+func (http *httpOrdersAPI) getOrderStatus(ctx context.Context, request requestOrdersAPIGetOrderStatus) (response responseOrdersAPIGetOrderStatus, err error) {
+
+	response.Response, err = http.svc.GetOrderStatus(ctx, request.UserID, request.OrderID)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpOrdersAPI) serveGetOrderStatus(ctx *fiber.Ctx) (err error) {
+
+	var request requestOrdersAPIGetOrderStatus
+
+	if _orderID := ctx.Query("orderID"); _orderID != "" {
+		var orderID uuid.UUID
+		orderID, _ = uuid.Parse(_orderID)
+		request.OrderID = orderID
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.GetOrderStatus(ctx, http.svc, request.UserID, request.OrderID)
 }
 func (http *httpOrdersAPI) getCities(ctx context.Context, request requestOrdersAPIGetCities) (response responseOrdersAPIGetCities, err error) {
 
@@ -562,6 +590,5 @@ func (http *httpOrdersAPI) getCities(ctx context.Context, request requestOrdersA
 	return
 }
 func (http *httpOrdersAPI) serveGetCities(ctx *fiber.Ctx) (err error) {
-
 	return customhandlers.GetCities(ctx, http.svc)
 }

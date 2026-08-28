@@ -96,3 +96,26 @@ func (s *Storage) InsertContact(ctx context.Context, counterpartyID uuid.NullUUI
 	}
 	return id, nil
 }
+
+// DeleteAddressAndContact removes the address/contact rows inserted for an order
+// attempt that then failed. InsertDeliveryAddress/InsertContact commit on their
+// own, outside the CreateOrder transaction, so a rolled-back order (e.g. a
+// failed 1С push) would otherwise leave two orphan rows behind on every retry.
+//
+// Best-effort cleanup, not correctness-critical: the two DELETEs run
+// independently, and a failure is reported to the caller only for logging — it
+// must never replace the original error the client needs to see.
+func (s *Storage) DeleteAddressAndContact(ctx context.Context, addressID, contactID uuid.UUID) error {
+	var errs []error
+	if addressID != uuid.Nil {
+		if _, err := s.pool.Exec(ctx, `DELETE FROM counterparty_addresses WHERE id = $1`, addressID); err != nil {
+			errs = append(errs, fmt.Errorf("delete orphan address: %w", err))
+		}
+	}
+	if contactID != uuid.Nil {
+		if _, err := s.pool.Exec(ctx, `DELETE FROM counterparty_contacts WHERE id = $1`, contactID); err != nil {
+			errs = append(errs, fmt.Errorf("delete orphan contact: %w", err))
+		}
+	}
+	return errors.Join(errs...)
+}

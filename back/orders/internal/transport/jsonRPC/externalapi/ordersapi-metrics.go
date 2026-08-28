@@ -342,6 +342,29 @@ func (m metricsOrdersAPI) UpdateOrderStatus(ctx context.Context, userID uuid.UUI
 	return m.next.UpdateOrderStatus(ctx, userID, orderID, status, paymentStatus, comment, changedBy)
 }
 
+func (m metricsOrdersAPI) GetOrderStatus(ctx context.Context, userID uuid.UUID, orderID uuid.UUID) (response models.GetOrderStatusResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("ordersAPI", "getOrderStatus", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("ordersAPI", "getOrderStatus", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("ordersAPI", "getOrderStatus", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.GetOrderStatus(ctx, userID, orderID)
+}
+
 func (m metricsOrdersAPI) GetCities(ctx context.Context) (response []models.GetCities, err error) {
 
 	defer func(_begin time.Time) {

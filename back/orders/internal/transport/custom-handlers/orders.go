@@ -166,6 +166,15 @@ func UpdateOrderStatus(ctx *fiber.Ctx, svc externalapi.OrdersAPI, userID uuid.UU
 	})
 }
 
+func GetOrderStatus(ctx *fiber.Ctx, svc externalapi.OrdersAPI, userID uuid.UUID, orderID uuid.UUID) error {
+	return handle(ctx, "get", "/v1/admin/orders/{orderID}/status", "GetOrderStatus", map[string]interface{}{
+		"orderID": orderID,
+		"userID":  userID,
+	}, func() (interface{}, error) {
+		return svc.GetOrderStatus(ctx.UserContext(), userID, orderID)
+	})
+}
+
 func handle(
 	ctx *fiber.Ctx,
 	method string,
