@@ -30,6 +30,9 @@ var sqlInsertCounterparty string
 //go:embed sql/insertUserForIP.sql
 var sqlInsertUserForIP string
 
+//go:embed sql/insertUserClient.sql
+var sqlInsertUserClient string
+
 //go:embed sql/insertIndividualUser.sql
 var sqlInsertIndividualUser string
 
@@ -52,11 +55,24 @@ type User struct {
 }
 
 type Storage struct {
-	pool *pgxpool.Pool
+	pool    *pgxpool.Pool
+	beginTx func(context.Context) (transaction, error)
 }
 
 func New(pool *pgxpool.Pool) *Storage {
-	return &Storage{pool: pool}
+	return &Storage{
+		pool: pool,
+		beginTx: func(ctx context.Context) (transaction, error) {
+			return pool.Begin(ctx)
+		},
+	}
+}
+
+type transaction interface {
+	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
+	Commit(ctx context.Context) error
+	Rollback(ctx context.Context) error
 }
 
 func (s *Storage) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -84,7 +100,7 @@ func (s *Storage) GetUserByID(ctx context.Context, userID uuid.UUID) (User, erro
 }
 
 // assignRole looks up roleCode and links userID to it inside the given transaction.
-func (s *Storage) assignRole(ctx context.Context, tx pgx.Tx, userID uuid.UUID, roleCode int) error {
+func (s *Storage) assignRole(ctx context.Context, tx transaction, userID uuid.UUID, roleCode int) error {
 	var roleID uuid.UUID
 	err := tx.QueryRow(ctx, sqlGetRoleByCode, roleCode).Scan(&roleID)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -105,12 +121,13 @@ func (s *Storage) assignRole(ctx context.Context, tx pgx.Tx, userID uuid.UUID, r
 func (s *Storage) CreateIPUser(
 	ctx context.Context,
 	email, passwordHash string,
+	surename, name, middleName string,
 	fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
 	directorFullName, directorPosition, phone, additionalPhone, website,
 	bankAccount, bankName, bankBik, correspondentAccount *string,
 	roleCode int,
 ) (uuid.UUID, error) {
-	tx, err := s.pool.Begin(ctx)
+	tx, err := s.beginTx(ctx)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("begin create ip user transaction: %w", err)
 	}
@@ -127,13 +144,19 @@ func (s *Storage) CreateIPUser(
 	}
 
 	var userID uuid.UUID
-	err = tx.QueryRow(ctx, sqlInsertUserForIP, email, passwordHash, counterpartyID).Scan(&userID)
+	err = tx.QueryRow(ctx, sqlInsertUserForIP,
+		email, passwordHash, counterpartyID, surename, name, middleName, phone,
+	).Scan(&userID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
 			return uuid.UUID{}, ErrEmailTaken
 		}
 		return uuid.UUID{}, fmt.Errorf("insert user: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx, sqlInsertUserClient, userID, counterpartyID); err != nil {
+		return uuid.UUID{}, fmt.Errorf("link user client: %w", err)
 	}
 
 	if err = s.assignRole(ctx, tx, userID, roleCode); err != nil {
@@ -155,7 +178,7 @@ func (s *Storage) CreateIndividualUser(
 	inn *string,
 	roleCode int,
 ) (uuid.UUID, error) {
-	tx, err := s.pool.Begin(ctx)
+	tx, err := s.beginTx(ctx)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("begin create individual user transaction: %w", err)
 	}

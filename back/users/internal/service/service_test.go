@@ -194,6 +194,25 @@ func TestGetProfileOwnProfile(t *testing.T) {
 	}
 }
 
+func TestGetProfileWithoutActiveClientStillReturnsUserFields(t *testing.T) {
+	userID := uuid.New()
+	user := testUser(userID, uuid.Nil)
+	repo := &fakeStorage{getProfileFn: func(context.Context, uuid.UUID) (internalModels.User, *internalModels.Client, error) {
+		return user, nil, nil
+	}}
+
+	response, err := testService(repo).GetProfile(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("GetProfile() error = %v", err)
+	}
+	if response.Profile.UserID != userID.String() || response.Profile.FirstName != "Иван" || response.Profile.Phone != "+79990000000" {
+		t.Fatalf("profile = %+v", response.Profile)
+	}
+	if response.Profile.ActiveClient != nil || response.Profile.ActiveClientID != "" {
+		t.Fatalf("unexpected active client: %+v", response.Profile.ActiveClient)
+	}
+}
+
 func TestUpdateProfile(t *testing.T) {
 	userID := uuid.New()
 	var captured internalModels.UpdateProfileParams

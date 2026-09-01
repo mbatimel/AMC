@@ -2,15 +2,20 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 
 	customErrors "github.com/mbatimel/AMC/admin/internal/errors"
+	"github.com/mbatimel/AMC/admin/internal/mailer"
 	"github.com/mbatimel/AMC/admin/internal/storage/postgres"
+	"github.com/mbatimel/AMC/admin/pkg/models"
 	"github.com/valyala/fasthttp"
 )
 
@@ -34,16 +39,23 @@ func (f *fakeUsersClient) DeleteUser(_ context.Context, userID uuid.UUID) error 
 }
 
 type fakeMailer struct {
-	to      string
-	subject string
-	body    string
-	sendErr error
-	calls   int
+	to          string
+	subject     string
+	body        string
+	attachments []models.ImageFile
+	sendErr     error
+	calls       int
 }
 
 func (f *fakeMailer) Send(_ context.Context, to string, subject string, body string) error {
 	f.calls++
 	f.to, f.subject, f.body = to, subject, body
+	return f.sendErr
+}
+
+func (f *fakeMailer) SendWithAttachments(_ context.Context, to string, subject string, body string, attachments []models.ImageFile) error {
+	f.calls++
+	f.to, f.subject, f.body, f.attachments = to, subject, body, attachments
 	return f.sendErr
 }
 
@@ -117,6 +129,65 @@ func TestRejectSignupRequest_AlreadyDecided_ReturnsConflict(t *testing.T) {
 	}
 	if mail.calls != 0 || users.deleted {
 		t.Fatal("RejectSignupRequest() must not delete accounts or send email when the guard rejects the decision")
+	}
+}
+
+func TestRejectSignupRequest_DatabaseErrorDoesNotNotify(t *testing.T) {
+	storage := &fakeStorage{decideSignupFn: func(context.Context, uuid.UUID, string, string) (postgres.SignupRequest, error) {
+		return postgres.SignupRequest{}, errors.New("database unavailable")
+	}}
+	mail := &fakeMailer{}
+	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, &fakeUsersClient{}, mail)
+
+	if _, err := svc.RejectSignupRequest(context.Background(), uuid.New(), uuid.New(), "reason"); err == nil {
+		t.Fatal("RejectSignupRequest() error = nil")
+	}
+	if mail.calls != 0 {
+		t.Fatalf("mailer calls = %d, want 0", mail.calls)
+	}
+}
+
+func TestRejectSignupRequest_MailerErrorDoesNotPanicOrRollBackDecision(t *testing.T) {
+	requestID := uuid.New()
+	storage := &fakeStorage{decideSignupFn: func(_ context.Context, id uuid.UUID, status string, reason string) (postgres.SignupRequest, error) {
+		return postgres.SignupRequest{ID: id, Email: "applicant@example.com", Status: status, RejectReason: reason}, nil
+	}}
+	mail := &fakeMailer{sendErr: errors.New("smtp unavailable")}
+	var logs bytes.Buffer
+	logger := zerolog.New(&logs).With().Str("serviceName", "admin-api").Logger()
+	svc := NewAdminApiService(logger, storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, &fakeUsersClient{}, mail)
+
+	response, err := svc.RejectSignupRequest(context.Background(), uuid.New(), requestID, "reason")
+	if err != nil || response.Status != signupStatusRejected {
+		t.Fatalf("response=%+v err=%v", response, err)
+	}
+	if mail.calls != 1 {
+		t.Fatalf("mailer calls = %d, want 1", mail.calls)
+	}
+	logOutput := logs.String()
+	for _, expected := range []string{"smtp unavailable", "signup_rejected", requestID.String(), "applicant@example.com", "admin-api"} {
+		if !strings.Contains(logOutput, expected) {
+			t.Fatalf("SMTP failure log does not contain %q: %s", expected, logOutput)
+		}
+	}
+}
+
+func TestRejectSignupRequest_MissingSMTPConfigurationStillSucceeds(t *testing.T) {
+	storage := &fakeStorage{decideSignupFn: func(_ context.Context, id uuid.UUID, status string, reason string) (postgres.SignupRequest, error) {
+		return postgres.SignupRequest{ID: id, Email: "applicant@example.com", Status: status, RejectReason: reason}, nil
+	}}
+	var logs bytes.Buffer
+	logger := zerolog.New(&logs).With().Str("serviceName", "admin-api").Logger()
+	disabledMailer := mailer.NewSMTPMailer(logger, "", "587", "", "", "", true, time.Second)
+	svc := NewAdminApiService(logger, storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, &fakeUsersClient{}, disabledMailer)
+
+	response, err := svc.RejectSignupRequest(context.Background(), uuid.New(), uuid.New(), "reason")
+	if err != nil || response.Status != signupStatusRejected {
+		t.Fatalf("response=%+v err=%v", response, err)
+	}
+	logOutput := logs.String()
+	if !strings.Contains(logOutput, "SMTP is not configured") || !strings.Contains(logOutput, "signup_rejected") {
+		t.Fatalf("missing SMTP diagnostics: %s", logOutput)
 	}
 }
 

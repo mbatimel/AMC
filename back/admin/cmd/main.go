@@ -26,6 +26,13 @@ import (
 
 const serviceName = "admin-api"
 
+const requestBodyOverhead = int64(1024 * 1024)
+
+func requestBodyLimit(maxFileSize int64) int {
+	base64Size := ((maxFileSize + 2) / 3) * 4
+	return int(base64Size + requestBodyOverhead)
+}
+
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout}).With().Str("serviceName", serviceName).Logger()
 
@@ -45,7 +52,10 @@ func main() {
 	access := accessTransport.NewClientAccessAPI(cfg.AccessURL)
 	auth := authTransport.NewClientAuthAPI(cfg.AuthURL)
 	users := usersClient.New(cfg.UsersURL)
-	mail := mailer.NewSMTPMailer(log.Logger, cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword, cfg.SMTPFrom)
+	mail := mailer.NewSMTPMailer(
+		log.Logger, cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword,
+		cfg.SMTPFrom, cfg.SMTPTLS, cfg.SMTPTimeout,
+	)
 	s3Client, err := objectstorage.New(objectstorage.Config{
 		Endpoint: cfg.S3Endpoint, PublicEndpoint: cfg.S3PublicEndpoint,
 		AccessKey: cfg.S3AccessKey, SecretKey: cfg.S3SecretKey,
@@ -54,14 +64,22 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create S3 client")
 	}
-	svc := adminService.NewAdminApiService(log.Logger, postgresStorage, auth, access, users, mail, adminService.WithObjectStorage(s3Client, cfg.S3MaxFileSize))
+	svc := adminService.NewAdminApiService(
+		log.Logger, postgresStorage, auth, access, users, mail,
+		adminService.WithObjectStorage(s3Client, cfg.S3MaxFileSize),
+		adminService.WithCompanyRequestRecipient(cfg.CompanyRequestRecipient),
+	)
 
 	bannerRoutes := customHandlers.NewBannerRoutes(log.Logger, svc, cfg.S3MaxFileSize)
+	companyRequestRoutes := customHandlers.NewCompanyRequestRoutes(
+		log.Logger, svc, cfg.S3MaxFileSize, adminService.MaxCompanyRequestAttachments,
+	)
 	app := externalapi.New(
 		log.Logger,
-		externalapi.MaxBodySize(int(cfg.S3MaxFileSize+1024*1024)),
+		externalapi.MaxBodySize(requestBodyLimit(cfg.S3MaxFileSize)),
 		externalapi.AdminAPI(externalapi.NewAdminAPI(svc)),
 		externalapi.Service(bannerRoutes),
+		externalapi.Service(companyRequestRoutes),
 	).WithLog().WithMetrics()
 	server := &fasthttp.Server{
 		Handler: app.Fiber().Handler(),
