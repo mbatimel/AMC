@@ -33,6 +33,19 @@ type ImageFile struct {
 	Content  []byte `json:"-"`
 }
 
+type CompanyRequestInput struct {
+	ContactName string      `json:"contact_name"`
+	Email       string      `json:"email"`
+	Phone       string      `json:"phone"`
+	Company     string      `json:"company"`
+	Message     string      `json:"message"`
+	Attachments []ImageFile `json:"-"`
+}
+
+type CompanyRequestResponse struct {
+	Accepted bool `json:"accepted"`
+}
+
 type BannerInput struct {
 	Title     string     `json:"title"`
 	Subtitle  string     `json:"subtitle"`

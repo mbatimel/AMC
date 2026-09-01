@@ -64,14 +64,22 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create S3 client")
 	}
-	svc := adminService.NewAdminApiService(log.Logger, postgresStorage, auth, access, users, mail, adminService.WithObjectStorage(s3Client, cfg.S3MaxFileSize))
+	svc := adminService.NewAdminApiService(
+		log.Logger, postgresStorage, auth, access, users, mail,
+		adminService.WithObjectStorage(s3Client, cfg.S3MaxFileSize),
+		adminService.WithCompanyRequestRecipient(cfg.CompanyRequestRecipient),
+	)
 
 	bannerRoutes := customHandlers.NewBannerRoutes(log.Logger, svc, cfg.S3MaxFileSize)
+	companyRequestRoutes := customHandlers.NewCompanyRequestRoutes(
+		log.Logger, svc, cfg.S3MaxFileSize, adminService.MaxCompanyRequestAttachments,
+	)
 	app := externalapi.New(
 		log.Logger,
 		externalapi.MaxBodySize(requestBodyLimit(cfg.S3MaxFileSize)),
 		externalapi.AdminAPI(externalapi.NewAdminAPI(svc)),
 		externalapi.Service(bannerRoutes),
+		externalapi.Service(companyRequestRoutes),
 	).WithLog().WithMetrics()
 	server := &fasthttp.Server{
 		Handler: app.Fiber().Handler(),
