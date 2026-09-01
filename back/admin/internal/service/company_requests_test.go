@@ -9,7 +9,6 @@ import (
 
 	"github.com/rs/zerolog"
 
-	customErrors "github.com/mbatimel/AMC/admin/internal/errors"
 	"github.com/mbatimel/AMC/admin/pkg/models"
 )
 
@@ -100,7 +99,7 @@ func TestSendCompanyRequestRejectsInvalidEmail(t *testing.T) {
 	}
 }
 
-func TestSendCompanyRequestRequiresSuccessfulEmailDelivery(t *testing.T) {
+func TestSendCompanyRequestSenderErrorIsBestEffort(t *testing.T) {
 	mail := &fakeMailer{sendErr: errors.New("smtp failed")}
 	var logs bytes.Buffer
 	logger := zerolog.New(&logs).With().Str("serviceName", "admin-api").Logger()
@@ -108,9 +107,9 @@ func TestSendCompanyRequestRequiresSuccessfulEmailDelivery(t *testing.T) {
 		logger, &fakeStorage{}, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, mail,
 		WithObjectStorage(nil, 1024), WithCompanyRequestRecipient("order@voint.ru"),
 	)
-	_, err := svc.SendCompanyRequest(context.Background(), validCompanyRequest())
-	if !customErrors.Is(err, customErrors.InternalServerError()) {
-		t.Fatalf("error = %v, want internal", err)
+	response, err := svc.SendCompanyRequest(context.Background(), validCompanyRequest())
+	if err != nil || !response.Accepted {
+		t.Fatalf("response=%+v error=%v, want accepted response", response, err)
 	}
 	if mail.calls != 1 || mail.to != "order@voint.ru" {
 		t.Fatalf("calls=%d to=%q", mail.calls, mail.to)
@@ -119,6 +118,26 @@ func TestSendCompanyRequestRequiresSuccessfulEmailDelivery(t *testing.T) {
 	for _, expected := range []string{"smtp failed", "company_request", "applicant@example.com", "order@voint.ru", "admin-api"} {
 		if !strings.Contains(logOutput, expected) {
 			t.Fatalf("SMTP failure log does not contain %q: %s", expected, logOutput)
+		}
+	}
+}
+
+func TestSendCompanyRequestMissingMailerIsBestEffort(t *testing.T) {
+	var logs bytes.Buffer
+	logger := zerolog.New(&logs).With().Str("serviceName", "admin-api").Logger()
+	svc := NewAdminApiService(
+		logger, &fakeStorage{}, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, nil,
+		WithObjectStorage(nil, 1024), WithCompanyRequestRecipient("order@voint.ru"),
+	)
+
+	response, err := svc.SendCompanyRequest(context.Background(), validCompanyRequest())
+	if err != nil || !response.Accepted {
+		t.Fatalf("response=%+v error=%v, want accepted response", response, err)
+	}
+	logOutput := logs.String()
+	for _, expected := range []string{"company request email delivery is not configured", "company_request", "applicant@example.com", "order@voint.ru", "admin-api"} {
+		if !strings.Contains(logOutput, expected) {
+			t.Fatalf("SMTP configuration log does not contain %q: %s", expected, logOutput)
 		}
 	}
 }

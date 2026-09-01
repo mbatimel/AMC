@@ -98,7 +98,7 @@ func (s *service) SendCompanyRequest(ctx context.Context, input models.CompanyRe
 			Str("requester_email", email).
 			Str("recipient", s.companyRequestRecipient).
 			Msg("company request email delivery is not configured")
-		return models.CompanyRequestResponse{}, customErrors.InternalServerError()
+		return models.CompanyRequestResponse{Accepted: true}, nil
 	}
 	body := fmt.Sprintf(
 		"Контактное лицо: %s\nEmail: %s\nТелефон: %s\nКомпания: %s\n\nСообщение:\n%s",
@@ -118,7 +118,7 @@ func (s *service) SendCompanyRequest(ctx context.Context, input models.CompanyRe
 			Str("requester_email", email).
 			Str("recipient", s.companyRequestRecipient).
 			Msg("failed to send company request email")
-		return models.CompanyRequestResponse{}, customErrors.InternalServerError()
+		return models.CompanyRequestResponse{Accepted: true}, nil
 	}
 	return models.CompanyRequestResponse{Accepted: true}, nil
 }
