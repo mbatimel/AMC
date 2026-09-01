@@ -35,22 +35,34 @@ WHERE counterparty_id IS NOT NULL
 
 -- The director and phone stored on the explicitly linked counterparty are the
 -- only profile values that can be recovered without inventing user data.
-WITH recoverable AS (
+WITH candidates AS (
     SELECT
         u.id,
-        CASE
-            WHEN NOT EXISTS (
-                SELECT 1
-                FROM users other
-                WHERE other.id <> u.id
-                  AND other.deleted_at IS NULL
-                  AND NULLIF(other.phone, '') = NULLIF(trim(c.phone), '')
-            ) THEN NULLIF(trim(c.phone), '')
-        END AS phone,
+        NULLIF(trim(c.phone), '') AS candidate_phone,
         regexp_split_to_array(NULLIF(trim(c.director_full_name), ''), E'\\s+') AS fio
     FROM users u
     JOIN counterparties c ON c.id = u.counterparty_id
     WHERE u.deleted_at IS NULL
+),
+recoverable AS (
+    SELECT
+        id,
+        CASE
+            WHEN candidate_phone IS NOT NULL
+              -- Same phone claimed by more than one user in this batch: skip it,
+              -- since a single UPDATE cannot assign it to both without
+              -- violating idx_users_phone_unique.
+              AND count(*) OVER (PARTITION BY candidate_phone) = 1
+              AND NOT EXISTS (
+                SELECT 1
+                FROM users other
+                WHERE other.id <> candidates.id
+                  AND other.deleted_at IS NULL
+                  AND NULLIF(other.phone, '') = candidate_phone
+              ) THEN candidate_phone
+        END AS phone,
+        fio
+    FROM candidates
 )
 UPDATE users u
 SET surename = COALESCE(NULLIF(u.surename, ''), recoverable.fio[1]),
