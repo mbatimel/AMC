@@ -45,7 +45,10 @@ func main() {
 	access := accessTransport.NewClientAccessAPI(cfg.AccessURL)
 	auth := authTransport.NewClientAuthAPI(cfg.AuthURL)
 	users := usersClient.New(cfg.UsersURL)
-	mail := mailer.NewSMTPMailer(log.Logger, cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword, cfg.SMTPFrom)
+	mail := mailer.NewSMTPMailer(
+		log.Logger, cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword,
+		cfg.SMTPFrom, cfg.SMTPTLS, cfg.SMTPTimeout,
+	)
 	s3Client, err := objectstorage.New(objectstorage.Config{
 		Endpoint: cfg.S3Endpoint, PublicEndpoint: cfg.S3PublicEndpoint,
 		AccessKey: cfg.S3AccessKey, SecretKey: cfg.S3SecretKey,

@@ -73,17 +73,25 @@ type UsersClient interface {
 // Mailer is implemented by internal/mailer.SMTPMailer.
 type Mailer interface {
 	Send(ctx context.Context, to string, subject string, body string) error
+	SendWithAttachments(ctx context.Context, to string, subject string, body string, attachments []models.ImageFile) error
 }
 
 type service struct {
-	logger        zerolog.Logger
-	storage       Storage
-	authClient    AuthClient
-	accessClient  AccessClient
-	usersClient   UsersClient
-	mailer        Mailer
-	objectStorage ObjectStorage
-	maxFileSize   int64
+	logger                  zerolog.Logger
+	storage                 Storage
+	authClient              AuthClient
+	accessClient            AccessClient
+	usersClient             UsersClient
+	mailer                  Mailer
+	objectStorage           ObjectStorage
+	maxFileSize             int64
+	companyRequestRecipient string
+}
+
+func WithCompanyRequestRecipient(recipient string) Option {
+	return func(s *service) {
+		s.companyRequestRecipient = recipient
+	}
 }
 
 var _ externalapi.AdminAPI = (*service)(nil)
