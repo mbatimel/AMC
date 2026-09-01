@@ -1,8 +1,8 @@
 export const formatPrice = (value: number): string => {
   const formatted = new Intl.NumberFormat('ru-RU', {
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  }).format(Math.round(value));
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  }).format(value);
 
   return `${formatted}\u00A0₽`;
 };

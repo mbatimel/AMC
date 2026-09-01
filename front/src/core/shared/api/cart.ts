@@ -149,6 +149,23 @@ export const addCartItemRequest = async ({
   return parseCart(await response.json());
 };
 
+export const updateCartItemRequest = async ({
+  cartItemID,
+  clientID,
+  qty,
+  userId,
+}: UserScopedParams & { cartItemID: string; qty: number }): Promise<Cart> => {
+  const query = omitEmptyParams({ cartItemID, clientID, qty });
+  const response = await fetch(`/api/v1/orders/cart/items${query}`, {
+    headers: withUserHeaders(userId),
+    method: 'PATCH',
+  });
+
+  await throwIfNotOk(response, 'Не удалось изменить количество');
+
+  return parseCart(await response.json());
+};
+
 export const deleteCartItemRequest = async ({
   cartItemID,
   clientID,

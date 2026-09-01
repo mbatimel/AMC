@@ -2,13 +2,15 @@ import type {
   BannersSettings,
   ContentPageKey,
   ContentPages,
-  LegalDoc,
 } from '@/core/shared/server/portal/types';
 
 import { assertApiSuccess, parseApiErrorMessage } from './parseApiError';
 import { portalRequest } from './portalClient';
 
+export type { LegalDoc, LegalDocVersion } from './legalDocs';
+export { fetchLegalDocsRequest } from './legalDocs';
 export type {
+  AboutPageContent,
   BannerItem,
   BannersSettings,
   ContactOffice,
@@ -17,7 +19,6 @@ export type {
   ContentPageKey,
   ContentPages,
   HomePageContent,
-  LegalDoc,
   ListPageContent,
   TextPageContent,
 } from '@/core/shared/server/portal/types';
@@ -67,27 +68,4 @@ export const updateBannersRequest = (payload: BannersSettings): Promise<BannersS
     fallback: 'Не удалось сохранить баннеры',
     method: 'PUT',
     path: '/banners',
-  });
-
-export const fetchLegalDocsRequest = async (): Promise<LegalDoc[]> => {
-  const result = await portalRequest<{ items: LegalDoc[] }>({
-    fallback: 'Не удалось загрузить юридические документы',
-    path: '/legal',
-  });
-
-  return result.items;
-};
-
-export const fetchLegalDocRequest = (docId: string): Promise<LegalDoc> =>
-  portalRequest({ fallback: 'Не удалось загрузить документ', path: `/legal/${docId}` });
-
-export const updateLegalDocRequest = (
-  docId: string,
-  payload: { body: string; name?: string; summary?: string; version?: string },
-): Promise<LegalDoc> =>
-  portalRequest({
-    body: payload,
-    fallback: 'Не удалось сохранить документ',
-    method: 'PUT',
-    path: `/legal/${docId}`,
   });

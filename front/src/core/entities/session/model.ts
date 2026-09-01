@@ -1,13 +1,10 @@
 import { createEffect, createEvent, createStore, sample } from 'effector';
 
-import type { AuthCredentials, AuthUserResponse } from '@/core/shared/api/auth';
+import type { AuthCredentials, AuthUserResponse, RegisterIpPayload } from '@/core/shared/api/auth';
 
-import { loginRequest, registerIndividualRequest, registerIpRequest } from '@/core/shared/api/auth';
+import { loginRequest, registerIpRequest } from '@/core/shared/api/auth';
 import { createSignupRequest } from '@/core/shared/api/signupRequests';
 
-import type { RegisterPayload } from './lib/buildRegisterPayload';
-
-import { RegisterType } from './lib/buildRegisterPayload';
 import { clearUserIdCookie, readUserIdCookie, writeUserIdCookie } from './lib/cookie';
 
 export const sessionHydrated = createEvent();
@@ -16,13 +13,7 @@ export const sessionEnded = createEvent();
 export const authErrorCleared = createEvent();
 
 export const loginFx = createEffect<AuthCredentials, AuthUserResponse, Error>(loginRequest);
-export const signupFx = createEffect<RegisterPayload, AuthUserResponse, Error>(async (payload) => {
-  if (payload.type === RegisterType.Organization) {
-    return registerIpRequest(payload.data);
-  }
-
-  return registerIndividualRequest(payload.data);
-});
+export const signupFx = createEffect<RegisterIpPayload, AuthUserResponse, Error>(registerIpRequest);
 
 export const $isSessionHydrated = createStore(false).on(sessionHydrated, () => true);
 
@@ -61,31 +52,16 @@ export const $authError = createStore<null | string>(null)
  * Заявка на модерацию (M-05): после успешной регистрации карточка клиента
  * попадает в админку в раздел «Заявки на регистрацию».
  */
-export const registerModerationFx = createEffect(async (payload: RegisterPayload) => {
-  if (payload.type === RegisterType.Organization) {
-    await createSignupRequest({
-      company: payload.data.shortName ?? payload.data.fullName ?? '',
-      contact: payload.data.directorFullName ?? '',
-      email: payload.data.email,
-      inn: payload.data.inn ?? '',
-      phone: payload.data.phone ?? '',
-      type: 'organization',
-    });
-
-    return;
-  }
-
+export const registerModerationFx = createEffect(async (payload: RegisterIpPayload) => {
   await createSignupRequest({
-    company: payload.data.fio,
-    contact: payload.data.fio,
-    email: payload.data.email,
-    inn: payload.data.inn ?? '',
-    phone: payload.data.phone,
-    type: 'individual',
+    company: payload.shortName ?? payload.fullName ?? '',
+    contact: payload.directorFullName ?? '',
+    email: payload.email,
+    inn: payload.inn ?? '',
+    phone: payload.phone ?? '',
+    type: 'organization',
   });
 });
-
-/* eslint-disable perfectionist/sort-objects -- effector sample: clock -> fn -> target */
 
 sample({
   clock: loginFx.doneData,
@@ -98,5 +74,3 @@ sample({
   fn: ({ params }) => params,
   target: registerModerationFx,
 });
-
-/* eslint-enable perfectionist/sort-objects */

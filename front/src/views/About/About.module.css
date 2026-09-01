@@ -282,6 +282,13 @@
   line-height: 1.55;
 }
 
+.ctaHint {
+  margin: 10px 0 0;
+  color: #5b6478;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .ctaActions {
   display: flex;
   flex-direction: column;

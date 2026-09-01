@@ -11,7 +11,7 @@ import {
   listSignupRequests,
   rejectSignupRequest,
 } from '@/core/shared/api/signupRequests';
-import { listUsersRequest, setUserActiveRequest } from '@/core/shared/api/users';
+import { listAllUsersRequest, setUserActiveRequest } from '@/core/shared/api/users';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
 /** Приводим пользователя реального сервиса `users` к виду, который уже умеет рисовать UI. */
@@ -39,7 +39,7 @@ export const signupDecided = createEvent<{
 export const signupRejected = createEvent<{ id: string; reason: string }>();
 
 export const fetchPortalUsersFx = createEffect(async () => {
-  const { items } = await listUsersRequest();
+  const items = await listAllUsersRequest();
 
   return items.map(toPortalUser);
 });

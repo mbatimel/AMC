@@ -2,6 +2,7 @@ export enum AppPath {
   AuditLog = '/audit-log',
   Banners = '/banners',
   Categories = '/categories',
+  Certificates = '/certificates',
   Content = '/content',
   Feedback = '/feedback',
   Home = '/',

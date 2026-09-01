@@ -7,6 +7,24 @@
  * достаточно было поменять базовый URL в `core/shared/api/*`.
  */
 
+export type AboutPageContent = TextPageContent & {
+  cta_badge?: string;
+  cta_button?: string;
+  cta_hint?: string;
+  cta_text?: string;
+  cta_title?: string;
+  directions_badge?: string;
+  directions_subtitle?: string;
+  directions_title?: string;
+  hero_badge?: string;
+  hero_subtitle?: string;
+  offices_badge?: string;
+  offices_subtitle?: string;
+  offices_title?: string;
+  profile_badge?: string;
+  profile_title?: string;
+};
+
 export type AuditLogEntry = {
   action: string;
   actor_label: string;
@@ -55,13 +73,17 @@ export type ContactsPageContent = {
   requisites: string;
   subtitle: string;
   title: string;
+  /** Подпись под картой склада. */
+  warehouse_map_caption?: string;
+  /** URL виджета Яндекс.Карт (iframe src). */
+  warehouse_map_url?: string;
   work_hours: string;
 };
 
 export type ContentPageKey = 'about' | 'certificates' | 'contacts' | 'home' | 'promo' | 'terms';
 
 export type ContentPages = {
-  about: TextPageContent;
+  about: AboutPageContent;
   certificates: ListPageContent;
   contacts: ContactsPageContent;
   home: HomePageContent;

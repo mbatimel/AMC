@@ -20,6 +20,7 @@ import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
 import styles from './Admin.module.css';
 import bannerStyles from './AdminBanners.module.css';
 import { AdminPageHeader } from './ui/AdminPageHeader';
+import { FileThumb } from './ui/FileThumb';
 
 const createBanner = (): BannerItem => ({
   dateFrom: '',
@@ -209,10 +210,22 @@ export const AdminBannersPage = (): JSX.Element => {
                   </button>
                 </div>
               </div>
-              {item.image ? (
-                <a href={item.image} rel="noreferrer" target="_blank">
-                  Текущее изображение
-                </a>
+              {item.image || files[item.id] ? (
+                <div className={clsx(bannerStyles.previewRow)}>
+                  <FileThumb file={files[item.id]} href={item.image || undefined} />
+                  <div className={clsx(bannerStyles.previewMeta)}>
+                    {item.image ? (
+                      <a href={item.image} rel="noreferrer" target="_blank">
+                        {files[item.id] ? 'Открыть текущее изображение' : 'Текущее изображение'}
+                      </a>
+                    ) : null}
+                    {files[item.id] ? (
+                      <p className={clsx(bannerStyles.previewName)}>
+                        Новый файл: {files[item.id]?.name}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
               ) : null}
               <div className={clsx(styles.formGrid)}>
                 <label className={clsx(styles.field)}>

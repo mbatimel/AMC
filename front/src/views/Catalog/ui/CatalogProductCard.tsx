@@ -51,16 +51,21 @@ export const CatalogProductCard = ({
         >
           <Chip.Label>{isOut ? 'Нет в наличии' : `В наличии: ${product.stock_qty}`}</Chip.Label>
         </Chip>
-        <Button
-          aria-label={isFavorite ? 'Убрать из избранного' : 'В избранное'}
-          className={clsx(styles.favorite, isFavorite && styles.favoriteActive)}
-          isIconOnly
-          onPress={onToggleFavorite}
-          size="sm"
-          variant="outline"
+        <span
+          className={clsx(styles.favoriteWrap)}
+          title={isFavorite ? 'Убрать из моего избранного' : 'Добавить в моё избранное'}
         >
-          ★
-        </Button>
+          <Button
+            aria-label={isFavorite ? 'Убрать из моего избранного' : 'Добавить в моё избранное'}
+            className={clsx(styles.favorite, isFavorite && styles.favoriteActive)}
+            isIconOnly
+            onPress={onToggleFavorite}
+            size="sm"
+            variant="outline"
+          >
+            ★
+          </Button>
+        </span>
         <div className={clsx(styles.imageWrap)}>
           {!image || failed ? (
             <ProductImageFallback categoryName={product.category_name} />

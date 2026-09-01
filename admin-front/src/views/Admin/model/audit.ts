@@ -12,7 +12,7 @@ const isUserId = (userId: null | string): userId is string =>
 export const adminAuditLogOpened = createEvent();
 
 export const fetchAuditLogFx = createEffect(async (userId: string) =>
-  adminAuditLogRequest({ limit: 100, offset: 0, userId }),
+  adminAuditLogRequest({ limit: 50, offset: 0, userId }),
 );
 
 export const $auditLog = createStore<AdminAuditLogEntry[]>([]).on(

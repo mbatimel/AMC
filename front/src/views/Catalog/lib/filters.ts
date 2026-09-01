@@ -1,9 +1,12 @@
 import type { ProductListItem } from '@/core/shared/api/products';
 
+export type CatalogCollection = 'favorites' | 'ordered';
+
 export type CatalogFilters = {
   brandID?: string;
   brandName?: string;
   categoryID?: string;
+  collection?: CatalogCollection;
   gost?: string;
   inStock?: boolean;
   material?: string;
@@ -32,11 +35,13 @@ const parsePage = (value: null | string): number => {
 
 export const parseCatalogFilters = (params: URLSearchParams): CatalogFilters => {
   const view = params.get('view');
+  const collection = params.get('collection');
 
   return {
     brandID: params.get('brandID') || undefined,
     brandName: params.get('brandName') || params.get('brand') || undefined,
     categoryID: params.get('categoryID') || undefined,
+    collection: collection === 'favorites' || collection === 'ordered' ? collection : undefined,
     gost: params.get('gost') || undefined,
     inStock: params.get('inStock') === 'true' ? true : undefined,
     material: params.get('material') || undefined,
@@ -58,6 +63,10 @@ export const catalogFiltersToSearchParams = (filters: CatalogFilters): URLSearch
 
   if (filters.categoryID) {
     params.set('categoryID', filters.categoryID);
+  }
+
+  if (filters.collection) {
+    params.set('collection', filters.collection);
   }
 
   if (filters.brandID) {
@@ -129,6 +138,10 @@ export const countActiveFilters = (filters: CatalogFilters): number => {
 export const toCatalogProductsQueryKey = (filters: CatalogFilters): string => {
   if (filters.promotionID) {
     return `promo\u001f${filters.promotionID}`;
+  }
+
+  if (filters.collection) {
+    return `collection\u001f${filters.collection}\u001f${String(filters.page)}`;
   }
 
   return [

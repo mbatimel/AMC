@@ -8,6 +8,7 @@ import {
   clearCartRequest,
   deleteCartItemRequest,
   getCartRequest,
+  updateCartItemRequest,
 } from '@/core/shared/api/cart';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
@@ -34,6 +35,7 @@ const isUserId = (userId: null | string): userId is string =>
 
 export const cartHydrated = createEvent();
 export const addToCartRequested = createEvent<AddToCartPayload>();
+export const cartItemQtyChanged = createEvent<{ cartItemID: string; qty: number }>();
 export const cartItemRemoved = createEvent<string>();
 export const cartClearRequested = createEvent();
 
@@ -42,6 +44,16 @@ export const fetchCartFx = createEffect(async (userId: string) => getCartRequest
 export const addToCartFx = createEffect(
   async ({ productID, qty, userId }: AddToCartPayload & { userId: string }) =>
     addCartItemRequest({ productID, qty, userId }),
+);
+
+export const updateCartItemFx = createEffect(
+  async ({ cartItemID, qty, userId }: { cartItemID: string; qty: number; userId: string }) => {
+    if (qty <= 0) {
+      return deleteCartItemRequest({ cartItemID, userId });
+    }
+
+    return updateCartItemRequest({ cartItemID, qty, userId });
+  },
 );
 
 export const deleteCartItemFx = createEffect(
@@ -54,6 +66,7 @@ export const clearCartFx = createEffect(async (userId: string) => clearCartReque
 export const $cart = createStore<Cart>(emptyCart())
   .on(fetchCartFx.doneData, (_, cart) => cart)
   .on(addToCartFx.doneData, (_, cart) => cart)
+  .on(updateCartItemFx.doneData, (_, cart) => cart)
   .on(deleteCartItemFx.doneData, (_, cart) => cart)
   .on(clearCartFx.doneData, (_, cart) => cart)
   .reset(sessionEnded);
@@ -68,6 +81,7 @@ export const $cartCount = $cart.map((cart) => cart.items.length);
 export const $isCartPending = combine(
   fetchCartFx.pending,
   addToCartFx.pending,
+  updateCartItemFx.pending,
   deleteCartItemFx.pending,
   clearCartFx.pending,
   (...flags) => flags.some(Boolean),
@@ -76,8 +90,10 @@ export const $isCartPending = combine(
 export const $cartError = createStore<null | string>(null)
   .on(fetchCartFx, () => null)
   .on(addToCartFx, () => null)
+  .on(updateCartItemFx, () => null)
   .on(fetchCartFx.failData, (_, error) => error.message)
   .on(addToCartFx.failData, (_, error) => error.message)
+  .on(updateCartItemFx.failData, (_, error) => error.message)
   .on(deleteCartItemFx.failData, (_, error) => error.message)
   .on(clearCartFx.failData, (_, error) => error.message)
   .reset(sessionEnded);
@@ -108,11 +124,28 @@ sample({
 });
 
 sample({
+  clock: cartItemQtyChanged,
+  source: $userId,
+  filter: isUserId,
+  fn: (userId, payload) => ({ ...payload, userId }),
+  target: updateCartItemFx,
+});
+
+sample({
   clock: cartItemRemoved,
   source: $userId,
   filter: isUserId,
   fn: (userId, cartItemID) => ({ cartItemID, userId }),
   target: deleteCartItemFx,
+});
+
+sample({
+  clock: updateCartItemFx.failData,
+  fn: (error) => ({
+    message: error.message,
+    tone: 'error' as const,
+  }),
+  target: toastShown,
 });
 
 sample({

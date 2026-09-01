@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 
 import { AssistantWidget } from '@/core/shared/ui/AssistantWidget';
+import { BackToTop } from '@/core/shared/ui/BackToTop';
 import { Footer } from '@/core/shared/ui/Footer';
 import { Header } from '@/core/shared/ui/Header';
 
@@ -19,6 +20,7 @@ export const Page = ({ children, hasAssistant = true }: PageProps): JSX.Element 
       <main className={clsx(styles.main)}>{children}</main>
       <Footer />
       {hasAssistant ? <AssistantWidget /> : null}
+      <BackToTop />
     </div>
   );
 };

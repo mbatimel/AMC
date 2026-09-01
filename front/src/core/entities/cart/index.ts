@@ -8,10 +8,12 @@ export {
   addToCartRequested,
   cartClearRequested,
   cartHydrated,
+  cartItemQtyChanged,
   cartItemRemoved,
   clearCartFx,
   deleteCartItemFx,
   fetchCartFx,
+  updateCartItemFx,
 } from './model';
 
 // Догрузка фото позиций корзины по product_id.

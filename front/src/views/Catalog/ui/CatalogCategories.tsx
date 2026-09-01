@@ -6,14 +6,20 @@ import { useMemo, useState } from 'react';
 import type { Category } from '@/core/shared/api/products';
 
 import { IconChevronRight } from '@/core/shared/icons/IconChevronRight';
+import { IconFavorite } from '@/core/shared/icons/IconFavorite';
 import { IconLayers } from '@/core/shared/icons/IconLayers';
+import { IconOrders } from '@/core/shared/icons/IconOrders';
+
+import type { CatalogCollection } from '../lib/filters';
 
 import styles from './CatalogCategories.module.css';
 
 type CatalogCategoriesProps = {
   categories: Category[];
   onSelect: (categoryID?: string) => void;
+  onSelectCollection: (collection?: CatalogCollection) => void;
   selectedCategoryId?: string;
+  selectedCollection?: CatalogCollection;
   totalAll: number;
 };
 
@@ -44,12 +50,14 @@ const buildTree = (categories: Category[]): CategoryNode[] => {
 export const CatalogCategories = ({
   categories,
   onSelect,
+  onSelectCollection,
   selectedCategoryId,
+  selectedCollection,
   totalAll,
 }: CatalogCategoriesProps): JSX.Element => {
   const tree = useMemo(() => buildTree(categories), [categories]);
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
-  const isAllActive = !selectedCategoryId;
+  const isAllActive = !selectedCategoryId && !selectedCollection;
 
   const toggleExpanded = (id: string): void => {
     setExpandedIds((current) =>
@@ -100,6 +108,30 @@ export const CatalogCategories = ({
 
   return (
     <aside className={clsx(styles.root)}>
+      <div className={clsx(styles.shortcuts)}>
+        <button
+          className={clsx(
+            styles.shortcut,
+            selectedCollection === 'favorites' && styles.shortcutActive,
+          )}
+          onClick={() => onSelectCollection('favorites')}
+          type="button"
+        >
+          <IconFavorite currentColor="currentColor" height={16} width={16} />
+          Моё избранное
+        </button>
+        <button
+          className={clsx(
+            styles.shortcut,
+            selectedCollection === 'ordered' && styles.shortcutActive,
+          )}
+          onClick={() => onSelectCollection('ordered')}
+          type="button"
+        >
+          <IconOrders currentColor="currentColor" height={16} width={16} />
+          Ранее заказывал
+        </button>
+      </div>
       <h2 className={clsx(styles.title)}>Категории</h2>
       <ul className={clsx(styles.list)}>
         <li>

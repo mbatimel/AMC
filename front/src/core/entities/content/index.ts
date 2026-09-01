@@ -1,6 +1,7 @@
 export { useContent } from './lib/useContent';
 export {
   $banners,
+  $certificates,
   $content,
   $contentError,
   $isContentPending,

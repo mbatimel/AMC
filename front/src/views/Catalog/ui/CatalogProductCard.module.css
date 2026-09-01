@@ -36,11 +36,14 @@
   color: var(--alert);
 }
 
-.favorite {
+.favoriteWrap {
   position: absolute;
   z-index: 1;
   inset-block-start: 12px;
   inset-inline-end: 12px;
+}
+
+.favorite {
   display: inline-flex;
   align-items: center;
   justify-content: center;

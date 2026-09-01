@@ -10,7 +10,7 @@ type CreateAuditBody = {
 
 export const GET = (request: Request): Response => {
   const params = new URL(request.url).searchParams;
-  const limit = Math.min(Number(params.get('limit')) || 50, 200);
+  const limit = Math.min(Number(params.get('limit')) || 50, 50);
   const offset = Number(params.get('offset')) || 0;
   const all = readPortalState().audit_log;
 

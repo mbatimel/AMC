@@ -103,15 +103,6 @@
   color: var(--header-brand);
 }
 
-.departmentEyebrow {
-  margin: 0 0 6px;
-  color: var(--header-brand);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
 .departmentTitle {
   margin: 0 0 14px;
   color: var(--palette-black);
@@ -310,6 +301,33 @@
   margin-block-start: 2px;
 }
 
+.mapSection {
+  margin-block-end: 40px;
+}
+
+.mapCaption {
+  max-inline-size: 640px;
+  margin: 10px 0 0;
+  color: #5b6478;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.mapFrame {
+  overflow: hidden;
+  border: 1px solid #e6e9f0;
+  border-radius: 16px;
+  background: #fff;
+  block-size: 420px;
+}
+
+.mapIframe {
+  display: block;
+  border: 0;
+  block-size: 100%;
+  inline-size: 100%;
+}
+
 .requisites {
   border: 1px solid #e6e9f0;
   border-radius: 16px;
@@ -319,6 +337,7 @@
 
 .requisitesHeader {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   margin-block-end: 8px;
@@ -341,6 +360,13 @@
   font-size: 20px;
   font-weight: 700;
   line-height: 1.25;
+}
+
+.requisitesActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-inline-start: auto;
 }
 
 .requisitesList {

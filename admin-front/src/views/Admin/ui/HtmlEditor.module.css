@@ -1,0 +1,28 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-end: 8px;
+}
+
+.tool {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--palette-white);
+  color: var(--palette-black);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding-block: 6px;
+  padding-inline: 10px;
+}
+
+.tool:hover {
+  background: var(--palette-ulight);
+}
+
+.area {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+}

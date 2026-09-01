@@ -6,6 +6,7 @@ import { useUnit } from 'effector-react';
 import { useState } from 'react';
 
 import type {
+  AboutPageContent,
   ContactsPageContent,
   ContentPageKey,
   HomePageContent,
@@ -19,13 +20,14 @@ import { CONTENT_PAGE_TITLES } from '@/core/shared/api/content';
 import styles from './Admin.module.css';
 import { $contentSaveError, $isContentSaving, contentSaveRequested } from './model/content';
 import { AdminPageHeader } from './ui/AdminPageHeader';
+import { HtmlEditor } from './ui/HtmlEditor';
 import { StringListEditor } from './ui/StringListEditor';
 
 type AdminContentPageProps = {
   pageKey: ContentPageKey;
 };
 
-const isTextPage = (key: ContentPageKey): boolean => key === 'about' || key === 'terms';
+const isTextPage = (key: ContentPageKey): boolean => key === 'terms';
 const isListPage = (key: ContentPageKey): boolean => key === 'certificates' || key === 'promo';
 
 export const AdminContentPage = ({ pageKey }: AdminContentPageProps): JSX.Element => {
@@ -83,6 +85,10 @@ export const AdminContentPage = ({ pageKey }: AdminContentPageProps): JSX.Elemen
             <HomeEditor onChange={patch} value={draft as unknown as HomePageContent} />
           ) : null}
 
+          {pageKey === 'about' ? (
+            <AboutEditor onChange={patch} value={draft as unknown as AboutPageContent} />
+          ) : null}
+
           {isTextPage(pageKey) ? (
             <TextEditor onChange={patch} value={draft as unknown as TextPageContent} />
           ) : null}
@@ -105,6 +111,106 @@ type EditorProps<T> = {
   value: T;
 };
 
+const field = (
+  id: string,
+  label: string,
+  value: string,
+  onChange: (next: string) => void,
+): JSX.Element => (
+  <div className={clsx(styles.field)}>
+    <label className={clsx(styles.label)} htmlFor={id}>
+      {label}
+    </label>
+    <input
+      className={clsx(styles.input)}
+      id={id}
+      onChange={(event) => onChange(event.target.value)}
+      value={value}
+    />
+  </div>
+);
+
+const AboutEditor = ({ onChange, value }: EditorProps<AboutPageContent>): JSX.Element => (
+  <>
+    {field('about-title', 'Заголовок страницы', value.title, (title) => onChange({ title }))}
+    {field('about-hero-badge', 'Бейдж в шапке', value.hero_badge ?? '', (hero_badge) =>
+      onChange({ hero_badge }),
+    )}
+    {field(
+      'about-hero-subtitle',
+      'Подзаголовок в шапке',
+      value.hero_subtitle ?? '',
+      (hero_subtitle) => onChange({ hero_subtitle }),
+    )}
+    {field(
+      'about-profile-badge',
+      'Бейдж блока «Кто мы»',
+      value.profile_badge ?? '',
+      (profile_badge) => onChange({ profile_badge }),
+    )}
+    {field(
+      'about-profile-title',
+      'Заголовок блока «Кто мы»',
+      value.profile_title ?? '',
+      (profile_title) => onChange({ profile_title }),
+    )}
+    <HtmlEditor
+      label="Текст «Кто мы»"
+      onChange={(text) => onChange({ text })}
+      rows={10}
+      value={value.text}
+    />
+    {field(
+      'about-directions-badge',
+      'Бейдж «Ассортимент»',
+      value.directions_badge ?? '',
+      (directions_badge) => onChange({ directions_badge }),
+    )}
+    {field(
+      'about-directions-title',
+      'Заголовок «Ассортимент»',
+      value.directions_title ?? '',
+      (directions_title) => onChange({ directions_title }),
+    )}
+    {field(
+      'about-directions-subtitle',
+      'Подзаголовок «Ассортимент»',
+      value.directions_subtitle ?? '',
+      (directions_subtitle) => onChange({ directions_subtitle }),
+    )}
+    {field('about-offices-badge', 'Бейдж «География»', value.offices_badge ?? '', (offices_badge) =>
+      onChange({ offices_badge }),
+    )}
+    {field(
+      'about-offices-title',
+      'Заголовок «География»',
+      value.offices_title ?? '',
+      (offices_title) => onChange({ offices_title }),
+    )}
+    {field(
+      'about-offices-subtitle',
+      'Подзаголовок «География»',
+      value.offices_subtitle ?? '',
+      (offices_subtitle) => onChange({ offices_subtitle }),
+    )}
+    {field('about-cta-badge', 'Бейдж призыва', value.cta_badge ?? '', (cta_badge) =>
+      onChange({ cta_badge }),
+    )}
+    {field('about-cta-title', 'Заголовок призыва', value.cta_title ?? '', (cta_title) =>
+      onChange({ cta_title }),
+    )}
+    {field('about-cta-text', 'Текст призыва', value.cta_text ?? '', (cta_text) =>
+      onChange({ cta_text }),
+    )}
+    {field('about-cta-button', 'Текст кнопки заявки', value.cta_button ?? '', (cta_button) =>
+      onChange({ cta_button }),
+    )}
+    {field('about-cta-hint', 'Подсказка про email', value.cta_hint ?? '', (cta_hint) =>
+      onChange({ cta_hint }),
+    )}
+  </>
+);
+
 const HomeEditor = ({ onChange, value }: EditorProps<HomePageContent>): JSX.Element => (
   <>
     <div className={clsx(styles.field)}>
@@ -119,17 +225,12 @@ const HomeEditor = ({ onChange, value }: EditorProps<HomePageContent>): JSX.Elem
       />
     </div>
 
-    <div className={clsx(styles.field)}>
-      <label className={clsx(styles.label)} htmlFor="home-hero-subtitle">
-        Подзаголовок
-      </label>
-      <textarea
-        className={clsx(styles.textarea)}
-        id="home-hero-subtitle"
-        onChange={(event) => onChange({ hero_subtitle: event.target.value })}
-        value={value.hero_subtitle}
-      />
-    </div>
+    <HtmlEditor
+      label="Подзаголовок"
+      onChange={(hero_subtitle) => onChange({ hero_subtitle })}
+      rows={4}
+      value={value.hero_subtitle}
+    />
 
     <div className={clsx(styles.field)}>
       <label className={clsx(styles.label)} htmlFor="home-hero-button">
@@ -235,18 +336,12 @@ const TextEditor = ({ onChange, value }: EditorProps<TextPageContent>): JSX.Elem
         value={value.title}
       />
     </div>
-    <div className={clsx(styles.field)}>
-      <label className={clsx(styles.label)} htmlFor="text-body">
-        Текст (пустая строка — новый абзац)
-      </label>
-      <textarea
-        className={clsx(styles.textarea)}
-        id="text-body"
-        onChange={(event) => onChange({ text: event.target.value })}
-        rows={14}
-        value={value.text}
-      />
-    </div>
+    <HtmlEditor
+      label="Текст"
+      onChange={(text) => onChange({ text })}
+      rows={14}
+      value={value.text}
+    />
   </>
 );
 
@@ -263,17 +358,7 @@ const ListEditor = ({ onChange, value }: EditorProps<ListPageContent>): JSX.Elem
         value={value.title}
       />
     </div>
-    <div className={clsx(styles.field)}>
-      <label className={clsx(styles.label)} htmlFor="list-text">
-        Вводный текст
-      </label>
-      <textarea
-        className={clsx(styles.textarea)}
-        id="list-text"
-        onChange={(event) => onChange({ text: event.target.value })}
-        value={value.text}
-      />
-    </div>
+    <HtmlEditor label="Вводный текст" onChange={(text) => onChange({ text })} value={value.text} />
     <StringListEditor
       label="Пункты списка"
       onChange={(items) => onChange({ items })}
@@ -356,6 +441,31 @@ const ContactsEditor = ({ onChange, value }: EditorProps<ContactsPageContent>): 
           id="contacts-address"
           onChange={(event) => onChange({ address: event.target.value })}
           value={value.address}
+        />
+      </div>
+
+      <div className={clsx(styles.field)}>
+        <label className={clsx(styles.label)} htmlFor="contacts-warehouse-caption">
+          Адрес склада / подпись к карте
+        </label>
+        <input
+          className={clsx(styles.input)}
+          id="contacts-warehouse-caption"
+          onChange={(event) => onChange({ warehouse_map_caption: event.target.value })}
+          value={value.warehouse_map_caption ?? ''}
+        />
+      </div>
+
+      <div className={clsx(styles.field)}>
+        <label className={clsx(styles.label)} htmlFor="contacts-warehouse-map">
+          Схема проезда на склад (URL виджета Яндекс.Карт)
+        </label>
+        <input
+          className={clsx(styles.input)}
+          id="contacts-warehouse-map"
+          onChange={(event) => onChange({ warehouse_map_url: event.target.value })}
+          placeholder="https://yandex.ru/map-widget/v1/?ll=..."
+          value={value.warehouse_map_url ?? ''}
         />
       </div>
 

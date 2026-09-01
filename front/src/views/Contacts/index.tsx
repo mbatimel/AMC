@@ -1,6 +1,8 @@
 'use client';
 
+import { Button } from '@heroui/react';
 import clsx from 'clsx';
+import { useUnit } from 'effector-react';
 
 import { useContent } from '@/core/entities/content';
 import {
@@ -13,13 +15,20 @@ import {
   IconSupport,
 } from '@/core/shared/icons';
 import { Page } from '@/core/shared/ui/Page';
+import { toastShown } from '@/core/shared/ui/Toast/model';
 
 import styles from './Contacts.module.css';
-import { toTelHref } from './lib/contactsData';
+import {
+  downloadRequisitesFile,
+  formatRequisitesText,
+  isYandexMapEmbedUrl,
+  toTelHref,
+} from './lib/contactsData';
 
 const departmentIcons = [IconSupport, IconPhone, IconBuilding] as const;
 
 export const Contacts = (): JSX.Element => {
+  const showToast = useUnit(toastShown);
   const { content, error, isPending } = useContent();
   const contacts = content?.contacts;
   const title = contacts?.title ?? 'Контакты';
@@ -28,6 +37,20 @@ export const Contacts = (): JSX.Element => {
   const managers = contacts?.managers ?? [];
   const offices = contacts?.offices ?? [];
   const requisiteItems = contacts?.requisite_items ?? [];
+  const warehouseCaption = contacts?.warehouse_map_caption ?? '';
+  const warehouseMapUrl = contacts?.warehouse_map_url ?? '';
+  const hasWarehouseMap = Boolean(warehouseMapUrl && isYandexMapEmbedUrl(warehouseMapUrl));
+
+  const copyRequisites = async (): Promise<void> => {
+    const text = formatRequisitesText(requisiteItems);
+
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast({ message: 'Реквизиты скопированы', tone: 'success' });
+    } catch {
+      showToast({ message: 'Не удалось скопировать реквизиты', tone: 'error' });
+    }
+  };
 
   return (
     <Page>
@@ -59,10 +82,6 @@ export const Contacts = (): JSX.Element => {
                       <Icon currentColor="currentColor" height={22} width={22} />
                     </div>
 
-                    {isFeatured ? (
-                      <p className={clsx(styles.departmentEyebrow)}>Единый контакт</p>
-                    ) : null}
-
                     <h2 className={clsx(styles.departmentTitle)}>{manager.name}</h2>
 
                     <ul className={clsx(styles.departmentMeta)}>
@@ -78,7 +97,7 @@ export const Contacts = (): JSX.Element => {
                           <a href={toTelHref(manager.phone)}>{manager.phone}</a>
                         </li>
                       ) : null}
-                      {manager.role && !isFeatured ? (
+                      {manager.role ? (
                         <li>
                           {index === 1 ? (
                             <IconCalendar currentColor="currentColor" height={14} width={14} />
@@ -163,6 +182,31 @@ export const Contacts = (): JSX.Element => {
             </section>
           ) : null}
 
+          {hasWarehouseMap || warehouseCaption ? (
+            <section aria-labelledby="warehouse-map-title" className={clsx(styles.mapSection)}>
+              <div className={clsx(styles.sectionIntro)}>
+                <p className={clsx(styles.sectionBadge)}>Склад</p>
+                <h2 className={clsx(styles.sectionTitle)} id="warehouse-map-title">
+                  Схема проезда на склад
+                </h2>
+                {warehouseCaption ? (
+                  <p className={clsx(styles.mapCaption)}>{warehouseCaption}</p>
+                ) : null}
+              </div>
+
+              {hasWarehouseMap ? (
+                <div className={clsx(styles.mapFrame)}>
+                  <iframe
+                    allowFullScreen
+                    className={clsx(styles.mapIframe)}
+                    src={warehouseMapUrl}
+                    title="Схема проезда на склад"
+                  />
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
           {requisiteItems.length > 0 ? (
             <section aria-labelledby="requisites-title" className={clsx(styles.requisites)}>
               <header className={clsx(styles.requisitesHeader)}>
@@ -172,6 +216,20 @@ export const Contacts = (): JSX.Element => {
                 <h2 className={clsx(styles.requisitesTitle)} id="requisites-title">
                   Реквизиты компании
                 </h2>
+                <div className={clsx(styles.requisitesActions)}>
+                  <Button onPress={() => void copyRequisites()} size="sm" variant="secondary">
+                    Скопировать реквизиты в буфер обмена
+                  </Button>
+                  <Button
+                    onPress={() =>
+                      downloadRequisitesFile(formatRequisitesText(requisiteItems), 'requisites.txt')
+                    }
+                    size="sm"
+                    variant="secondary"
+                  >
+                    Скачать файл с реквизитами
+                  </Button>
+                </div>
               </header>
 
               <dl className={clsx(styles.requisitesList)}>

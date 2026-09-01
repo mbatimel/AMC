@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import Link from 'next/link';
 
 import { AppPath } from '@/core/shared/router/paths';
+import { HtmlContent } from '@/core/shared/ui/HtmlContent';
 
 import styles from './InfoPage.module.css';
 
@@ -12,12 +13,7 @@ type InfoPageProps = {
   title: string;
 };
 
-export const InfoPage = ({
-  children,
-  description,
-  eyebrow,
-  title,
-}: InfoPageProps): JSX.Element => {
+export const InfoPage = ({ children, description, eyebrow, title }: InfoPageProps): JSX.Element => {
   return (
     <div className={clsx(styles.root)}>
       <section className={clsx(styles.hero)}>
@@ -64,19 +60,9 @@ type InfoTextProps = {
   text: string;
 };
 
-/** Многострочный текст из редактора контента — абзацы по пустой строке. */
+/** Текст из редактора контента: HTML или абзацы по пустой строке. */
 export const InfoText = ({ text }: InfoTextProps): JSX.Element => {
-  const paragraphs = text.split('\n').filter((line) => line.trim().length > 0);
-
-  return (
-    <>
-      {paragraphs.map((paragraph, index) => (
-        <p className={clsx(styles.paragraph)} key={`${index}-${paragraph.slice(0, 12)}`}>
-          {paragraph}
-        </p>
-      ))}
-    </>
-  );
+  return <HtmlContent className={clsx(styles.paragraph)} text={text} />;
 };
 
 type InfoListProps = {

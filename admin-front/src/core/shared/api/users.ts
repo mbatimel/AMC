@@ -97,13 +97,16 @@ const request = async (path: string, init?: RequestInit): Promise<unknown> => {
   return record.data;
 };
 
+/** Бэкенд отклоняет `limit` больше 50. */
+const USERS_PAGE_LIMIT = 50;
+
 export const listUsersRequest = async (
   params: ListUsersParams = {},
 ): Promise<{ items: RealUser[] }> => {
   const query = omitEmptyParams({
     clientID: params.clientID,
     isActive: params.isActive,
-    limit: params.limit ?? 200,
+    limit: params.limit ?? USERS_PAGE_LIMIT,
     offset: params.offset,
     q: params.q,
     role: params.role,
@@ -122,6 +125,27 @@ export const listUsersRequest = async (
       return parsed ? [parsed] : [];
     }),
   };
+};
+
+export const listAllUsersRequest = async (
+  params: Omit<ListUsersParams, 'limit' | 'offset'> = {},
+): Promise<RealUser[]> => {
+  const items: RealUser[] = [];
+  let offset = 0;
+
+  for (;;) {
+    const page = await listUsersRequest({ ...params, limit: USERS_PAGE_LIMIT, offset });
+
+    items.push(...page.items);
+
+    if (page.items.length < USERS_PAGE_LIMIT) {
+      break;
+    }
+
+    offset += USERS_PAGE_LIMIT;
+  }
+
+  return items;
 };
 
 export const getUserRequest = async (userId: string): Promise<RealUser> => {

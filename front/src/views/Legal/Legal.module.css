@@ -42,3 +42,16 @@
 .link:hover {
   color: var(--link-hover);
 }
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.meta {
+  margin: 0;
+  color: var(--palette-dark);
+  font-size: 14px;
+}

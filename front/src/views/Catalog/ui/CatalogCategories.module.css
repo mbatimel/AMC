@@ -17,6 +17,40 @@
   text-transform: uppercase;
 }
 
+.shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-block-end: 16px;
+  padding-block-end: 14px;
+  padding-inline: 4px;
+  border-block-end: 1px solid var(--border);
+}
+
+.shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--palette-white);
+  color: var(--palette-black);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding-block: 10px;
+  padding-inline: 12px;
+  text-align: start;
+}
+
+.shortcut:hover,
+.shortcutActive {
+  border-color: var(--header-brand);
+  color: var(--header-brand);
+}
+
 .list {
   margin: 0;
   padding: 0;

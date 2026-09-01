@@ -9,14 +9,6 @@ export type AuthUserResponse = {
   userID: string;
 };
 
-export type RegisterIndividualPayload = AuthCredentials & {
-  city: string;
-  deliveryAddress: string;
-  fio: string;
-  inn?: string;
-  phone: string;
-};
-
 export type RegisterIpPayload = AuthCredentials & {
   actualAddress?: string;
   additionalPhone?: string;
@@ -180,22 +172,6 @@ export const registerIpRequest = async ({
     email,
     password,
     ...omitEmptyFields(optionalFields),
-  });
-};
-
-export const registerIndividualRequest = async (
-  payload: RegisterIndividualPayload,
-): Promise<AuthUserResponse> => {
-  const { city, deliveryAddress, email, fio, inn, password, phone } = payload;
-
-  return postAuth('/api/v1/auth/register/individual', {
-    city,
-    deliveryAddress,
-    email,
-    fio,
-    password,
-    phone,
-    ...omitEmptyFields({ inn }),
   });
 };
 

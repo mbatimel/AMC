@@ -1,0 +1,33 @@
+.root {
+  color: inherit;
+  font-size: inherit;
+  line-height: 1.6;
+}
+
+.root p {
+  margin: 0 0 12px;
+}
+
+.root p:last-child {
+  margin-block-end: 0;
+}
+
+.root a {
+  color: var(--header-brand);
+  text-decoration: underline;
+}
+
+.root a:hover {
+  color: var(--header-brand-hover);
+}
+
+.root strong,
+.root b {
+  font-weight: 700;
+}
+
+.root ul,
+.root ol {
+  margin: 0 0 12px;
+  padding-inline-start: 20px;
+}

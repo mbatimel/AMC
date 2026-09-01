@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import type { ContactsPageContent, PortalState } from './types';
+import type { AboutPageContent, ContactsPageContent, PortalState } from './types';
 
 import { createDefaultPortalState } from './defaults';
 
@@ -19,6 +19,14 @@ const DATA_FILE = process.env.PORTAL_DATA_FILE ?? join(process.cwd(), '.portal-d
 type PortalGlobal = typeof globalThis & { __portalState?: PortalState };
 
 const portalGlobal = globalThis as PortalGlobal;
+
+const mergeAbout = (
+  defaults: AboutPageContent,
+  saved?: Partial<AboutPageContent>,
+): AboutPageContent => ({
+  ...defaults,
+  ...saved,
+});
 
 const mergeContacts = (
   defaults: ContactsPageContent,
@@ -40,6 +48,7 @@ const mergePortalState = (defaults: PortalState, saved: PortalState): PortalStat
   content: {
     ...defaults.content,
     ...saved.content,
+    about: mergeAbout(defaults.content.about, saved.content?.about),
     contacts: mergeContacts(defaults.content.contacts, saved.content?.contacts),
   },
 });

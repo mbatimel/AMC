@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 
 import {
   $banners,
+  $certificates,
   $content,
   $contentError,
   $isContentPending,
@@ -13,9 +14,10 @@ import {
 } from '../model';
 
 export const useContent = () => {
-  const [content, banners, legalDocs, isPending, error, request] = useUnit([
+  const [content, banners, certificates, legalDocs, isPending, error, request] = useUnit([
     $content,
     $banners,
+    $certificates,
     $legalDocs,
     $isContentPending,
     $contentError,
@@ -26,5 +28,5 @@ export const useContent = () => {
     request();
   }, [request]);
 
-  return { banners, content, error, isPending, legalDocs };
+  return { banners, certificates, content, error, isPending, legalDocs };
 };

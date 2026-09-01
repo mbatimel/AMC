@@ -6,3 +6,23 @@
   border-radius: 12px;
   gap: 10px;
 }
+
+.previewRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.previewMeta {
+  display: flex;
+  min-inline-size: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.previewName {
+  margin: 0;
+  color: var(--palette-dark);
+  font-size: 12px;
+}

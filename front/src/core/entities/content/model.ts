@@ -1,7 +1,9 @@
 import { createEffect, createEvent, createStore, sample } from 'effector';
 
+import type { Certificate } from '@/core/shared/api/certificates';
 import type { BannersSettings, ContentPages, LegalDoc } from '@/core/shared/api/content';
 
+import { fetchCertificatesRequest } from '@/core/shared/api/certificates';
 import {
   fetchBannersRequest,
   fetchContentPagesRequest,
@@ -15,6 +17,7 @@ export const contentInvalidated = createEvent();
 export const fetchContentFx = createEffect(() => fetchContentPagesRequest());
 export const fetchBannersFx = createEffect(() => fetchBannersRequest());
 export const fetchLegalDocsFx = createEffect(() => fetchLegalDocsRequest());
+export const fetchCertificatesFx = createEffect(() => fetchCertificatesRequest());
 
 export const $content = createStore<ContentPages | null>(null).on(
   fetchContentFx.doneData,
@@ -29,6 +32,11 @@ export const $banners = createStore<BannersSettings | null>(null).on(
 export const $legalDocs = createStore<LegalDoc[]>([]).on(
   fetchLegalDocsFx.doneData,
   (_, docs) => docs,
+);
+
+export const $certificates = createStore<Certificate[]>([]).on(
+  fetchCertificatesFx.doneData,
+  (_, items) => items,
 );
 
 export const $isContentPending = fetchContentFx.pending;
@@ -49,12 +57,12 @@ sample({
   clock: contentRequested,
   source: { loaded: $isContentLoaded, pending: fetchContentFx.pending },
   filter: ({ loaded, pending }) => !loaded && !pending,
-  target: [fetchContentFx, fetchBannersFx, fetchLegalDocsFx],
+  target: [fetchContentFx, fetchBannersFx, fetchLegalDocsFx, fetchCertificatesFx],
 });
 
 sample({
   clock: contentInvalidated,
-  target: [fetchContentFx, fetchBannersFx, fetchLegalDocsFx],
+  target: [fetchContentFx, fetchBannersFx, fetchLegalDocsFx, fetchCertificatesFx],
 });
 
 /* eslint-enable perfectionist/sort-objects */

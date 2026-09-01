@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 import type { ProductListItem } from '@/core/shared/api/products';
 
-import { IconPlus, IconPriceTag } from '@/core/shared/icons';
+import { IconCart, IconFavorite, IconPriceTag } from '@/core/shared/icons';
 import { formatPrice } from '@/core/shared/lib/formatPrice';
 import { getPrimaryProductImage } from '@/core/shared/lib/productImage';
 import { getStockLevel } from '@/core/shared/lib/stock';
@@ -18,7 +18,10 @@ import { QuantityStepper } from '@/core/shared/ui/QuantityStepper';
 import styles from './CatalogB2BTable.module.css';
 
 type CatalogB2BTableProps = {
+  isFavorite: (productId: string) => boolean;
+  isPreviouslyOrdered: (productId: string) => boolean;
   onAddToCart: (productID: string, name: string, qty: number, packageQty: number) => void;
+  onToggleFavorite: (productId: string) => void;
   products: ProductListItem[];
 };
 
@@ -26,9 +29,9 @@ const EMPTY = '—';
 
 const formatPlainNumber = (value: number): string =>
   new Intl.NumberFormat('ru-RU', {
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  }).format(Math.round(value));
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  }).format(value);
 
 const displayValue = (value: null | string | undefined): string => {
   const trimmed = value?.trim();
@@ -70,7 +73,13 @@ const ProductThumb = ({ product }: { product: ProductListItem }): JSX.Element =>
   );
 };
 
-export const CatalogB2BTable = ({ onAddToCart, products }: CatalogB2BTableProps): JSX.Element => {
+export const CatalogB2BTable = ({
+  isFavorite,
+  isPreviouslyOrdered,
+  onAddToCart,
+  onToggleFavorite,
+  products,
+}: CatalogB2BTableProps): JSX.Element => {
   const [qtyById, setQtyById] = useState<Record<string, number>>({});
 
   return (
@@ -107,6 +116,16 @@ export const CatalogB2BTable = ({ onAddToCart, products }: CatalogB2BTableProps)
                     <Link className={clsx(styles.nameLink)} href={getProductPath(product.id)}>
                       {product.name}
                     </Link>
+                    {isFavorite(product.id) || isPreviouslyOrdered(product.id) ? (
+                      <p className={clsx(styles.marks)}>
+                        {isFavorite(product.id) ? (
+                          <span className={clsx(styles.mark)}>В моём избранном</span>
+                        ) : null}
+                        {isPreviouslyOrdered(product.id) ? (
+                          <span className={clsx(styles.mark)}>Ранее заказывали</span>
+                        ) : null}
+                      </p>
+                    ) : null}
                     <p className={clsx(styles.compactMeta)}>{formatCompactMeta(product)}</p>
                     <span
                       className={clsx(
@@ -154,6 +173,26 @@ export const CatalogB2BTable = ({ onAddToCart, products }: CatalogB2BTableProps)
                 </div>
 
                 <div className={clsx(styles.actions)}>
+                  <button
+                    aria-label={
+                      isFavorite(product.id)
+                        ? 'Убрать из моего избранного'
+                        : 'Добавить в моё избранное'
+                    }
+                    className={clsx(
+                      styles.favoriteButton,
+                      isFavorite(product.id) && styles.favoriteButtonActive,
+                    )}
+                    onClick={() => onToggleFavorite(product.id)}
+                    title={
+                      isFavorite(product.id)
+                        ? 'Убрать из моего избранного'
+                        : 'Добавить в моё избранное'
+                    }
+                    type="button"
+                  >
+                    <IconFavorite currentColor="currentColor" height={16} width={16} />
+                  </button>
                   <QuantityStepper
                     className={clsx(styles.stepper)}
                     disabled={isOut}
@@ -173,7 +212,7 @@ export const CatalogB2BTable = ({ onAddToCart, products }: CatalogB2BTableProps)
                       'Нет'
                     ) : (
                       <>
-                        <IconPlus currentColor="currentColor" height={14} width={14} />
+                        <IconCart currentColor="currentColor" height={14} width={14} />
                         <span className={clsx(styles.cartButtonLabel)}>В корзину</span>
                       </>
                     )}

@@ -45,6 +45,7 @@ const CatalogContent = (): JSX.Element => {
     isPending,
     pageCount,
     patchFilters,
+    previouslyOrderedIds,
     products,
     resetAll,
     resetFilters,
@@ -111,8 +112,10 @@ const CatalogContent = (): JSX.Element => {
         <div className={clsx(styles.layout)}>
           <CatalogCategories
             categories={categories}
-            onSelect={(categoryID) => patchFilters({ categoryID })}
+            onSelect={(categoryID) => patchFilters({ categoryID, collection: undefined })}
+            onSelectCollection={(collection) => patchFilters({ categoryID: undefined, collection })}
             selectedCategoryId={filters.categoryID}
+            selectedCollection={filters.collection}
             totalAll={total}
           />
 
@@ -141,6 +144,7 @@ const CatalogContent = (): JSX.Element => {
                 {hasQuery ? (
                   <CatalogSearchSection
                     isFavorite={favorites.isFavorite}
+                    isPreviouslyOrdered={(productId) => previouslyOrderedIds.includes(productId)}
                     onAddToCart={handleAddToCart}
                     onAddToCartFromCard={(product) =>
                       handleAddToCart(
@@ -156,7 +160,13 @@ const CatalogContent = (): JSX.Element => {
                     view={effectiveView}
                   />
                 ) : effectiveView === 'table' ? (
-                  <CatalogB2BTable onAddToCart={handleAddToCart} products={products} />
+                  <CatalogB2BTable
+                    isFavorite={favorites.isFavorite}
+                    isPreviouslyOrdered={(productId) => previouslyOrderedIds.includes(productId)}
+                    onAddToCart={handleAddToCart}
+                    onToggleFavorite={favorites.toggleFavorite}
+                    products={products}
+                  />
                 ) : (
                   <CatalogCardsGrid
                     isFavorite={favorites.isFavorite}

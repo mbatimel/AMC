@@ -5,6 +5,8 @@ import clsx from 'clsx';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+import { HtmlContent } from '@/core/shared/ui/HtmlContent';
+
 import type { HomeHeroContent } from '../lib/types';
 
 import styles from './HomeHero.module.css';
@@ -29,7 +31,7 @@ export const HomeHero = ({ content }: HomeHeroProps): JSX.Element => {
         <div className={clsx(styles.copy)}>
           <span className={clsx(styles.badge)}>{badge}</span>
           <h1 className={clsx(styles.title)}>{title}</h1>
-          <p className={clsx(styles.description)}>{description}</p>
+          <HtmlContent className={clsx(styles.description)} text={description} />
 
           <ul className={clsx(styles.bullets)}>
             {bullets.map((bullet) => (

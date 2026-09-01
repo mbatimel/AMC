@@ -103,6 +103,9 @@ const asNumber = (value: unknown, fallback = 0): number =>
 const asString = (value: unknown, fallback = ''): string =>
   typeof value === 'string' ? value : fallback;
 
+/** Бэкенд отклоняет `limit` больше 50. */
+const API_MAX_PAGE_LIMIT = 50;
+
 const parseCities = (data: unknown): CityItem[] => {
   if (typeof data !== 'object' || data === null) {
     throw new OrdersApiError(500, 'Некорректный ответ сервера');
@@ -483,4 +486,61 @@ export const getOrderRequest = async ({
   }
 
   return order;
+};
+
+const parsePreviouslyOrderedIds = (payload: unknown): string[] => {
+  if (typeof payload !== 'object' || payload === null) {
+    return [];
+  }
+
+  const items = (payload as { items?: unknown }).items;
+
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items.flatMap((item) => {
+    if (typeof item !== 'object' || item === null) {
+      return [];
+    }
+
+    const productId = (item as { product_id?: unknown }).product_id;
+
+    return typeof productId === 'string' && productId.length > 0 ? [productId] : [];
+  });
+};
+
+export const listPreviouslyOrderedProductIdsRequest = async (userId: string): Promise<string[]> => {
+  const ids: string[] = [];
+  let offset = 0;
+
+  for (;;) {
+    const query = omitEmptyParams({ limit: API_MAX_PAGE_LIMIT, offset });
+    const response = await fetch(`/api/v1/orders/previously-ordered-products${query}`, {
+      headers: { 'X-User-Id': userId },
+    });
+
+    if (!response.ok) {
+      throw new OrdersApiError(
+        response.status,
+        await parseApiErrorMessage(response, 'Не удалось загрузить ранее заказанные товары'),
+      );
+    }
+
+    const record = assertApiSuccess(
+      await response.json(),
+      'Некорректный ответ ранее заказанных товаров',
+    );
+    const page = parsePreviouslyOrderedIds(record.data);
+
+    ids.push(...page);
+
+    if (page.length < API_MAX_PAGE_LIMIT) {
+      break;
+    }
+
+    offset += API_MAX_PAGE_LIMIT;
+  }
+
+  return ids;
 };

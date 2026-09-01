@@ -1,0 +1,42 @@
+.button {
+  position: fixed;
+  z-index: var(--z-index-popup);
+  inset-block-end: 88px;
+  inset-inline-end: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--palette-white);
+  block-size: 44px;
+  box-shadow: 0 8px 24px rgb(18 26 51 / 12%);
+  color: var(--palette-black);
+  cursor: pointer;
+  inline-size: 44px;
+  padding: 0;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.button:hover {
+  background: var(--palette-ulight);
+}
+
+.buttonHidden {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.icon {
+  transform: rotate(180deg);
+}
+
+@mixin mobileOnly {
+  .button {
+    inset-block-end: 80px;
+    inset-inline-end: 16px;
+  }
+}

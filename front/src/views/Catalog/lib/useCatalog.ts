@@ -20,6 +20,7 @@ import {
   $categories,
   $isCatalogPending,
   $isCategoriesPending,
+  $previouslyOrderedIds,
   catalogFiltersApplied,
   catalogMounted,
 } from '../model';
@@ -48,6 +49,7 @@ export const useCatalog = () => {
     mount,
     applyFilters,
     showToast,
+    previouslyOrderedIds,
   ] = useUnit([
     $catalogFilters,
     $catalogProducts,
@@ -59,6 +61,7 @@ export const useCatalog = () => {
     catalogMounted,
     catalogFiltersApplied,
     toastShown,
+    $previouslyOrderedIds,
   ]);
 
   const urlFilters = useMemo(
@@ -142,6 +145,7 @@ export const useCatalog = () => {
     isPending,
     pageCount: catalogPageCount(total),
     patchFilters,
+    previouslyOrderedIds,
     products,
     resetAll,
     resetFilters,

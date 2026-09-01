@@ -20,7 +20,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
       { href: AppPath.Banners, label: 'Баннеры' },
       { href: getContentPath('about'), label: 'О компании' },
       { href: getContentPath('terms'), label: 'Условия работы' },
-      { href: getContentPath('certificates'), label: 'Сертификаты' },
+      { href: AppPath.Certificates, label: 'Сертификаты' },
       { href: getContentPath('contacts'), label: 'Контакты' },
     ],
     title: 'Контент',

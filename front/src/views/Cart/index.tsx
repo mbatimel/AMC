@@ -17,6 +17,7 @@ import { formatPositionsCount } from '@/core/shared/lib/pluralize';
 import { AppPath, getProductPath } from '@/core/shared/router/paths';
 import { Page } from '@/core/shared/ui/Page';
 import { ProductThumb } from '@/core/shared/ui/ProductThumb';
+import { QuantityStepper } from '@/core/shared/ui/QuantityStepper';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
 import styles from './Cart.module.css';
@@ -87,7 +88,7 @@ export const CartPage = (): JSX.Element => {
   const showToast = useUnit(toastShown);
   const { isAuthenticated, isHydrated } = useSession();
   const { selectedCityName } = useCity();
-  const { cart, cartCount, clear, isCartPending, removeItem } = useCart();
+  const { cart, cartCount, changeItemQty, clear, isCartPending, removeItem } = useCart();
   const productImages = useUnit($productImageById);
 
   useEffect(() => {
@@ -224,7 +225,17 @@ export const CartPage = (): JSX.Element => {
                           </div>
                         </td>
                         <td>
-                          <span className={clsx(styles.qtyBox)}>{item.qty}</span>
+                          <QuantityStepper
+                            disabled={isCartPending}
+                            onChange={(qty) => {
+                              if (qty === item.qty) {
+                                return;
+                              }
+
+                              changeItemQty({ cartItemID: item.id, qty });
+                            }}
+                            value={item.qty}
+                          />
                         </td>
                         <td className={clsx(styles.sum)}>{formatPrice(item.total)}</td>
                         <td className={clsx(styles.removeCell)}>

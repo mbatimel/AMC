@@ -2,6 +2,9 @@ import { combine, createEffect, createEvent, createStore, sample } from 'effecto
 
 import type { Category, ListProductsResult, ProductListItem } from '@/core/shared/api/products';
 
+import { $favoriteIds } from '@/core/entities/favorites';
+import { $userId } from '@/core/entities/session';
+import { listPreviouslyOrderedProductIdsRequest } from '@/core/shared/api/orders';
 import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
 import {
   getProductRequest,
@@ -23,10 +26,7 @@ import {
 export const catalogMounted = createEvent();
 export const catalogFiltersApplied = createEvent<CatalogFilters>();
 
-const fetchPromotionProducts = async (promotionID: string): Promise<ListProductsResult> => {
-  const promotion = await getPromotionRequest(promotionID);
-  const productIds = promotion.products.map((item) => item.product_id);
-
+const fetchProductsByIds = async (productIds: string[]): Promise<ListProductsResult> => {
   const settled = await Promise.allSettled(productIds.map((id) => getProductRequest(id)));
   const items = settled.flatMap((result) =>
     result.status === 'fulfilled' ? [result.value as ProductListItem] : [],
@@ -38,28 +38,71 @@ const fetchPromotionProducts = async (promotionID: string): Promise<ListProducts
   };
 };
 
-export const fetchCatalogProductsFx = createEffect(
-  async (filters: CatalogFilters): Promise<ListProductsResult> => {
-    if (filters.promotionID) {
-      return fetchPromotionProducts(filters.promotionID);
-    }
+const fetchPromotionProducts = async (promotionID: string): Promise<ListProductsResult> => {
+  const promotion = await getPromotionRequest(promotionID);
+  const productIds = promotion.products.map((item) => item.product_id);
 
-    const page = Math.max(1, filters.page);
-    const offset = (page - 1) * CATALOG_PAGE_SIZE;
+  return fetchProductsByIds(productIds);
+};
 
-    return listProductsRequest({
-      brandID: filters.brandID,
-      categoryID: filters.categoryID,
-      gost: filters.gost,
-      inStock: filters.inStock,
-      limit: CATALOG_PAGE_SIZE,
-      material: filters.material,
-      offset,
-      q: filters.q,
-      size: filters.size,
-    });
-  },
+type CatalogFetchParams = {
+  favoriteIds: string[];
+  filters: CatalogFilters;
+  previouslyOrderedIds: string[];
+  userId: null | string;
+};
+
+const fetchCatalogProducts = async ({
+  favoriteIds,
+  filters,
+  previouslyOrderedIds,
+  userId,
+}: CatalogFetchParams): Promise<ListProductsResult> => {
+  if (filters.promotionID) {
+    return fetchPromotionProducts(filters.promotionID);
+  }
+
+  if (filters.collection === 'favorites') {
+    return fetchProductsByIds(favoriteIds);
+  }
+
+  if (filters.collection === 'ordered') {
+    const ids =
+      previouslyOrderedIds.length > 0
+        ? previouslyOrderedIds
+        : userId
+          ? await listPreviouslyOrderedProductIdsRequest(userId)
+          : [];
+
+    return fetchProductsByIds(ids);
+  }
+
+  const page = Math.max(1, filters.page);
+  const offset = (page - 1) * CATALOG_PAGE_SIZE;
+
+  return listProductsRequest({
+    brandID: filters.brandID,
+    categoryID: filters.categoryID,
+    gost: filters.gost,
+    inStock: filters.inStock,
+    limit: CATALOG_PAGE_SIZE,
+    material: filters.material,
+    offset,
+    q: filters.q,
+    size: filters.size,
+  });
+};
+
+export const fetchPreviouslyOrderedIdsFx = createEffect(async (userId: string) =>
+  listPreviouslyOrderedProductIdsRequest(userId),
 );
+
+export const $previouslyOrderedIds = createStore<string[]>([]).on(
+  fetchPreviouslyOrderedIdsFx.doneData,
+  (_, ids) => ids,
+);
+
+export const fetchCatalogProductsFx = createEffect(fetchCatalogProducts);
 
 export const fetchCategoriesFx = createEffect(() => listCategoriesRequest());
 
@@ -82,7 +125,7 @@ export const $catalogProducts = combine(
   $catalogRawProducts,
   $catalogFilters,
   (products, filters) => {
-    if (!filters.promotionID) {
+    if (!filters.promotionID && !filters.collection) {
       return products;
     }
 
@@ -95,7 +138,9 @@ export const $catalogTotal = combine(
   $catalogRawTotal,
   $catalogFilters,
   (products, rawTotal, filters) =>
-    filters.promotionID ? applyClientCatalogFilters(products, filters).length : rawTotal,
+    filters.promotionID || filters.collection
+      ? applyClientCatalogFilters(products, filters).length
+      : rawTotal,
 );
 
 export const $categories = createStore<Category[]>([]).on(
@@ -124,7 +169,7 @@ const $isCategoriesFetched = createStore(false)
 
 /** Последний успешно запрошенный ключ продуктов (API-поля / promo id). */
 const $productsQueryKey = createStore<null | string>(null)
-  .on(fetchCatalogProductsFx, (_, filters) => toCatalogProductsQueryKey(filters))
+  .on(fetchCatalogProductsFx, (_, { filters }) => toCatalogProductsQueryKey(filters))
   .on(fetchCatalogProductsFx.fail, () => null);
 
 const $canFetchCategories = combine(
@@ -143,13 +188,28 @@ sample({
 });
 
 sample({
+  clock: catalogMounted,
+  source: $userId,
+  filter: (userId): userId is string => typeof userId === 'string' && userId.length > 0,
+  target: fetchPreviouslyOrderedIdsFx,
+});
+
+sample({
   clock: catalogFiltersApplied,
   source: {
+    favoriteIds: $favoriteIds,
     key: $productsQueryKey,
     pending: fetchCatalogProductsFx.pending,
+    previouslyOrderedIds: $previouslyOrderedIds,
+    userId: $userId,
   },
   filter: ({ key, pending }, filters) => !pending && toCatalogProductsQueryKey(filters) !== key,
-  fn: (_, filters) => filters,
+  fn: ({ favoriteIds, previouslyOrderedIds, userId }, filters) => ({
+    favoriteIds,
+    filters,
+    previouslyOrderedIds,
+    userId,
+  }),
   target: fetchCatalogProductsFx,
 });
 

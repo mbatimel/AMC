@@ -10,6 +10,7 @@ import styles from './CatalogSearchSection.module.css';
 
 type CatalogSearchSectionProps = {
   isFavorite: (productId: string) => boolean;
+  isPreviouslyOrdered: (productId: string) => boolean;
   onAddToCart: (productID: string, name: string, qty: number, packageQty: number) => void;
   onAddToCartFromCard: (product: ProductListItem) => void;
   onToggleFavorite: (productId: string) => void;
@@ -20,6 +21,7 @@ type CatalogSearchSectionProps = {
 
 export const CatalogSearchSection = ({
   isFavorite,
+  isPreviouslyOrdered,
   onAddToCart,
   onAddToCartFromCard,
   onToggleFavorite,
@@ -38,7 +40,13 @@ export const CatalogSearchSection = ({
       <section className={clsx(styles.section)}>
         <h2 className={clsx(styles.title)}>Лучшее совпадение</h2>
         {view === 'table' ? (
-          <CatalogB2BTable onAddToCart={onAddToCart} products={[bestMatch]} />
+          <CatalogB2BTable
+            isFavorite={isFavorite}
+            isPreviouslyOrdered={isPreviouslyOrdered}
+            onAddToCart={onAddToCart}
+            onToggleFavorite={onToggleFavorite}
+            products={[bestMatch]}
+          />
         ) : (
           <CatalogCardsGrid
             isFavorite={isFavorite}
@@ -55,7 +63,13 @@ export const CatalogSearchSection = ({
             Похожие позиции и категория — ещё {Math.max(total - 1, rest.length)}
           </h2>
           {view === 'table' ? (
-            <CatalogB2BTable onAddToCart={onAddToCart} products={rest} />
+            <CatalogB2BTable
+              isFavorite={isFavorite}
+              isPreviouslyOrdered={isPreviouslyOrdered}
+              onAddToCart={onAddToCart}
+              onToggleFavorite={onToggleFavorite}
+              products={rest}
+            />
           ) : (
             <CatalogCardsGrid
               isFavorite={isFavorite}

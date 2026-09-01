@@ -1,6 +1,7 @@
 export { AdminAuditLogPage } from './AdminAuditLogPage';
 export { AdminBannersPage } from './AdminBannersPage';
 export { AdminCategoriesPage } from './AdminCategoriesPage';
+export { AdminCertificatesPage } from './AdminCertificatesPage';
 export { AdminContentPage } from './AdminContentPage';
 export { AdminDashboardPage } from './AdminDashboardPage';
 export { AdminFeedbackPage } from './AdminFeedbackPage';

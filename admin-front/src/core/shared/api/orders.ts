@@ -104,10 +104,12 @@ const parseOrder = (value: unknown): null | Order => {
   };
 };
 
-/** История заказов конкретного пользователя. Бэк резолвит контрагента по X-User-Id. */
-export const listUserOrdersRequest = async (userId: string): Promise<ListOrdersResult> => {
+/** Бэкенд отклоняет `limit` больше 50. */
+const ORDERS_PAGE_LIMIT = 50;
+
+const fetchUserOrdersPage = async (userId: string, offset: number): Promise<ListOrdersResult> => {
   const fallback = 'Не удалось загрузить историю заказов';
-  const query = omitEmptyParams({ limit: 100 });
+  const query = omitEmptyParams({ limit: ORDERS_PAGE_LIMIT, offset });
   const response = await fetchWithNetworkFallback(
     `/api/v1/orders${query}`,
     { headers: { 'X-User-Id': userId } },
@@ -140,4 +142,22 @@ export const listUserOrdersRequest = async (userId: string): Promise<ListOrdersR
     }),
     total: asNumber(pagination.total),
   };
+};
+
+/** История заказов конкретного пользователя. Бэк резолвит контрагента по X-User-Id. */
+export const listUserOrdersRequest = async (userId: string): Promise<ListOrdersResult> => {
+  const items: Order[] = [];
+  let offset = 0;
+
+  for (;;) {
+    const page = await fetchUserOrdersPage(userId, offset);
+
+    items.push(...page.items);
+
+    if (page.items.length < ORDERS_PAGE_LIMIT) {
+      return { items, total: page.total };
+    }
+
+    offset += ORDERS_PAGE_LIMIT;
+  }
 };
