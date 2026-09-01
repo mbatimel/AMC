@@ -13,6 +13,10 @@ import (
 
 type stubStorage struct {
 	createIPUserCalled bool
+	surename           string
+	name               string
+	middleName         string
+	phone              *string
 }
 
 func (s *stubStorage) GetUserByEmail(ctx context.Context, email string) (postgres.User, error) {
@@ -26,12 +30,14 @@ func (s *stubStorage) GetUserByID(ctx context.Context, userID uuid.UUID) (postgr
 func (s *stubStorage) CreateIPUser(
 	ctx context.Context,
 	email, passwordHash string,
+	surename, name, middleName string,
 	fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
 	directorFullName, directorPosition, phone, additionalPhone, website,
 	bankAccount, bankName, bankBik, correspondentAccount *string,
 	roleCode int,
 ) (uuid.UUID, error) {
 	s.createIPUserCalled = true
+	s.surename, s.name, s.middleName, s.phone = surename, name, middleName, phone
 	return uuid.New(), nil
 }
 
@@ -95,6 +101,32 @@ func TestRegisterIP_FnsValid_CreatesUser(t *testing.T) {
 	}
 	if fnsClient.calls != 1 || fnsClient.lastINN != validINN {
 		t.Fatalf("expected fns client called once with %q, got calls=%d inn=%q", validINN, fnsClient.calls, fnsClient.lastINN)
+	}
+}
+
+func TestRegisterIP_PersistsDirectorNameAndPhone(t *testing.T) {
+	storage := &stubStorage{}
+	svc := &service{logger: zerolog.Nop(), storage: storage, fnsClient: &stubFnsClient{valid: true}}
+
+	inn := validINN
+	args := registerIPArgs(&inn)
+	director := "Иванов Иван Иванович"
+	phone := "+7 999 000-00-00"
+	args[9], args[11] = &director, &phone
+
+	_, err := svc.RegisterIP(context.Background(), "user@example.com", "password",
+		args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8],
+		args[9], args[10], args[11], args[12], args[13],
+		args[14], args[15], args[16], args[17],
+	)
+	if err != nil {
+		t.Fatalf("RegisterIP() error = %v", err)
+	}
+	if storage.surename != "Иванов" || storage.name != "Иван" || storage.middleName != "Иванович" {
+		t.Fatalf("stored name = %q %q %q", storage.surename, storage.name, storage.middleName)
+	}
+	if storage.phone == nil || *storage.phone != phone {
+		t.Fatalf("stored phone = %v, want %q", storage.phone, phone)
 	}
 }
 

@@ -22,6 +22,7 @@ type Storage interface {
 	CreateIPUser(
 		ctx context.Context,
 		email, passwordHash string,
+		surename, name, middleName string,
 		fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
 		directorFullName, directorPosition, phone, additionalPhone, website,
 		bankAccount, bankName, bankBik, correspondentAccount *string,
@@ -93,15 +94,15 @@ func (s *service) RegisterIP(
 	if strings.TrimSpace(password) == "" {
 		return uuid.Nil, customErrors.ValidationError("password")
 	}
-	if inn == nil{
-		return uuid.Nil,customErrors.InnEmptyErr("inn")
+	if inn == nil {
+		return uuid.Nil, customErrors.InnEmptyErr("inn")
 	}
 	valid, err := validate(*inn)
-	if  err !=nil{
-		return uuid.Nil,err
+	if err != nil {
+		return uuid.Nil, err
 	}
-	if !valid{
-		return uuid.Nil,fmt.Errorf("Inn not valid:%w",err)
+	if !valid {
+		return uuid.Nil, fmt.Errorf("Inn not valid:%w", err)
 	}
 	fnsValid, err := s.fnsClient.CheckIndividual(ctx, *inn)
 	if err != nil {
@@ -114,8 +115,13 @@ func (s *service) RegisterIP(
 	if err != nil {
 		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
 	}
+	surename, name, middleName := "", "", ""
+	if directorFullName != nil {
+		surename, name, middleName = splitFio(*directorFullName)
+	}
 	userID, err = s.storage.CreateIPUser(
 		ctx, email, string(passwordHash),
+		surename, name, middleName,
 		fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
 		directorFullName, directorPosition, phone, additionalPhone, website,
 		bankAccount, bankName, bankBik, correspondentAccount,
@@ -130,7 +136,6 @@ func (s *service) RegisterIP(
 
 	return userID, nil
 }
-
 
 // splitFio splits a Russian "Фамилия Имя Отчество" string into its three parts.
 // Fewer than two words leaves name/middleName empty.
