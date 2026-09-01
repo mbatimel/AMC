@@ -26,6 +26,13 @@ import (
 
 const serviceName = "admin-api"
 
+const requestBodyOverhead = int64(1024 * 1024)
+
+func requestBodyLimit(maxFileSize int64) int {
+	base64Size := ((maxFileSize + 2) / 3) * 4
+	return int(base64Size + requestBodyOverhead)
+}
+
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout}).With().Str("serviceName", serviceName).Logger()
 
@@ -62,7 +69,7 @@ func main() {
 	bannerRoutes := customHandlers.NewBannerRoutes(log.Logger, svc, cfg.S3MaxFileSize)
 	app := externalapi.New(
 		log.Logger,
-		externalapi.MaxBodySize(int(cfg.S3MaxFileSize+1024*1024)),
+		externalapi.MaxBodySize(requestBodyLimit(cfg.S3MaxFileSize)),
 		externalapi.AdminAPI(externalapi.NewAdminAPI(svc)),
 		externalapi.Service(bannerRoutes),
 	).WithLog().WithMetrics()
