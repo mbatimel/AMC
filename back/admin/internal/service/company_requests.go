@@ -92,6 +92,12 @@ func (s *service) SendCompanyRequest(ctx context.Context, input models.CompanyRe
 	}
 
 	if s.mailer == nil || strings.TrimSpace(s.companyRequestRecipient) == "" {
+		s.logger.Error().
+			Str("component", "smtp").
+			Str("event", "company_request").
+			Str("requester_email", email).
+			Str("recipient", s.companyRequestRecipient).
+			Msg("company request email delivery is not configured")
 		return models.CompanyRequestResponse{}, customErrors.InternalServerError()
 	}
 	body := fmt.Sprintf(
@@ -105,7 +111,13 @@ func (s *service) SendCompanyRequest(ctx context.Context, input models.CompanyRe
 		body,
 		attachments,
 	); err != nil {
-		s.logger.Error().Err(err).Str("email", email).Msg("failed to send company request")
+		s.logger.Error().
+			Err(err).
+			Str("component", "smtp").
+			Str("event", "company_request").
+			Str("requester_email", email).
+			Str("recipient", s.companyRequestRecipient).
+			Msg("failed to send company request email")
 		return models.CompanyRequestResponse{}, customErrors.InternalServerError()
 	}
 	return models.CompanyRequestResponse{Accepted: true}, nil

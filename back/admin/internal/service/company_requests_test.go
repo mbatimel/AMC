@@ -1,8 +1,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -98,13 +100,25 @@ func TestSendCompanyRequestRejectsInvalidEmail(t *testing.T) {
 	}
 }
 
-func TestSendCompanyRequestMapsSenderError(t *testing.T) {
+func TestSendCompanyRequestRequiresSuccessfulEmailDelivery(t *testing.T) {
 	mail := &fakeMailer{sendErr: errors.New("smtp failed")}
-	_, err := companyRequestService(mail, 1024).SendCompanyRequest(context.Background(), validCompanyRequest())
+	var logs bytes.Buffer
+	logger := zerolog.New(&logs).With().Str("serviceName", "admin-api").Logger()
+	svc := NewAdminApiService(
+		logger, &fakeStorage{}, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, mail,
+		WithObjectStorage(nil, 1024), WithCompanyRequestRecipient("order@voint.ru"),
+	)
+	_, err := svc.SendCompanyRequest(context.Background(), validCompanyRequest())
 	if !customErrors.Is(err, customErrors.InternalServerError()) {
 		t.Fatalf("error = %v, want internal", err)
 	}
 	if mail.calls != 1 || mail.to != "order@voint.ru" {
 		t.Fatalf("calls=%d to=%q", mail.calls, mail.to)
+	}
+	logOutput := logs.String()
+	for _, expected := range []string{"smtp failed", "company_request", "applicant@example.com", "order@voint.ru", "admin-api"} {
+		if !strings.Contains(logOutput, expected) {
+			t.Fatalf("SMTP failure log does not contain %q: %s", expected, logOutput)
+		}
 	}
 }

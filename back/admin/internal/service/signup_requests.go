@@ -176,7 +176,7 @@ func (s *service) RejectSignupRequest(ctx context.Context, userID uuid.UUID, req
 	}
 
 	deletedAccount := s.deleteRejectedUserAccount(ctx, updated.Email)
-	s.sendRejectionEmail(ctx, updated.Email, reason)
+	s.sendRejectionEmail(ctx, updated.ID, updated.Email, reason)
 
 	action := fmt.Sprintf("Отклонена заявка на регистрацию (%s)", updated.Email)
 	if deletedAccount {
@@ -208,8 +208,14 @@ func (s *service) deleteRejectedUserAccount(ctx context.Context, email string) b
 	return true
 }
 
-func (s *service) sendRejectionEmail(ctx context.Context, email string, reason string) {
+func (s *service) sendRejectionEmail(ctx context.Context, requestID uuid.UUID, email string, reason string) {
 	if s.mailer == nil {
+		s.logger.Warn().
+			Str("component", "smtp").
+			Str("event", "signup_rejected").
+			Str("requestID", requestID.String()).
+			Str("recipient", email).
+			Msg("email delivery is disabled")
 		return
 	}
 
@@ -219,6 +225,12 @@ func (s *service) sendRejectionEmail(ctx context.Context, email string, reason s
 	}
 
 	if err := s.mailer.Send(ctx, email, "Заявка на регистрацию отклонена", body); err != nil {
-		s.logger.Error().Err(err).Str("email", email).Msg("failed to send signup rejection email")
+		s.logger.Error().
+			Err(err).
+			Str("component", "smtp").
+			Str("event", "signup_rejected").
+			Str("requestID", requestID.String()).
+			Str("recipient", email).
+			Msg("failed to send email")
 	}
 }

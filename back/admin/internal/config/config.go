@@ -54,8 +54,8 @@ func LoadConfig() Config {
 		SMTPUsername:            os.Getenv("SMTP_USERNAME"),
 		SMTPPassword:            os.Getenv("SMTP_PASSWORD"),
 		SMTPFrom:                os.Getenv("SMTP_FROM"),
-		SMTPTLS:                 getEnvBool("SMTP_TLS", true),
-		SMTPTimeout:             getEnvDuration("SMTP_TIMEOUT", 10*time.Second),
+		SMTPTLS:                 getOptionalEnvBool("SMTP_TLS", true),
+		SMTPTimeout:             getOptionalEnvDuration("SMTP_TIMEOUT", 10*time.Second),
 		CompanyRequestRecipient: GetEnv("COMPANY_REQUEST_RECIPIENT", "order@voint.ru"),
 		S3Endpoint:              os.Getenv("S3_ENDPOINT"),
 		S3PublicEndpoint:        os.Getenv("S3_PUBLIC_ENDPOINT"),
@@ -81,9 +81,6 @@ func LoadConfig() Config {
 	if cfg.UsersURL == "" {
 		cfg.UsersURL = "http://localhost:8083"
 		log.Warn().Msg("USERS_URL must be specified")
-	}
-	if cfg.SMTPHost == "" {
-		log.Warn().Msg("SMTP_HOST is not set, email notifications will be skipped")
 	}
 	if cfg.S3Endpoint == "" || cfg.S3PublicEndpoint == "" || cfg.S3AccessKey == "" || cfg.S3SecretKey == "" || cfg.S3Bucket == "" {
 		log.Fatal().Msg("S3_ENDPOINT, S3_PUBLIC_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY and S3_BUCKET must be specified")
@@ -116,14 +113,28 @@ func getEnvInt64(key string, fallback int64) int64 {
 	return parsed
 }
 
-func getEnvDuration(key string, fallback time.Duration) time.Duration {
+func getOptionalEnvBool(key string, fallback bool) bool {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
+		log.Warn().Err(err).Str("component", "smtp").Str("key", key).Str("value", value).Msg("invalid optional SMTP configuration; using default")
+		return fallback
+	}
+	return parsed
+}
+
+func getOptionalEnvDuration(key string, fallback time.Duration) time.Duration {
 	value := os.Getenv(key)
 	if value == "" {
 		return fallback
 	}
 	parsed, err := time.ParseDuration(value)
 	if err != nil || parsed <= 0 {
-		log.Fatal().Err(err).Str("key", key).Msg("invalid positive duration environment variable")
+		log.Warn().Err(err).Str("component", "smtp").Str("key", key).Str("value", value).Msg("invalid optional SMTP configuration; using default")
+		return fallback
 	}
 	return parsed
 }

@@ -31,7 +31,6 @@ type SMTPMailer struct {
 	from       string
 	tlsEnabled bool
 	timeout    time.Duration
-	logger     zerolog.Logger
 }
 
 type lineWriter struct {
@@ -65,10 +64,21 @@ func (w *lineWriter) Write(p []byte) (int, error) {
 }
 
 func NewSMTPMailer(logger zerolog.Logger, host, port, username, password, from string, tlsEnabled bool, timeout time.Duration) *SMTPMailer {
-	return &SMTPMailer{
+	mailer := &SMTPMailer{
 		host: host, port: port, username: username, password: password,
-		from: from, tlsEnabled: tlsEnabled, timeout: timeout, logger: logger,
+		from: from, tlsEnabled: tlsEnabled, timeout: timeout,
 	}
+	missing := make([]string, 0, 2)
+	if strings.TrimSpace(host) == "" {
+		missing = append(missing, "SMTP_HOST")
+	}
+	if strings.TrimSpace(from) == "" {
+		missing = append(missing, "SMTP_FROM")
+	}
+	if len(missing) > 0 {
+		logger.Warn().Str("component", "smtp").Strs("missing", missing).Msg("SMTP is not configured, email delivery is disabled")
+	}
+	return mailer
 }
 
 func (m *SMTPMailer) Send(ctx context.Context, to string, subject string, body string) error {
@@ -90,8 +100,7 @@ func (m *SMTPMailer) SendWithAttachments(ctx context.Context, to string, subject
 }
 
 func (m *SMTPMailer) send(ctx context.Context, to string, message []byte) error {
-	if m.host == "" || m.from == "" {
-		m.logger.Warn().Str("to", to).Msg("SMTP is not configured")
+	if strings.TrimSpace(m.host) == "" || strings.TrimSpace(m.from) == "" {
 		return fmt.Errorf("SMTP is not configured")
 	}
 	if m.timeout <= 0 {
