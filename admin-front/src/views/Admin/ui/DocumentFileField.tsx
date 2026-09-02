@@ -15,6 +15,8 @@ import styles from './DocumentFileField.module.css';
 import { FileThumb } from './FileThumb';
 
 type DocumentFileFieldProps = {
+  accept?: string;
+  acceptError?: string;
   currentFileHref?: string;
   currentFileLabel?: string;
   file: File | null;
@@ -26,12 +28,10 @@ type DocumentFileFieldProps = {
   onChange: (file: File | null) => void;
 };
 
-const ACCEPTED_EXTENSIONS = DOCUMENT_FILE_ACCEPT.split(',');
-
-const isAcceptedName = (name: string): boolean => {
+const isAcceptedName = (name: string, accept: string): boolean => {
   const lowerName = name.toLowerCase();
 
-  return ACCEPTED_EXTENSIONS.some((extension) => lowerName.endsWith(extension));
+  return accept.split(',').some((extension) => lowerName.endsWith(extension.trim()));
 };
 
 const formatFileSize = (bytes: number): string => {
@@ -55,6 +55,8 @@ const fileExtension = (name: string): string => {
 };
 
 export const DocumentFileField = ({
+  accept = DOCUMENT_FILE_ACCEPT,
+  acceptError = 'Можно загрузить PDF, JPG, PNG или WEBP',
   currentFileHref,
   currentFileLabel = 'Текущий файл',
   file,
@@ -97,8 +99,8 @@ export const DocumentFileField = ({
     }
 
     try {
-      if (!isAcceptedName(next.name)) {
-        throw new Error('Можно загрузить PDF, JPG, PNG или WEBP');
+      if (!isAcceptedName(next.name, accept)) {
+        throw new Error(acceptError);
       }
       assertDocumentFile(next);
       setLocalError(null);
@@ -175,7 +177,7 @@ export const DocumentFileField = ({
         onDrop={handleDrop}
       >
         <input
-          accept={DOCUMENT_FILE_ACCEPT}
+          accept={accept}
           className={clsx(styles.input)}
           disabled={isDisabled}
           id={id}

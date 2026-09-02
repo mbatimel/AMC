@@ -12,20 +12,6 @@
   border-color: var(--header-brand);
 }
 
-.previewRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
-.previewMeta {
-  display: flex;
-  min-inline-size: 0;
-  flex-direction: column;
-  gap: 4px;
-}
-
 .listTitle {
   margin: 0;
   font-size: 16px;

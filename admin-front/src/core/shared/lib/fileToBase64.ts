@@ -1,5 +1,7 @@
 export const DOCUMENT_FILE_ACCEPT = '.pdf,.jpg,.jpeg,.png,.webp';
 export const DOCUMENT_FILE_HINT = 'PDF, JPG, PNG или WEBP · до 8 МБ';
+export const IMAGE_FILE_ACCEPT = '.jpg,.jpeg,.png,.webp';
+export const IMAGE_FILE_HINT = 'JPG, PNG или WEBP · до 8 МБ';
 /** Декодированный файл: бэкенд до 10 МиБ, но JSON+base64 не влезает в BodyLimit 11 МиБ. */
 export const MAX_DOCUMENT_FILE_BYTES = 8 * 1024 * 1024;
 
@@ -27,6 +29,6 @@ export const fileToBase64 = (file: File): Promise<string> =>
 
 export const assertDocumentFile = (file: File): void => {
   if (file.size > MAX_DOCUMENT_FILE_BYTES) {
-    throw new Error('Файл больше 8 МБ. Выберите PDF, JPG, PNG или WEBP меньшего размера');
+    throw new Error('Файл больше 8 МБ. Выберите файл меньшего размера');
   }
 };

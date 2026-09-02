@@ -17,11 +17,12 @@ import {
 } from '@/core/shared/api/content';
 import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
 import { createClientId } from '@/core/shared/lib/createClientId';
+import { IMAGE_FILE_ACCEPT, IMAGE_FILE_HINT } from '@/core/shared/lib/fileToBase64';
 
 import styles from './Admin.module.css';
 import bannerStyles from './AdminBanners.module.css';
 import { AdminPageHeader } from './ui/AdminPageHeader';
-import { FileThumb } from './ui/FileThumb';
+import { DocumentFileField } from './ui/DocumentFileField';
 
 const createBanner = (): BannerItem => ({
   dateFrom: '',
@@ -242,23 +243,6 @@ export const AdminBannersPage = (): JSX.Element => {
                   </button>
                 </div>
               </div>
-              {item.image || files[item.id] ? (
-                <div className={clsx(bannerStyles.previewRow)}>
-                  <FileThumb file={files[item.id]} href={item.image || undefined} />
-                  <div className={clsx(bannerStyles.previewMeta)}>
-                    {item.image ? (
-                      <a href={item.image} rel="noreferrer" target="_blank">
-                        {files[item.id] ? 'Открыть текущее изображение' : 'Текущее изображение'}
-                      </a>
-                    ) : null}
-                    {files[item.id] ? (
-                      <p className={clsx(bannerStyles.previewName)}>
-                        Новый файл: {files[item.id]?.name}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
               <div className={clsx(styles.formGrid)}>
                 <label className={clsx(styles.field)}>
                   Заголовок
@@ -285,16 +269,6 @@ export const AdminBannersPage = (): JSX.Element => {
                   />
                 </label>
                 <label className={clsx(styles.field)}>
-                  Изображение
-                  <input
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(event) =>
-                      setFiles((previous) => ({ ...previous, [item.id]: event.target.files?.[0] }))
-                    }
-                    type="file"
-                  />
-                </label>
-                <label className={clsx(styles.field)}>
                   Показывать с
                   <input
                     className={clsx(styles.input)}
@@ -313,6 +287,21 @@ export const AdminBannersPage = (): JSX.Element => {
                   />
                 </label>
               </div>
+              <DocumentFileField
+                accept={IMAGE_FILE_ACCEPT}
+                acceptError="Можно загрузить JPG, PNG или WEBP"
+                currentFileHref={item.image || undefined}
+                currentFileLabel="Открыть текущее изображение"
+                file={files[item.id] ?? null}
+                hint={IMAGE_FILE_HINT}
+                id={`banner-file-${item.id}`}
+                isDisabled={isSaving}
+                isRequired={item.id.startsWith('new-')}
+                label="Изображение"
+                onChange={(file) =>
+                  setFiles((previous) => ({ ...previous, [item.id]: file ?? undefined }))
+                }
+              />
               <label className={clsx(styles.checkboxRow)}>
                 <input
                   checked={item.is_active}
