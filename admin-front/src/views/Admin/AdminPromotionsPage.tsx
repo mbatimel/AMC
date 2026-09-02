@@ -22,6 +22,7 @@ import {
   updatePromotionRequest,
 } from '@/core/shared/api/promotions';
 import { IconChevronDown } from '@/core/shared/icons';
+import { createClientId } from '@/core/shared/lib/createClientId';
 import { DateTimeField } from '@/core/shared/ui/DateTimeField';
 import { FormSelect, type FormSelectOptionGroup } from '@/core/shared/ui/FormSelect';
 
@@ -222,7 +223,7 @@ const draftFromPromotion = (promotion: Promotion): PromotionDraft => ({
 const createEmptyDraft = (): PromotionDraft => ({
   discountPercent: 10,
   endsAt: '',
-  id: `new-${crypto.randomUUID()}`,
+  id: createClientId(),
   name: '',
   products: [],
   startsAt: '',

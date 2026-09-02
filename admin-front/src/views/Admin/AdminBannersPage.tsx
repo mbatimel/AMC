@@ -3,7 +3,7 @@
 import { Button } from '@heroui/react';
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { BannerItem, BannersSettings } from '@/core/shared/api/content';
 
@@ -16,6 +16,7 @@ import {
   updateBannerRequest,
 } from '@/core/shared/api/content';
 import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
+import { createClientId } from '@/core/shared/lib/createClientId';
 
 import styles from './Admin.module.css';
 import bannerStyles from './AdminBanners.module.css';
@@ -25,7 +26,7 @@ import { FileThumb } from './ui/FileThumb';
 const createBanner = (): BannerItem => ({
   dateFrom: '',
   dateTo: '',
-  id: `new-${crypto.randomUUID()}`,
+  id: createClientId(),
   image: '',
   is_active: true,
   link: '',
@@ -41,6 +42,8 @@ export const AdminBannersPage = (): JSX.Element => {
   const [files, setFiles] = useState<Record<string, File | undefined>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<null | string>(null);
+  const [addedId, setAddedId] = useState<null | string>(null);
+  const addedBannerRef = useRef<HTMLElement | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     if (!adminUserId) {
@@ -49,8 +52,11 @@ export const AdminBannersPage = (): JSX.Element => {
     try {
       const banners = await fetchAdminBannersRequest(adminUserId);
 
-      setDraft({ ...banners, items: banners.items.map((item) => ({ ...item })) });
-      setPersistedIds(banners.items.map((item) => item.id));
+      setDraft({
+        ...banners,
+        items: Array.isArray(banners.items) ? banners.items.map((item) => ({ ...item })) : [],
+      });
+      setPersistedIds(Array.isArray(banners.items) ? banners.items.map((item) => item.id) : []);
       setFiles({});
       setError(null);
     } catch (loadError) {
@@ -63,6 +69,23 @@ export const AdminBannersPage = (): JSX.Element => {
 
     return () => window.clearTimeout(timeout);
   }, [load]);
+
+  const addBanner = (): void => {
+    const banner = createBanner();
+
+    setDraft((previous) =>
+      previous ? { ...previous, items: [banner, ...(previous.items ?? [])] } : previous,
+    );
+    setAddedId(banner.id);
+  };
+
+  useEffect(() => {
+    if (!addedId) {
+      return;
+    }
+
+    addedBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [addedId]);
 
   if (!draft) {
     return (
@@ -135,15 +158,7 @@ export const AdminBannersPage = (): JSX.Element => {
       <AdminPageHeader
         actions={
           <>
-            <button
-              className={clsx(styles.smallButton)}
-              onClick={() =>
-                setDraft((previous) =>
-                  previous ? { ...previous, items: [...previous.items, createBanner()] } : previous,
-                )
-              }
-              type="button"
-            >
+            <button className={clsx(styles.smallButton)} onClick={addBanner} type="button">
               Добавить баннер
             </button>
             <Button isDisabled={isSaving} onPress={() => void save()} variant="primary">
@@ -174,10 +189,27 @@ export const AdminBannersPage = (): JSX.Element => {
       </section>
 
       <div className={clsx(styles.card)}>
-        <h2 className={clsx(styles.cardTitle)}>Список баннеров ({draft.items.length})</h2>
+        <div className={clsx(styles.bannerHeader)}>
+          <h2 className={clsx(bannerStyles.listTitle)}>Список баннеров ({draft.items.length})</h2>
+          <button className={clsx(styles.smallButton)} onClick={addBanner} type="button">
+            Добавить баннер
+          </button>
+        </div>
         <div className={clsx(styles.listEditor)}>
+          {draft.items.length === 0 ? (
+            <p className={clsx(styles.hint)}>
+              Баннеров пока нет. Добавьте первый — карточка появится здесь.
+            </p>
+          ) : null}
           {draft.items.map((item, index) => (
-            <article className={clsx(bannerStyles.bannerItem)} key={item.id}>
+            <article
+              className={clsx(
+                bannerStyles.bannerItem,
+                item.id === addedId && bannerStyles.bannerItemNew,
+              )}
+              key={item.id}
+              ref={item.id === addedId ? addedBannerRef : undefined}
+            >
               <div className={clsx(styles.bannerHeader)}>
                 {' '}
                 <strong>#{index + 1}</strong>
