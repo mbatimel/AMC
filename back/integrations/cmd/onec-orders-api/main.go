@@ -35,7 +35,7 @@ func main() {
 	if cfg.OnecOrdersBaseURL == "" || cfg.OnecOrdersUser == "" || cfg.OnecOrdersPassword == "" {
 		log.Fatal().Msg("ONEC_ORDERS_BASE_URL, ONEC_ORDERS_USER and ONEC_ORDERS_PASSWORD must be specified")
 	}
-	if cfg.OnecWebhookAPIKey == "" || cfg.OrdersURL == "" || cfg.OrdersSystemUserID == uuid.Nil {
+	if  cfg.OrdersURL == "" || cfg.OrdersSystemUserID == uuid.Nil {
 		log.Fatal().Msg("ONEC_WEBHOOK_API_KEY, ORDERS_URL and ORDERS_SYSTEM_USER_ID must be specified")
 	}
 

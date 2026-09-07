@@ -39,6 +39,10 @@ func New(baseURL, user, password string, timeout time.Duration, logger zerolog.L
 	}
 }
 
+// maxRedirects ограничивает число переходов по Location, чтобы не зациклиться
+// на редиректе на редирект (например, http -> https -> http на кривом прокси).
+const maxRedirects = 5
+
 func fetchEntitySet[T any](ctx context.Context, c *Client, entitySet string) ([]T, error) {
 	_ = ctx // резерв на будущее (deadline/cancel), fasthttp.DoTimeout ctx не принимает
 
@@ -55,17 +59,61 @@ func fetchEntitySet[T any](ctx context.Context, c *Client, entitySet string) ([]
 	auth := base64.StdEncoding.EncodeToString([]byte(c.user + ":" + c.password))
 	req.Header.Set("Authorization", "Basic "+auth)
 
-	doErr := c.http.DoTimeout(req, resp, c.timeout)
-	if doErr != nil {
-		c.logger.Error().Str("entitySet", entitySet).Err(doErr).Msg("onec odata request failed")
-		return nil, fmt.Errorf("onec odata request %s: %w", entitySet, doErr)
-	}
+	origURI := fasthttp.AcquireURI()
+	origURI.Update(reqURL)
+	origHost := string(origURI.Host())
+	origScheme := string(origURI.Scheme())
+	fasthttp.ReleaseURI(origURI)
 
-	statusCode := resp.StatusCode()
-	// resp.Body() остаётся валидным до fasthttp.ReleaseResponse(resp) (см.
-	// defer выше), а весь код ниже, использующий body, выполняется до
-	// возврата из функции — отдельная копия буфера не нужна.
-	body := resp.Body()
+	var statusCode int
+	var body []byte
+
+	// fasthttp.Client.DoTimeout (в отличие от Get/DoRedirects) редиректы не
+	// следует — 1C/IIS на 301/302 отдаёт пустое тело, и без ручного перехода
+	// по Location запрос всегда падал бы с "unexpected status 301".
+	for redirect := 0; ; redirect++ {
+		doErr := c.http.DoTimeout(req, resp, c.timeout)
+		if doErr != nil {
+			c.logger.Error().Str("entitySet", entitySet).Err(doErr).Msg("onec odata request failed")
+			return nil, fmt.Errorf("onec odata request %s: %w", entitySet, doErr)
+		}
+
+		statusCode = resp.StatusCode()
+		if !fasthttp.StatusCodeIsRedirect(statusCode) {
+			body = append([]byte(nil), resp.Body()...)
+			break
+		}
+
+		location := resp.Header.Peek("Location")
+		if redirect >= maxRedirects || len(location) == 0 {
+			c.logger.Error().Str("entitySet", entitySet).Int("status", statusCode).Bytes("location", location).Msg("onec odata redirect loop or missing location")
+			return nil, fmt.Errorf("onec odata %s: unexpected status %d (redirect not followed)", entitySet, statusCode)
+		}
+
+		// Location может быть относительным — резолвим его так же, как это
+		// делает сам fasthttp в DoRedirects.
+		redirectURI := fasthttp.AcquireURI()
+		redirectURI.Update(reqURL)
+		redirectURI.UpdateBytes(location)
+		redirectURL := redirectURI.String()
+		redirectHost := string(redirectURI.Host())
+		redirectScheme := string(redirectURI.Scheme())
+		fasthttp.ReleaseURI(redirectURI)
+
+		c.logger.Warn().Str("entitySet", entitySet).Int("status", statusCode).Str("location", redirectURL).Msg("onec odata redirected")
+
+		// Basic-auth уходит только на исходный host и не понижается до http:
+		// редирект на другой хост или https->http не должен палить учётку.
+		if redirectHost != origHost || (origScheme == "https" && redirectScheme == "http") {
+			c.logger.Warn().Str("entitySet", entitySet).Str("origHost", origHost).Str("redirectHost", redirectHost).Msg("onec odata cross-host/downgrade redirect, stripping Authorization")
+			req.Header.Del("Authorization")
+		}
+
+		resp.Reset()
+		req.SetRequestURI(redirectURL)
+		req.Header.SetMethod(fasthttp.MethodGet)
+		reqURL = redirectURL
+	}
 
 	// Полное тело ответа логируем только на Debug: для крупного каталога
 	// это может быть один огромный лог на каждый прогон (5 раз в день).
