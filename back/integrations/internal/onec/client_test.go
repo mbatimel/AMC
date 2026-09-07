@@ -93,8 +93,15 @@ func TestFetchProducts_Success(t *testing.T) {
 }
 
 func TestFetchPrices_Success(t *testing.T) {
+	// InformationRegister_ЦеныНоменклатуры в этой базе подчинён
+	// регистратору: строки цен лежат в RecordSet, а не на верхнем уровне
+	// value[] (см. models.go, priceRecorderDTO). Неактивная строка
+	// (Active=false) должна быть отфильтрована.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"value":[{"Номенклатура_Key":"22222222-2222-2222-2222-222222222222","ТипЦен_Key":"33333333-3333-3333-3333-333333333333","Цена":150.5}]}`))
+		w.Write([]byte(`{"value":[{"Recorder":"11111111-1111-1111-1111-111111111111","RecordSet":[
+			{"Active":true,"Номенклатура_Key":"22222222-2222-2222-2222-222222222222","ТипЦен_Key":"33333333-3333-3333-3333-333333333333","Цена":150.5},
+			{"Active":false,"Номенклатура_Key":"55555555-5555-5555-5555-555555555555","ТипЦен_Key":"33333333-3333-3333-3333-333333333333","Цена":999}
+		]}]}`))
 	}))
 	defer server.Close()
 
@@ -103,7 +110,7 @@ func TestFetchPrices_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(got) != 1 || got[0].Price != 150.5 {
+	if len(got) != 1 || got[0].Price != 150.5 || got[0].ProductKey != "22222222-2222-2222-2222-222222222222" {
 		t.Fatalf("unexpected result: %+v", got)
 	}
 }

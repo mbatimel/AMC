@@ -16,7 +16,10 @@ const (
 	entitySetWarehouses = "Catalog_Склады"
 	entitySetProducts   = "Catalog_Номенклатура"
 	entitySetPrices     = "InformationRegister_ЦеныНоменклатуры"
-	entitySetStock      = "AccumulationRegister_ТоварыНаСкладахBalance"
+	// Balance() — OData-функция виртуальной таблицы остатков, а не отдельный
+	// EntitySet (AccumulationRegister_ТоварыНаСкладахBalance не существует
+	// в этой публикации — см. models.go).
+	entitySetStock = "AccumulationRegister_ТоварыНаСкладах/Balance()"
 )
 
 type Client struct {
@@ -144,8 +147,29 @@ func (c *Client) FetchProducts(ctx context.Context) ([]ProductDTO, error) {
 	return fetchEntitySet[ProductDTO](ctx, c, entitySetProducts)
 }
 
+// FetchPrices запрашивает InformationRegister_ЦеныНоменклатуры и
+// разворачивает вложенный RecordSet каждого Recorder'а в плоский список цен
+// (см. комментарий у priceRecorderDTO в models.go). Строки с Active=false
+// (цена отменённого/непроведённого документа) пропускаются.
 func (c *Client) FetchPrices(ctx context.Context) ([]PriceDTO, error) {
-	return fetchEntitySet[PriceDTO](ctx, c, entitySetPrices)
+	recorders, err := fetchEntitySet[priceRecorderDTO](ctx, c, entitySetPrices)
+	if err != nil {
+		return nil, err
+	}
+	var out []PriceDTO
+	for _, recorder := range recorders {
+		for _, row := range recorder.RecordSet {
+			if !row.Active {
+				continue
+			}
+			out = append(out, PriceDTO{
+				ProductKey:   row.ProductKey,
+				PriceTypeKey: row.PriceTypeKey,
+				Price:        row.Price,
+			})
+		}
+	}
+	return out, nil
 }
 
 func (c *Client) FetchStock(ctx context.Context) ([]StockDTO, error) {
