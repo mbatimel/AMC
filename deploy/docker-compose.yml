@@ -219,6 +219,7 @@ services:
       ONEC_BASE_URL: ${ONEC_BASE_URL}
       ONEC_USER: ${ONEC_USER}
       ONEC_PASSWORD: ${ONEC_PASSWORD}
+      ONEC_BASE_PRICE_TYPE_KEY: ${ONEC_BASE_PRICE_TYPE_KEY}
       SYNC_INTERVAL: "24h"
     depends_on:
       migrations:

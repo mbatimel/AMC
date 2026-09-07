@@ -34,7 +34,7 @@ func main() {
 
 	storageImpl := postgres.New(pool)
 	onecClient := onec.New(cfg.OnecBaseURL, cfg.OnecUser, cfg.OnecPassword, cfg.OnecRequestTimeout, log.Logger)
-	svc := service.New(log.Logger, onecClient, storageImpl)
+	svc := service.New(log.Logger, onecClient, storageImpl, service.WithBasePriceTypeKey(cfg.OnecBasePriceTypeKey))
 
 	healthServer := transportHTTP.NewHealthServer()
 	go func() {

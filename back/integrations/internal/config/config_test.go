@@ -29,6 +29,7 @@ func requiredEnv(t *testing.T) {
 	setEnv(t, "ONEC_BASE_URL", "http://pviserver/UT/odata/standard.odata")
 	setEnv(t, "ONEC_USER", "site")
 	setEnv(t, "ONEC_PASSWORD", "site-pass")
+	setEnv(t, "ONEC_BASE_PRICE_TYPE_KEY", "da0b5907-dbec-11f0-ba0c-cb4b655316ff")
 }
 
 func TestLoadConfig_Defaults(t *testing.T) {

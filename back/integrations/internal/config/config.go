@@ -22,6 +22,13 @@ type Config struct {
 	OnecPassword string
 	SyncInterval time.Duration
 
+	// OnecBasePriceTypeKey — GUID (Catalog_ТипыЦенНоменклатуры.Ref_Key) типа
+	// цен 1С, который считается базовой ценой сайта. У базы 1С за годы
+	// накопилось ~60 исторических типов цен — без этого фильтра synкать
+	// было бы нечего (product_prices.price_type должен быть 'base', а не
+	// произвольным GUID типа цен, см. listProducts.sql products-сервиса).
+	OnecBasePriceTypeKey string
+
 	OnecRequestTimeout time.Duration
 
 	OnecOrdersBindAddr       string
@@ -36,16 +43,17 @@ type Config struct {
 
 func LoadConfig() Config {
 	cfg := Config{
-		PGHost:       GetEnv("PG_HOST", "localhost"),
-		PGPort:       GetEnv("PG_PORT", "5432"),
-		PGDB:         os.Getenv("PG_DB"),
-		PGUser:       os.Getenv("PG_USER"),
-		PGPassword:   os.Getenv("PG_PASSWORD"),
-		HealthAddr:   GetEnv("HEALTH_ADDR", ":9096"),
-		OnecBaseURL:  os.Getenv("ONEC_BASE_URL"),
-		OnecUser:     os.Getenv("ONEC_USER"),
-		OnecPassword: os.Getenv("ONEC_PASSWORD"),
-		SyncInterval: getEnvDuration("SYNC_INTERVAL", 24*time.Hour),
+		PGHost:               GetEnv("PG_HOST", "localhost"),
+		PGPort:               GetEnv("PG_PORT", "5432"),
+		PGDB:                 os.Getenv("PG_DB"),
+		PGUser:               os.Getenv("PG_USER"),
+		PGPassword:           os.Getenv("PG_PASSWORD"),
+		HealthAddr:           GetEnv("HEALTH_ADDR", ":9096"),
+		OnecBaseURL:          os.Getenv("ONEC_BASE_URL"),
+		OnecUser:             os.Getenv("ONEC_USER"),
+		OnecPassword:         os.Getenv("ONEC_PASSWORD"),
+		OnecBasePriceTypeKey: os.Getenv("ONEC_BASE_PRICE_TYPE_KEY"),
+		SyncInterval:         getEnvDuration("SYNC_INTERVAL", 24*time.Hour),
 
 		OnecRequestTimeout: getEnvDuration("ONEC_REQUEST_TIMEOUT", 30*time.Second),
 	}
@@ -54,6 +62,9 @@ func LoadConfig() Config {
 	}
 	if cfg.OnecBaseURL == "" || cfg.OnecUser == "" || cfg.OnecPassword == "" {
 		log.Fatal().Msg("ONEC_BASE_URL, ONEC_USER and ONEC_PASSWORD must be specified")
+	}
+	if cfg.OnecBasePriceTypeKey == "" {
+		log.Fatal().Msg("ONEC_BASE_PRICE_TYPE_KEY must be specified")
 	}
 
 	cfg.OnecOrdersBindAddr = GetEnv("ONEC_ORDERS_BIND_ADDR", ":8090")

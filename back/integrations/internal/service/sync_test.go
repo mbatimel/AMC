@@ -185,7 +185,7 @@ func TestRunSync_HappyPath(t *testing.T) {
 		stock:  []onec.StockDTO{{ProductKey: productGUID, WarehouseKey: warehouseGUID, Quantity: 5}},
 	}
 	storage := newFakeStorage()
-	svc := New(zerolog.Nop(), onecClient, storage)
+	svc := New(zerolog.Nop(), onecClient, storage, WithBasePriceTypeKey("type-a"))
 
 	if err := svc.RunSync(context.Background()); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -390,7 +390,7 @@ func TestRunSync_ProductsStepFails_PricesAndStockLogAggregateDropCounts(t *testi
 		},
 	}
 	storage := newFakeStorage()
-	svc := New(zerolog.Nop(), onecClient, storage)
+	svc := New(zerolog.Nop(), onecClient, storage, WithBasePriceTypeKey("type-a"))
 
 	if err := svc.RunSync(context.Background()); err != nil {
 		t.Fatalf("unexpected error: %v", err)

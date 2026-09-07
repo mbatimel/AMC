@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -58,10 +59,27 @@ type Service struct {
 	onec    OnecClient
 	storage Storage
 	logger  zerolog.Logger
+
+	// basePriceTypeKey — GUID (Catalog_ТипыЦенНоменклатуры.Ref_Key) типа цен
+	// в 1С, который считается базовой ценой сайта. У этой базы 1С за годы
+	// накопилось ~60 исторических типов цен (сезонные, дилерские, со
+	// скидками) — синкать их все бессмысленно, поэтому processPrices
+	// оставляет только совпадающие по этому ключу строки.
+	basePriceTypeKey string
 }
 
-func New(logger zerolog.Logger, onecClient OnecClient, storage Storage) *Service {
-	return &Service{onec: onecClient, storage: storage, logger: logger}
+type Option func(*Service)
+
+func WithBasePriceTypeKey(key string) Option {
+	return func(s *Service) { s.basePriceTypeKey = strings.TrimSpace(key) }
+}
+
+func New(logger zerolog.Logger, onecClient OnecClient, storage Storage, opts ...Option) *Service {
+	s := &Service{onec: onecClient, storage: storage, logger: logger}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 // fetchResult — сырые ответы 1С по всем пяти entity set'ам одного прогона.
@@ -305,7 +323,16 @@ func (s *Service) processPrices(ctx context.Context, dtos []onec.PriceDTO, produ
 	sourceRefs := make([]string, 0, len(dtos))
 	var skipped []string
 	droppedUnknownProduct := 0
+	droppedOtherPriceType := 0
 	for _, dto := range dtos {
+		// Строки других типов цен (исторические/дилерские/со скидками) не
+		// ошибка синка — их просто не тащим в БД. В skipped/sync_logs не
+		// пишем: иначе каждый штатный прогон гарантированно получал бы
+		// status=partial из-за тысяч ожидаемых пропусков.
+		if !strings.EqualFold(dto.PriceTypeKey, s.basePriceTypeKey) {
+			droppedOtherPriceType++
+			continue
+		}
 		in, ok, mapErr := mapPrice(dto, productIDs)
 		if mapErr != nil {
 			skipped = append(skipped, fmt.Sprintf("price for product %s: %s", dto.ProductKey, mapErr))
@@ -315,6 +342,11 @@ func (s *Service) processPrices(ctx context.Context, dtos []onec.PriceDTO, produ
 			droppedUnknownProduct++
 			continue
 		}
+		// mapPrice кладёт в PriceType сырой ТипЦен_Key из 1С — здесь он уже
+		// один-единственный (отфильтровано выше), переводим в семантическую
+		// метку, которую читает products-сервис (listProducts.sql: price_type
+		// = 'base').
+		in.PriceType = "base"
 		items = append(items, in)
 		sourceRefs = append(sourceRefs, dto.ProductKey)
 	}
@@ -327,6 +359,9 @@ func (s *Service) processPrices(ctx context.Context, dtos []onec.PriceDTO, produ
 	}
 	if droppedUnknownProduct > 0 {
 		skipped = append(skipped, fmt.Sprintf("prices: %d rows skipped, referenced product not found in this run", droppedUnknownProduct))
+	}
+	if droppedOtherPriceType > 0 {
+		s.logger.Debug().Int("count", droppedOtherPriceType).Str("basePriceTypeKey", s.basePriceTypeKey).Msg("prices: rows skipped, price type does not match configured base price type")
 	}
 	return capSkipped(skipped)
 }
