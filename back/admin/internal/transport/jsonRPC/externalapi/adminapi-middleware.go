@@ -13,10 +13,6 @@ type AdminAPILogin func(ctx context.Context, email string, password string) (res
 type AdminAPILogout func(ctx context.Context, userID uuid.UUID) (err error)
 type AdminAPIGetSession func(ctx context.Context, userID uuid.UUID) (response models.SessionResponse, err error)
 type AdminAPIListAuditLog func(ctx context.Context, userID uuid.UUID, limit int, offset int) (response models.ListAuditLogResponse, err error)
-type AdminAPICreateSignupRequest func(ctx context.Context, company string, inn string, contact string, email string, phone string, requestType string) (response models.SignupRequest, err error)
-type AdminAPIListSignupRequests func(ctx context.Context, userID uuid.UUID, status string) (response models.ListSignupRequestsResponse, err error)
-type AdminAPIApproveSignupRequest func(ctx context.Context, userID uuid.UUID, requestID uuid.UUID) (response models.SignupRequest, err error)
-type AdminAPIRejectSignupRequest func(ctx context.Context, userID uuid.UUID, requestID uuid.UUID, reason string) (response models.SignupRequest, err error)
 type AdminAPIListLegalDocs func(ctx context.Context, userID uuid.UUID) (response models.ListLegalDocsResponse, err error)
 type AdminAPIListPublicLegalDocs func(ctx context.Context) (response models.ListLegalDocsResponse, err error)
 type AdminAPICreateLegalDoc func(ctx context.Context, userID uuid.UUID, id string, name string, version string, summary string, fileName string, fileContentBase64 string) (response models.LegalDoc, err error)
@@ -35,10 +31,6 @@ type MiddlewareAdminAPILogin func(next AdminAPILogin) AdminAPILogin
 type MiddlewareAdminAPILogout func(next AdminAPILogout) AdminAPILogout
 type MiddlewareAdminAPIGetSession func(next AdminAPIGetSession) AdminAPIGetSession
 type MiddlewareAdminAPIListAuditLog func(next AdminAPIListAuditLog) AdminAPIListAuditLog
-type MiddlewareAdminAPICreateSignupRequest func(next AdminAPICreateSignupRequest) AdminAPICreateSignupRequest
-type MiddlewareAdminAPIListSignupRequests func(next AdminAPIListSignupRequests) AdminAPIListSignupRequests
-type MiddlewareAdminAPIApproveSignupRequest func(next AdminAPIApproveSignupRequest) AdminAPIApproveSignupRequest
-type MiddlewareAdminAPIRejectSignupRequest func(next AdminAPIRejectSignupRequest) AdminAPIRejectSignupRequest
 type MiddlewareAdminAPIListLegalDocs func(next AdminAPIListLegalDocs) AdminAPIListLegalDocs
 type MiddlewareAdminAPIListPublicLegalDocs func(next AdminAPIListPublicLegalDocs) AdminAPIListPublicLegalDocs
 type MiddlewareAdminAPICreateLegalDoc func(next AdminAPICreateLegalDoc) AdminAPICreateLegalDoc

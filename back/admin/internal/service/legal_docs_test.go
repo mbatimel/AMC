@@ -18,7 +18,7 @@ func legalDocPDFBase64() string {
 }
 
 func newLegalDocService(storage *fakeStorage, objects *fakeBannerObjectStorage) *service {
-	return NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, nil, WithObjectStorage(objects, 4096))
+	return NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, WithObjectStorage(objects, 4096))
 }
 
 func TestCreateLegalDoc(t *testing.T) {
@@ -130,7 +130,7 @@ func TestDeleteLegalDoc_RemovesEveryVersionFile(t *testing.T) {
 
 func TestListLegalDocs_RequiresAdmin(t *testing.T) {
 	storage := &fakeStorage{legalDocs: map[string]postgres.LegalDoc{"oferta": {ID: "oferta"}}}
-	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: false}, nil, nil)
+	svc := NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: false}, nil)
 	_, err := svc.ListLegalDocs(context.Background(), uuid.New())
 	if err == nil {
 		t.Fatal("ListLegalDocs() error = nil, want forbidden for non-admin")

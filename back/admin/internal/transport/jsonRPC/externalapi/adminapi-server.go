@@ -15,10 +15,6 @@ type serverAdminAPI struct {
 	logout                 AdminAPILogout
 	getSession             AdminAPIGetSession
 	listAuditLog           AdminAPIListAuditLog
-	createSignupRequest    AdminAPICreateSignupRequest
-	listSignupRequests     AdminAPIListSignupRequests
-	approveSignupRequest   AdminAPIApproveSignupRequest
-	rejectSignupRequest    AdminAPIRejectSignupRequest
 	listLegalDocs          AdminAPIListLegalDocs
 	listPublicLegalDocs    AdminAPIListPublicLegalDocs
 	createLegalDoc         AdminAPICreateLegalDoc
@@ -38,10 +34,6 @@ type MiddlewareSetAdminAPI interface {
 	WrapLogout(m MiddlewareAdminAPILogout)
 	WrapGetSession(m MiddlewareAdminAPIGetSession)
 	WrapListAuditLog(m MiddlewareAdminAPIListAuditLog)
-	WrapCreateSignupRequest(m MiddlewareAdminAPICreateSignupRequest)
-	WrapListSignupRequests(m MiddlewareAdminAPIListSignupRequests)
-	WrapApproveSignupRequest(m MiddlewareAdminAPIApproveSignupRequest)
-	WrapRejectSignupRequest(m MiddlewareAdminAPIRejectSignupRequest)
 	WrapListLegalDocs(m MiddlewareAdminAPIListLegalDocs)
 	WrapListPublicLegalDocs(m MiddlewareAdminAPIListPublicLegalDocs)
 	WrapCreateLegalDoc(m MiddlewareAdminAPICreateLegalDoc)
@@ -60,10 +52,8 @@ type MiddlewareSetAdminAPI interface {
 
 func newServerAdminAPI(svc externalapi.AdminAPI) *serverAdminAPI {
 	return &serverAdminAPI{
-		approveSignupRequest:   svc.ApproveSignupRequest,
 		createCertificate:      svc.CreateCertificate,
 		createLegalDoc:         svc.CreateLegalDoc,
-		createSignupRequest:    svc.CreateSignupRequest,
 		deleteCertificate:      svc.DeleteCertificate,
 		deleteLegalDoc:         svc.DeleteLegalDoc,
 		getSession:             svc.GetSession,
@@ -73,10 +63,8 @@ func newServerAdminAPI(svc externalapi.AdminAPI) *serverAdminAPI {
 		listLegalDocs:          svc.ListLegalDocs,
 		listPublicCertificates: svc.ListPublicCertificates,
 		listPublicLegalDocs:    svc.ListPublicLegalDocs,
-		listSignupRequests:     svc.ListSignupRequests,
 		login:                  svc.Login,
 		logout:                 svc.Logout,
-		rejectSignupRequest:    svc.RejectSignupRequest,
 		replaceLegalDocFile:    svc.ReplaceLegalDocFile,
 		svc:                    svc,
 		updateCertificate:      svc.UpdateCertificate,
@@ -89,10 +77,6 @@ func (srv *serverAdminAPI) Wrap(m MiddlewareAdminAPI) {
 	srv.logout = srv.svc.Logout
 	srv.getSession = srv.svc.GetSession
 	srv.listAuditLog = srv.svc.ListAuditLog
-	srv.createSignupRequest = srv.svc.CreateSignupRequest
-	srv.listSignupRequests = srv.svc.ListSignupRequests
-	srv.approveSignupRequest = srv.svc.ApproveSignupRequest
-	srv.rejectSignupRequest = srv.svc.RejectSignupRequest
 	srv.listLegalDocs = srv.svc.ListLegalDocs
 	srv.listPublicLegalDocs = srv.svc.ListPublicLegalDocs
 	srv.createLegalDoc = srv.svc.CreateLegalDoc
@@ -120,22 +104,6 @@ func (srv *serverAdminAPI) GetSession(ctx context.Context, userID uuid.UUID) (re
 
 func (srv *serverAdminAPI) ListAuditLog(ctx context.Context, userID uuid.UUID, limit int, offset int) (response models.ListAuditLogResponse, err error) {
 	return srv.listAuditLog(ctx, userID, limit, offset)
-}
-
-func (srv *serverAdminAPI) CreateSignupRequest(ctx context.Context, company string, inn string, contact string, email string, phone string, requestType string) (response models.SignupRequest, err error) {
-	return srv.createSignupRequest(ctx, company, inn, contact, email, phone, requestType)
-}
-
-func (srv *serverAdminAPI) ListSignupRequests(ctx context.Context, userID uuid.UUID, status string) (response models.ListSignupRequestsResponse, err error) {
-	return srv.listSignupRequests(ctx, userID, status)
-}
-
-func (srv *serverAdminAPI) ApproveSignupRequest(ctx context.Context, userID uuid.UUID, requestID uuid.UUID) (response models.SignupRequest, err error) {
-	return srv.approveSignupRequest(ctx, userID, requestID)
-}
-
-func (srv *serverAdminAPI) RejectSignupRequest(ctx context.Context, userID uuid.UUID, requestID uuid.UUID, reason string) (response models.SignupRequest, err error) {
-	return srv.rejectSignupRequest(ctx, userID, requestID, reason)
 }
 
 func (srv *serverAdminAPI) ListLegalDocs(ctx context.Context, userID uuid.UUID) (response models.ListLegalDocsResponse, err error) {
@@ -196,22 +164,6 @@ func (srv *serverAdminAPI) WrapGetSession(m MiddlewareAdminAPIGetSession) {
 
 func (srv *serverAdminAPI) WrapListAuditLog(m MiddlewareAdminAPIListAuditLog) {
 	srv.listAuditLog = m(srv.listAuditLog)
-}
-
-func (srv *serverAdminAPI) WrapCreateSignupRequest(m MiddlewareAdminAPICreateSignupRequest) {
-	srv.createSignupRequest = m(srv.createSignupRequest)
-}
-
-func (srv *serverAdminAPI) WrapListSignupRequests(m MiddlewareAdminAPIListSignupRequests) {
-	srv.listSignupRequests = m(srv.listSignupRequests)
-}
-
-func (srv *serverAdminAPI) WrapApproveSignupRequest(m MiddlewareAdminAPIApproveSignupRequest) {
-	srv.approveSignupRequest = m(srv.approveSignupRequest)
-}
-
-func (srv *serverAdminAPI) WrapRejectSignupRequest(m MiddlewareAdminAPIRejectSignupRequest) {
-	srv.rejectSignupRequest = m(srv.rejectSignupRequest)
 }
 
 func (srv *serverAdminAPI) WrapListLegalDocs(m MiddlewareAdminAPIListLegalDocs) {

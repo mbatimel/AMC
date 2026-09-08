@@ -12,6 +12,27 @@ import (
 	"github.com/mbatimel/AMC/admin/pkg/models"
 )
 
+type fakeMailer struct {
+	to          string
+	subject     string
+	body        string
+	attachments []models.ImageFile
+	sendErr     error
+	calls       int
+}
+
+func (f *fakeMailer) Send(_ context.Context, to string, subject string, body string) error {
+	f.calls++
+	f.to, f.subject, f.body = to, subject, body
+	return f.sendErr
+}
+
+func (f *fakeMailer) SendWithAttachments(_ context.Context, to string, subject string, body string, attachments []models.ImageFile) error {
+	f.calls++
+	f.to, f.subject, f.body, f.attachments = to, subject, body, attachments
+	return f.sendErr
+}
+
 func validCompanyRequest() models.CompanyRequestInput {
 	return models.CompanyRequestInput{
 		ContactName: "Иван Иванов",
@@ -30,7 +51,7 @@ func pdfAttachment(name string, size int) models.ImageFile {
 
 func companyRequestService(mail *fakeMailer, maxFileSize int64) *service {
 	return NewAdminApiService(
-		zerolog.Nop(), &fakeStorage{}, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, mail,
+		zerolog.Nop(), &fakeStorage{}, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, mail,
 		WithObjectStorage(nil, maxFileSize), WithCompanyRequestRecipient("order@voint.ru"),
 	)
 }
@@ -104,7 +125,7 @@ func TestSendCompanyRequestSenderErrorIsBestEffort(t *testing.T) {
 	var logs bytes.Buffer
 	logger := zerolog.New(&logs).With().Str("serviceName", "admin-api").Logger()
 	svc := NewAdminApiService(
-		logger, &fakeStorage{}, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, mail,
+		logger, &fakeStorage{}, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, mail,
 		WithObjectStorage(nil, 1024), WithCompanyRequestRecipient("order@voint.ru"),
 	)
 	response, err := svc.SendCompanyRequest(context.Background(), validCompanyRequest())
@@ -126,7 +147,7 @@ func TestSendCompanyRequestMissingMailerIsBestEffort(t *testing.T) {
 	var logs bytes.Buffer
 	logger := zerolog.New(&logs).With().Str("serviceName", "admin-api").Logger()
 	svc := NewAdminApiService(
-		logger, &fakeStorage{}, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, nil,
+		logger, &fakeStorage{}, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil,
 		WithObjectStorage(nil, 1024), WithCompanyRequestRecipient("order@voint.ru"),
 	)
 

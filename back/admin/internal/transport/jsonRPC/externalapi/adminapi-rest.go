@@ -95,15 +95,6 @@ func (http *httpAdminAPI) serveListAuditLog(ctx *fiber.Ctx) (err error) {
 
 	var request requestAdminAPIListAuditLog
 
-	if _offset := ctx.Query("offset"); _offset != "" {
-		var offset int
-		offset, err = strconv.Atoi(_offset)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Offset = offset
-	}
 	if _limit := ctx.Query("limit"); _limit != "" {
 		var limit int
 		limit, err = strconv.Atoi(_limit)
@@ -113,6 +104,15 @@ func (http *httpAdminAPI) serveListAuditLog(ctx *fiber.Ctx) (err error) {
 		}
 		request.Limit = limit
 	}
+	if _offset := ctx.Query("offset"); _offset != "" {
+		var offset int
+		offset, err = strconv.Atoi(_offset)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Offset = offset
+	}
 
 	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
 		var userID uuid.UUID
@@ -121,116 +121,6 @@ func (http *httpAdminAPI) serveListAuditLog(ctx *fiber.Ctx) (err error) {
 	}
 
 	return customhandlers.ListAuditLog(ctx, http.svc, request.UserID, request.Limit, request.Offset)
-}
-func (http *httpAdminAPI) createSignupRequest(ctx context.Context, request requestAdminAPICreateSignupRequest) (response responseAdminAPICreateSignupRequest, err error) {
-
-	response.Response, err = http.svc.CreateSignupRequest(ctx, request.Company, request.Inn, request.Contact, request.Email, request.Phone, request.RequestType)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpAdminAPI) serveCreateSignupRequest(ctx *fiber.Ctx) (err error) {
-
-	var request requestAdminAPICreateSignupRequest
-	if err = ctx.BodyParser(&request); err != nil {
-		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
-		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
-		return
-	}
-
-	return customhandlers.CreateSignupRequest(ctx, http.svc, request.Company, request.Inn, request.Contact, request.Email, request.Phone, request.RequestType)
-}
-func (http *httpAdminAPI) listSignupRequests(ctx context.Context, request requestAdminAPIListSignupRequests) (response responseAdminAPIListSignupRequests, err error) {
-
-	response.Response, err = http.svc.ListSignupRequests(ctx, request.UserID, request.Status)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpAdminAPI) serveListSignupRequests(ctx *fiber.Ctx) (err error) {
-
-	var request requestAdminAPIListSignupRequests
-
-	if _status := ctx.Query("status"); _status != "" {
-		var status string
-		status = _status
-		request.Status = status
-	}
-
-	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
-		var userID uuid.UUID
-		userID, _ = uuid.Parse(_userID)
-		request.UserID = userID
-	}
-
-	return customhandlers.ListSignupRequests(ctx, http.svc, request.UserID, request.Status)
-}
-func (http *httpAdminAPI) approveSignupRequest(ctx context.Context, request requestAdminAPIApproveSignupRequest) (response responseAdminAPIApproveSignupRequest, err error) {
-
-	response.Response, err = http.svc.ApproveSignupRequest(ctx, request.UserID, request.RequestID)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpAdminAPI) serveApproveSignupRequest(ctx *fiber.Ctx) (err error) {
-
-	var request requestAdminAPIApproveSignupRequest
-
-	if _requestID := ctx.Params("requestID"); _requestID != "" {
-		var requestID uuid.UUID
-		requestID, _ = uuid.Parse(_requestID)
-		request.RequestID = requestID
-	}
-
-	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
-		var userID uuid.UUID
-		userID, _ = uuid.Parse(_userID)
-		request.UserID = userID
-	}
-
-	return customhandlers.ApproveSignupRequest(ctx, http.svc, request.UserID, request.RequestID)
-}
-func (http *httpAdminAPI) rejectSignupRequest(ctx context.Context, request requestAdminAPIRejectSignupRequest) (response responseAdminAPIRejectSignupRequest, err error) {
-
-	response.Response, err = http.svc.RejectSignupRequest(ctx, request.UserID, request.RequestID, request.Reason)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpAdminAPI) serveRejectSignupRequest(ctx *fiber.Ctx) (err error) {
-
-	var request requestAdminAPIRejectSignupRequest
-	if err = ctx.BodyParser(&request); err != nil {
-		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
-		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
-		return
-	}
-
-	if _requestID := ctx.Params("requestID"); _requestID != "" {
-		var requestID uuid.UUID
-		requestID, _ = uuid.Parse(_requestID)
-		request.RequestID = requestID
-	}
-
-	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
-		var userID uuid.UUID
-		userID, _ = uuid.Parse(_userID)
-		request.UserID = userID
-	}
-
-	return customhandlers.RejectSignupRequest(ctx, http.svc, request.UserID, request.RequestID, request.Reason)
 }
 func (http *httpAdminAPI) listLegalDocs(ctx context.Context, request requestAdminAPIListLegalDocs) (response responseAdminAPIListLegalDocs, err error) {
 
@@ -265,8 +155,6 @@ func (http *httpAdminAPI) listPublicLegalDocs(ctx context.Context, request reque
 	return
 }
 func (http *httpAdminAPI) serveListPublicLegalDocs(ctx *fiber.Ctx) (err error) {
-
-
 
 	return customhandlers.ListPublicLegalDocs(ctx, http.svc)
 }
@@ -419,8 +307,6 @@ func (http *httpAdminAPI) listPublicCertificates(ctx context.Context, request re
 	return
 }
 func (http *httpAdminAPI) serveListPublicCertificates(ctx *fiber.Ctx) (err error) {
-
-
 
 	return customhandlers.ListPublicCertificates(ctx, http.svc)
 }
