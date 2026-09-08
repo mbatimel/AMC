@@ -720,13 +720,19 @@ func (s *service) ListOrders(ctx context.Context, userID uuid.UUID, clientID str
 	if err = s.checkBuyerAccess(ctx, userID); err != nil {
 		return response, err
 	}
+	if limit == 0 {
+		limit = defaultOrdersLimit
+	}
+	if limit < 0 || limit > maxOrdersLimit {
+		return response, customErrors.BadRequestError().AddCause("field", "limit")
+	}
+	if offset < 0 {
+		return response, customErrors.BadRequestError().AddCause("field", "offset")
+	}
 
 	counterpartyID, err := s.resolveCounterpartyID(ctx, userID, clientID)
 	if err != nil {
 		return response, err
-	}
-	if limit <= 0 {
-		limit = defaultOrdersLimit
 	}
 
 	rows, total, err := s.storage.ListOrders(ctx, postgres.ListOrdersParams{

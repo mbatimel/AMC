@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -25,6 +26,8 @@ type clientResolutionStorage struct {
 	getCartErr              error
 	getOrCreateCartErr      error
 	listOrdersErr           error
+	listOrdersRows          []postgres.OrderRow
+	listOrdersTotal         int
 	listOrdersParams        postgres.ListOrdersParams
 	getCartCalls            int
 	getCartItemsCalls       int
@@ -145,7 +148,18 @@ func (s *clientResolutionStorage) GetVolumeDiscountPercent(context.Context, uuid
 func (s *clientResolutionStorage) ListOrders(_ context.Context, params postgres.ListOrdersParams) ([]postgres.OrderRow, int, error) {
 	s.listOrdersCalls++
 	s.listOrdersParams = params
-	return []postgres.OrderRow{}, 0, s.listOrdersErr
+	if s.listOrdersRows == nil {
+		return []postgres.OrderRow{}, s.listOrdersTotal, s.listOrdersErr
+	}
+	return s.listOrdersRows, s.listOrdersTotal, s.listOrdersErr
+}
+
+func (s *clientResolutionStorage) GetOrderItems(context.Context, uuid.UUID) ([]postgres.OrderItemRow, error) {
+	return []postgres.OrderItemRow{}, nil
+}
+
+func (s *clientResolutionStorage) GetOrderDocumentsByOrderID(context.Context, uuid.UUID) ([]postgres.OrderDocumentRow, error) {
+	return []postgres.OrderDocumentRow{}, nil
 }
 
 type allowBuyerAccess struct{}
@@ -390,6 +404,81 @@ func TestCartAndOrdersReachRepositoryWithValidClient(t *testing.T) {
 			t.Fatalf("repository limit = %d, want %d", storage.listOrdersParams.Limit, defaultOrdersLimit)
 		}
 	})
+}
+
+func TestListOrdersReturnsExistingOrders(t *testing.T) {
+	userID := uuid.New()
+	clientID := uuid.New()
+	orderID := uuid.New()
+	createdAt := time.Now().UTC().Truncate(time.Microsecond)
+	storage := &clientResolutionStorage{
+		counterpartyExists: true,
+		userHasClient:      true,
+		listOrdersRows: []postgres.OrderRow{{
+			ID:             orderID,
+			Number:         "AMC-1",
+			Status:         "processing",
+			PaymentStatus:  "not_paid",
+			DeliveryMethod: "delivery",
+			Subtotal:       100,
+			DiscountTotal:  10,
+			VATTotal:       19.8,
+			Total:          109.8,
+			CreatedAt:      createdAt,
+		}},
+		listOrdersTotal: 1,
+	}
+
+	response, err := newClientResolutionService(storage).ListOrders(
+		context.Background(), userID, clientID.String(), "", "", 50, 0, "",
+	)
+	if err != nil {
+		t.Fatalf("ListOrders() error = %v", err)
+	}
+	if len(response.Items) != 1 {
+		t.Fatalf("items = %#v, want one order", response.Items)
+	}
+	order := response.Items[0]
+	if order.ID != orderID.String() || order.ClientID != clientID.String() || order.Number != "AMC-1" {
+		t.Fatalf("order identity = %#v", order)
+	}
+	if order.Items == nil || order.Documents == nil {
+		t.Fatalf("nested collections must be non-nil: %#v", order)
+	}
+	if response.Pagination.Limit != 50 || response.Pagination.Offset != 0 || response.Pagination.Total != 1 {
+		t.Fatalf("pagination = %#v", response.Pagination)
+	}
+	if storage.listOrdersParams.Limit != 50 || storage.listOrdersParams.Offset != 0 {
+		t.Fatalf("repository pagination = %#v", storage.listOrdersParams)
+	}
+}
+
+func TestListOrdersRejectsInvalidPagination(t *testing.T) {
+	tests := []struct {
+		name       string
+		limit      int
+		offset     int
+		causeField string
+	}{
+		{name: "negative limit", limit: -1, causeField: "limit"},
+		{name: "limit above maximum", limit: maxOrdersLimit + 1, causeField: "limit"},
+		{name: "negative offset", limit: 50, offset: -1, causeField: "offset"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			storage := &clientResolutionStorage{}
+			_, err := newClientResolutionService(storage).ListOrders(
+				context.Background(), uuid.New(), "", "", "", tt.limit, tt.offset, "",
+			)
+			requireOrdersError(
+				t, err, http.StatusBadRequest, customErrors.ErrBadRequest, "field", tt.causeField,
+			)
+			if storage.listOrdersCalls != 0 {
+				t.Fatalf("repository called %d times for invalid pagination", storage.listOrdersCalls)
+			}
+		})
+	}
 }
 
 func TestGetCartReturnsEmptyModelWhenCartDoesNotExist(t *testing.T) {

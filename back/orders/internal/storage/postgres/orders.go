@@ -168,7 +168,16 @@ func (s *Storage) ListOrders(ctx context.Context, params ListOrdersParams) ([]Or
 	}
 
 	rows, err := s.pool.Query(ctx, fmt.Sprintf(`
-		SELECT id, number, status, payment_status, delivery_method, subtotal, discount_total, vat_total, total, created_at
+		SELECT id,
+		       COALESCE(number, ''),
+		       COALESCE(status, ''),
+		       COALESCE(payment_status, ''),
+		       COALESCE(delivery_method, ''),
+		       COALESCE(subtotal, 0),
+		       COALESCE(discount_total, 0),
+		       COALESCE(vat_total, 0),
+		       COALESCE(total, 0),
+		       created_at
 		FROM orders
 		WHERE (
 		    (counterparty_id = $1 AND $1::uuid IS NOT NULL)
