@@ -40,6 +40,18 @@ func round2(v float64) float64 {
 	return math.Round(v*100) / 100
 }
 
+// grossUnitPrice returns the per-unit price with VAT included, so the
+// frontend can display item.price as the VAT-inclusive price without doing
+// its own VAT math.
+func grossUnitPrice(netPrice float64, vatRatePercent float64) float64 {
+	return round2(netPrice * (1 + vatRatePercent/100))
+}
+
+// lineVAT returns the VAT amount for a net line total (qty * net unit price).
+func lineVAT(netLineTotal float64, vatRatePercent float64) float64 {
+	return round2(netLineTotal * vatRatePercent / 100)
+}
+
 // calcEffectiveDiscount combines the product's own manual discount with the
 // best currently-qualifying promotion discount (already threshold-filtered
 // by SQL) — the higher one wins, per the "берём максимум" resolution rule.

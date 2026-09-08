@@ -498,13 +498,14 @@ func modelProductListItem(product internalModels.Product) models.ProductListItem
 
 func modelCategory(category internalModels.Category) models.Category {
 	result := models.Category{
-		ID:        category.ID.String(),
-		Name:      category.Name,
-		Slug:      category.Slug,
-		SortOrder: category.SortOrder,
-		IsActive:  category.IsActive,
-		CreatedAt: category.CreatedAt,
-		UpdatedAt: category.UpdatedAt,
+		ID:         category.ID.String(),
+		Name:       category.Name,
+		Slug:       category.Slug,
+		SortOrder:  category.SortOrder,
+		IsActive:   category.IsActive,
+		CreatedAt:  category.CreatedAt,
+		UpdatedAt:  category.UpdatedAt,
+		ItemsCount: category.ItemsCount,
 	}
 	if category.ParentID.Valid {
 		result.ParentID = category.ParentID.UUID.String()
@@ -919,6 +920,10 @@ func (s *Service) ListCategories(
 	if err != nil {
 		return response, mapStorageError(err)
 	}
+	totalItems, err := s.storage.CountProducts(ctx, internalModels.ListProductsParams{})
+	if err != nil {
+		return response, mapStorageError(err)
+	}
 	response.Items = make([]models.Category, 0, len(items))
 	for _, item := range items {
 		response.Items = append(response.Items, modelCategory(item))
@@ -926,6 +931,7 @@ func (s *Service) ListCategories(
 	response.Pagination = models.Pagination{
 		Limit: resultLimit, Offset: resultOffset, Total: total,
 	}
+	response.TotalItems = totalItems
 	return response, nil
 }
 

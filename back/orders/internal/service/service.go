@@ -199,6 +199,7 @@ func (s *service) buildExistingCart(ctx context.Context, userID uuid.UUID, count
 	items := make([]models.CartItem, 0, len(rows))
 	for _, row := range rows {
 		lineTotal := round2(float64(row.Qty) * row.Price)
+		vat := lineVAT(lineTotal, s.vatRate)
 		calcItems = append(calcItems, CartCalcItem{Qty: row.Qty, Price: row.Price})
 		items = append(items, models.CartItem{
 			ID:          row.ID.String(),
@@ -207,8 +208,9 @@ func (s *service) buildExistingCart(ctx context.Context, userID uuid.UUID, count
 			SKU:         row.SKU,
 			ProductName: row.ProductName,
 			Qty:         row.Qty,
-			Price:       row.Price,
-			Total:       lineTotal,
+			Price:       grossUnitPrice(row.Price, s.vatRate),
+			Total:       round2(lineTotal + vat),
+			VAT:         vat,
 		})
 	}
 
@@ -504,6 +506,7 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 	responseItems := make([]models.OrderItem, 0, len(cartRows))
 	for _, row := range cartRows {
 		lineTotal := round2(float64(row.Qty) * row.Price)
+		vat := lineVAT(lineTotal, s.vatRate)
 		orderItems = append(orderItems, postgres.OrderItemInput{
 			ProductID:       row.ProductID,
 			SKU:             row.SKU,
@@ -519,8 +522,9 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 			SKU:         row.SKU,
 			ProductName: row.ProductName,
 			Qty:         row.Qty,
-			Price:       row.Price,
-			Total:       lineTotal,
+			Price:       grossUnitPrice(row.Price, s.vatRate),
+			Total:       round2(lineTotal + vat),
+			VAT:         vat,
 		})
 	}
 
@@ -643,6 +647,7 @@ func (s *service) buildOrderModel(ctx context.Context, row postgres.OrderDetailR
 
 	items := make([]models.OrderItem, 0, len(itemRows))
 	for _, item := range itemRows {
+		vat := lineVAT(item.LineTotal, item.VATRate)
 		items = append(items, models.OrderItem{
 			ID:          item.ID.String(),
 			OrderID:     row.ID.String(),
@@ -650,8 +655,9 @@ func (s *service) buildOrderModel(ctx context.Context, row postgres.OrderDetailR
 			SKU:         item.SKU,
 			ProductName: item.Name,
 			Qty:         item.Quantity,
-			Price:       item.UnitPrice,
-			Total:       item.LineTotal,
+			Price:       grossUnitPrice(item.UnitPrice, item.VATRate),
+			Total:       round2(item.LineTotal + vat),
+			VAT:         vat,
 		})
 	}
 
@@ -762,6 +768,7 @@ func (s *service) ListOrders(ctx context.Context, userID uuid.UUID, clientID str
 
 		items := make([]models.OrderItem, 0, len(itemRows))
 		for _, item := range itemRows {
+			vat := lineVAT(item.LineTotal, item.VATRate)
 			items = append(items, models.OrderItem{
 				ID:          item.ID.String(),
 				OrderID:     row.ID.String(),
@@ -769,8 +776,9 @@ func (s *service) ListOrders(ctx context.Context, userID uuid.UUID, clientID str
 				SKU:         item.SKU,
 				ProductName: item.Name,
 				Qty:         item.Quantity,
-				Price:       item.UnitPrice,
-				Total:       item.LineTotal,
+				Price:       grossUnitPrice(item.UnitPrice, item.VATRate),
+				Total:       round2(item.LineTotal + vat),
+				VAT:         vat,
 			})
 		}
 

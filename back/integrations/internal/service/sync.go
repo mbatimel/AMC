@@ -363,6 +363,17 @@ func (s *Service) processPrices(ctx context.Context, dtos []onec.PriceDTO, produ
 	if droppedOtherPriceType > 0 {
 		s.logger.Debug().Int("count", droppedOtherPriceType).Str("basePriceTypeKey", s.basePriceTypeKey).Msg("prices: rows skipped, price type does not match configured base price type")
 	}
+	// Если 1С вернула цены, но НИ ОДНА строка не совпала с настроенным
+	// basePriceTypeKey — это не штатный шум (обычно матчится хотя бы часть),
+	// а верный признак, что ONEC_BASE_PRICE_TYPE_KEY протух (бухгалтер завёл
+	// новый тип цены на очередную переоценку) и product_prices вообще
+	// перестанет пополняться. Молчать тут нельзя — иначе баг всплывает
+	// только когда кто-то заметит пропавшие цены на сайте.
+	if len(dtos) > 0 && droppedOtherPriceType == len(dtos) {
+		skipped = append(skipped, fmt.Sprintf(
+			"prices: none match configured base price type %s out of %d fetched rows (ONEC_BASE_PRICE_TYPE_KEY may be stale — check with 1C accountant)",
+			s.basePriceTypeKey, len(dtos)))
+	}
 	return capSkipped(skipped)
 }
 

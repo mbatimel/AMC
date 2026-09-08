@@ -501,12 +501,13 @@ type OrderItemRow struct {
 	Name      string
 	Quantity  int
 	UnitPrice float64
+	VATRate   float64
 	LineTotal float64
 }
 
 func (s *Storage) GetOrderItems(ctx context.Context, orderID uuid.UUID) ([]OrderItemRow, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT id, product_id, sku, name, quantity, unit_price, line_total
+		SELECT id, product_id, sku, name, quantity, unit_price, COALESCE(vat_rate, 0), line_total
 		FROM order_items WHERE order_id = $1 ORDER BY id
 	`, orderID)
 	if err != nil {
@@ -518,7 +519,7 @@ func (s *Storage) GetOrderItems(ctx context.Context, orderID uuid.UUID) ([]Order
 	for rows.Next() {
 		var item OrderItemRow
 		var qty float64
-		if err = rows.Scan(&item.ID, &item.ProductID, &item.SKU, &item.Name, &qty, &item.UnitPrice, &item.LineTotal); err != nil {
+		if err = rows.Scan(&item.ID, &item.ProductID, &item.SKU, &item.Name, &qty, &item.UnitPrice, &item.VATRate, &item.LineTotal); err != nil {
 			return nil, fmt.Errorf("scan order item: %w", err)
 		}
 		item.Quantity = int(qty)

@@ -47,14 +47,15 @@ type ProductImage struct {
 }
 
 type Category struct {
-	ID        uuid.UUID
-	Name      string
-	Slug      string
-	ParentID  uuid.NullUUID
-	SortOrder int
-	IsActive  bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID         uuid.UUID
+	Name       string
+	Slug       string
+	ParentID   uuid.NullUUID
+	SortOrder  int
+	IsActive   bool
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	ItemsCount int
 }
 
 type Brand struct {

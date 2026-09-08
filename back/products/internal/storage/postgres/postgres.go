@@ -789,6 +789,7 @@ func scanCategory(row rowScanner) (internalModels.Category, error) {
 		&category.IsActive,
 		&category.CreatedAt,
 		&category.UpdatedAt,
+		&category.ItemsCount,
 	)
 	return category, err
 }
