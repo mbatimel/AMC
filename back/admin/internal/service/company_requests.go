@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/mail"
 	"strings"
 	"unicode/utf8"
 
@@ -20,6 +21,18 @@ const (
 
 func companyRequestValidation(field string) error {
 	return customErrors.BadRequestError().AddCause("field", field)
+}
+
+func normalizeCompanyRequestEmail(value string) (string, error) {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if utf8.RuneCountInString(value) > maxCompanyRequestName || strings.ContainsAny(value, "\r\n\x00") {
+		return "", companyRequestValidation("email")
+	}
+	address, err := mail.ParseAddress(value)
+	if err != nil || address.Address != value {
+		return "", companyRequestValidation("email")
+	}
+	return value, nil
 }
 
 func normalizeCompanyRequestPhone(value string) (string, error) {
@@ -56,7 +69,7 @@ func (s *service) SendCompanyRequest(ctx context.Context, input models.CompanyRe
 	if err != nil {
 		return models.CompanyRequestResponse{}, err
 	}
-	email, err := normalizeSignupEmail(input.Email)
+	email, err := normalizeCompanyRequestEmail(input.Email)
 	if err != nil {
 		return models.CompanyRequestResponse{}, err
 	}

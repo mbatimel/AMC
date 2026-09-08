@@ -18,7 +18,7 @@ func certificatePDFBase64() string {
 }
 
 func newCertificateService(storage *fakeStorage, objects *fakeBannerObjectStorage) *service {
-	return NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, nil, WithObjectStorage(objects, 4096))
+	return NewAdminApiService(zerolog.Nop(), storage, &fakeAuthClient{}, &fakeAccessClient{allowed: true}, nil, WithObjectStorage(objects, 4096))
 }
 
 func TestCreateCertificateWithFile(t *testing.T) {
