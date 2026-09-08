@@ -24,6 +24,7 @@ type DeleteProductResponse struct {
 type ListCategoriesResponse struct {
 	Items      []Category `json:"items"`
 	Pagination Pagination `json:"pagination"`
+	TotalItems int        `json:"total_items"`
 }
 
 type ListBrandsResponse struct {

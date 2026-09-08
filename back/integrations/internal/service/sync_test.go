@@ -417,6 +417,39 @@ func TestRunSync_ProductsStepFails_PricesAndStockLogAggregateDropCounts(t *testi
 	}
 }
 
+func TestRunSync_PricesAllMismatchedType_LogsWarningAndPartial(t *testing.T) {
+	onecClient := &fakeOnecClient{
+		products: []onec.ProductDTO{
+			{RefKey: productGUID, Code: "SKU-1", Description: "Дрель"},
+		},
+		prices: []onec.PriceDTO{
+			{ProductKey: productGUID, PriceTypeKey: "old-type-2015", Price: 100},
+			{ProductKey: productGUID, PriceTypeKey: "old-type-2015", Price: 100},
+		},
+	}
+	storage := newFakeStorage()
+	svc := New(zerolog.Nop(), onecClient, storage, WithBasePriceTypeKey("current-type-2026"))
+
+	if err := svc.RunSync(context.Background()); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if storage.finalStatus != "partial" {
+		t.Fatalf("expected partial (configured base price type matched nothing), got %s", storage.finalStatus)
+	}
+	if len(storage.prices) != 0 {
+		t.Fatalf("expected no prices upserted, got %+v", storage.prices)
+	}
+	found := false
+	for _, l := range storage.logs {
+		if strings.Contains(l, "none match configured base price type") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected a sync log warning that no fetched prices matched the configured base price type, got %v", storage.logs)
+	}
+}
+
 func TestSyncCategories_TruncatesSkippedAt100(t *testing.T) {
 	dtos := make([]onec.CategoryDTO, 0, 150)
 	for i := 0; i < 150; i++ {

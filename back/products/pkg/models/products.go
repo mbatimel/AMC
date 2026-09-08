@@ -48,14 +48,15 @@ type ProductListItem struct {
 }
 
 type Category struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Slug      string    `json:"slug,omitempty"`
-	ParentID  string    `json:"parent_id,omitempty"`
-	SortOrder int       `json:"sort_order"`
-	IsActive  bool      `json:"is_active"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	Slug       string    `json:"slug,omitempty"`
+	ParentID   string    `json:"parent_id,omitempty"`
+	SortOrder  int       `json:"sort_order"`
+	IsActive   bool      `json:"is_active"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+	ItemsCount int       `json:"items_count"`
 }
 
 type Brand struct {

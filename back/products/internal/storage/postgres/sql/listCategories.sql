@@ -1,5 +1,11 @@
-SELECT id, COALESCE(name, ''), COALESCE(slug, ''), parent_id,
-       COALESCE(sort_order, 0), is_active, created_at, updated_at
-FROM categories
-ORDER BY sort_order, name, id
+SELECT c.id, COALESCE(c.name, ''), COALESCE(c.slug, ''), c.parent_id,
+       COALESCE(c.sort_order, 0), c.is_active, c.created_at, c.updated_at,
+       COALESCE(pc.items_count, 0)
+FROM categories c
+LEFT JOIN LATERAL (
+    SELECT COUNT(*) AS items_count
+    FROM products p
+    WHERE p.category_id = c.id
+) pc ON TRUE
+ORDER BY c.sort_order, c.name, c.id
 LIMIT $1 OFFSET $2;
