@@ -73,6 +73,26 @@ func (http *httpUsersAPI) serveListUsers(ctx *fiber.Ctx) (err error) {
 
 	var request requestUsersAPIListUsers
 
+	if _sort := ctx.Query("sort"); _sort != "" {
+		var sort string
+		sort = _sort
+		request.Sort = sort
+	}
+	if _q := ctx.Query("q"); _q != "" {
+		var q string
+		q = _q
+		request.Q = q
+	}
+	if _role := ctx.Query("role"); _role != "" {
+		var role string
+		role = _role
+		request.Role = role
+	}
+	if _status := ctx.Query("status"); _status != "" {
+		var status string
+		status = _status
+		request.Status = status
+	}
 	if _clientID := ctx.Query("clientID"); _clientID != "" {
 		var clientID string
 		clientID = _clientID
@@ -104,26 +124,6 @@ func (http *httpUsersAPI) serveListUsers(ctx *fiber.Ctx) (err error) {
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
 		request.Offset = offset
-	}
-	if _sort := ctx.Query("sort"); _sort != "" {
-		var sort string
-		sort = _sort
-		request.Sort = sort
-	}
-	if _q := ctx.Query("q"); _q != "" {
-		var q string
-		q = _q
-		request.Q = q
-	}
-	if _role := ctx.Query("role"); _role != "" {
-		var role string
-		role = _role
-		request.Role = role
-	}
-	if _status := ctx.Query("status"); _status != "" {
-		var status string
-		status = _status
-		request.Status = status
 	}
 
 	return customhandlers.ListUsers(ctx, http.svc, request.Q, request.Role, request.Status, request.ClientID, request.IsActive, request.Limit, request.Offset, request.Sort)
@@ -207,7 +207,7 @@ func (http *httpUsersAPI) serveActivateUser(ctx *fiber.Ctx) (err error) {
 }
 func (http *httpUsersAPI) deactivateUser(ctx context.Context, request requestUsersAPIDeactivateUser) (response responseUsersAPIDeactivateUser, err error) {
 
-	response.Response, err = http.svc.DeactivateUser(ctx, request.UserID)
+	response.Response, err = http.svc.DeactivateUser(ctx, request.UserID, request.Reason, request.ContactName, request.ContactPhone, request.ContactEmail)
 	if err != nil {
 		if http.errorHandler != nil {
 			err = http.errorHandler(err)
@@ -218,6 +218,11 @@ func (http *httpUsersAPI) deactivateUser(ctx context.Context, request requestUse
 func (http *httpUsersAPI) serveDeactivateUser(ctx *fiber.Ctx) (err error) {
 
 	var request requestUsersAPIDeactivateUser
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
 
 	if _userID := ctx.Params("userID"); _userID != "" {
 		var userID uuid.UUID
@@ -225,7 +230,7 @@ func (http *httpUsersAPI) serveDeactivateUser(ctx *fiber.Ctx) (err error) {
 		request.UserID = userID
 	}
 
-	return customhandlers.DeactivateUser(ctx, http.svc, request.UserID)
+	return customhandlers.DeactivateUser(ctx, http.svc, request.UserID, request.Reason, request.ContactName, request.ContactPhone, request.ContactEmail)
 }
 func (http *httpUsersAPI) getProfile(ctx context.Context, request requestUsersAPIGetProfile) (response responseUsersAPIGetProfile, err error) {
 

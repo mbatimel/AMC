@@ -118,8 +118,8 @@ func (srv *serverUsersAPI) ActivateUser(ctx context.Context, userID uuid.UUID) (
 	return srv.activateUser(ctx, userID)
 }
 
-func (srv *serverUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID) (response models.DeactivateUserResponse, err error) {
-	return srv.deactivateUser(ctx, userID)
+func (srv *serverUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error) {
+	return srv.deactivateUser(ctx, userID, reason, contactName, contactPhone, contactEmail)
 }
 
 func (srv *serverUsersAPI) GetProfile(ctx context.Context, userID uuid.UUID) (response models.GetProfileResponse, err error) {
