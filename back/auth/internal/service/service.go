@@ -8,6 +8,7 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -40,6 +41,14 @@ type Storage interface {
 		roleCode int,
 	) (uuid.UUID, error)
 	UpdateUserPassword(ctx context.Context, userID uuid.UUID, passwordHash string) error
+	CreatePasswordResetToken(ctx context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error
+	InvalidateUserPasswordResetTokens(ctx context.Context, userID uuid.UUID) error
+	GetPasswordResetToken(ctx context.Context, tokenHash string) (postgres.PasswordResetToken, error)
+}
+
+// Mailer is implemented by internal/mailer.SMTPMailer.
+type Mailer interface {
+	Send(ctx context.Context, to string, subject string, body string) error
 }
 
 // AccessClient is implemented by internal/access.Client.
@@ -97,13 +106,26 @@ func WithObjectStorage(storage ObjectStorage, maxFileSize int64) Option {
 	}
 }
 
+// WithPasswordReset wires the mailer used to send reset links, the public
+// front-end base URL the link points at, and how long a token stays valid.
+func WithPasswordReset(mailer Mailer, publicFrontBaseURL string, resetTokenTTL time.Duration) Option {
+	return func(s *service) {
+		s.mailer = mailer
+		s.publicFrontBaseURL = publicFrontBaseURL
+		s.resetTokenTTL = resetTokenTTL
+	}
+}
+
 type service struct {
-	logger        zerolog.Logger
-	storage       Storage
-	accessClient  AccessClient
-	fnsClient     FnsClient
-	objectStorage ObjectStorage
-	maxFileSize   int64
+	logger             zerolog.Logger
+	storage            Storage
+	accessClient       AccessClient
+	fnsClient          FnsClient
+	objectStorage      ObjectStorage
+	maxFileSize        int64
+	mailer             Mailer
+	publicFrontBaseURL string
+	resetTokenTTL      time.Duration
 }
 
 func NewAuthApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient, fnsClient FnsClient, options ...Option) *service {

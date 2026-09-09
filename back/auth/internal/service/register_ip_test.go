@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -13,16 +14,20 @@ import (
 )
 
 type stubStorage struct {
-	createIPUserCalled bool
-	surename           string
-	name               string
-	middleName         string
-	phone              *string
-	fileURL            string
-	fileName           string
-	innExists          bool
-	innExistsErr       error
-	getUserByEmailFn   func(context.Context, string) (postgres.User, error)
+	createIPUserCalled                  bool
+	surename                            string
+	name                                string
+	middleName                          string
+	phone                               *string
+	fileURL                             string
+	fileName                            string
+	innExists                           bool
+	innExistsErr                        error
+	getUserByEmailFn                    func(context.Context, string) (postgres.User, error)
+	createPasswordResetTokenFn          func(context.Context, uuid.UUID, string, time.Time) error
+	invalidateUserPasswordResetTokensFn func(context.Context, uuid.UUID) error
+	getPasswordResetTokenFn             func(context.Context, string) (postgres.PasswordResetToken, error)
+	updateUserPasswordFn                func(context.Context, uuid.UUID, string) error
 }
 
 func (s *stubStorage) GetUserByEmail(ctx context.Context, email string) (postgres.User, error) {
@@ -66,7 +71,31 @@ func (s *stubStorage) CreateIndividualUser(
 }
 
 func (s *stubStorage) UpdateUserPassword(ctx context.Context, userID uuid.UUID, passwordHash string) error {
+	if s.updateUserPasswordFn != nil {
+		return s.updateUserPasswordFn(ctx, userID, passwordHash)
+	}
 	return nil
+}
+
+func (s *stubStorage) CreatePasswordResetToken(ctx context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error {
+	if s.createPasswordResetTokenFn != nil {
+		return s.createPasswordResetTokenFn(ctx, userID, tokenHash, expiresAt)
+	}
+	return nil
+}
+
+func (s *stubStorage) InvalidateUserPasswordResetTokens(ctx context.Context, userID uuid.UUID) error {
+	if s.invalidateUserPasswordResetTokensFn != nil {
+		return s.invalidateUserPasswordResetTokensFn(ctx, userID)
+	}
+	return nil
+}
+
+func (s *stubStorage) GetPasswordResetToken(ctx context.Context, tokenHash string) (postgres.PasswordResetToken, error) {
+	if s.getPasswordResetTokenFn != nil {
+		return s.getPasswordResetTokenFn(ctx, tokenHash)
+	}
+	return postgres.PasswordResetToken{}, postgres.ErrTokenNotFound
 }
 
 type stubObjectStorage struct {

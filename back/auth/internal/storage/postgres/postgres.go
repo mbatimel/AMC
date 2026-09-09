@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
@@ -14,10 +15,11 @@ import (
 )
 
 var (
-	ErrUserNotFound = errors.New("user not found")
-	ErrEmailTaken   = errors.New("email already taken")
-	ErrInnTaken     = errors.New("inn already taken")
-	ErrRoleNotFound = errors.New("role not found")
+	ErrUserNotFound  = errors.New("user not found")
+	ErrEmailTaken    = errors.New("email already taken")
+	ErrInnTaken      = errors.New("inn already taken")
+	ErrRoleNotFound  = errors.New("role not found")
+	ErrTokenNotFound = errors.New("password reset token not found")
 )
 
 //go:embed sql/getUserByEmail.sql
@@ -49,6 +51,15 @@ var sqlGetRoleByCode string
 
 //go:embed sql/insertUserRole.sql
 var sqlInsertUserRole string
+
+//go:embed sql/insertPasswordResetToken.sql
+var sqlInsertPasswordResetToken string
+
+//go:embed sql/invalidateUserPasswordResetTokens.sql
+var sqlInvalidateUserPasswordResetTokens string
+
+//go:embed sql/getPasswordResetToken.sql
+var sqlGetPasswordResetToken string
 
 const uniqueViolationCode = "23505"
 
@@ -248,4 +259,41 @@ func (s *Storage) UpdateUserPassword(ctx context.Context, userID uuid.UUID, pass
 		return ErrUserNotFound
 	}
 	return nil
+}
+
+type PasswordResetToken struct {
+	UserID    uuid.UUID
+	ExpiresAt time.Time
+	UsedAt    sql.NullTime
+}
+
+// CreatePasswordResetToken stores the hash of a freshly generated reset
+// token. The raw token itself is never persisted — only its SHA-256 hash,
+// so a database leak alone cannot be used to reset anyone's password.
+func (s *Storage) CreatePasswordResetToken(ctx context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error {
+	if _, err := s.pool.Exec(ctx, sqlInsertPasswordResetToken, userID, tokenHash, expiresAt); err != nil {
+		return fmt.Errorf("insert password reset token: %w", err)
+	}
+	return nil
+}
+
+// InvalidateUserPasswordResetTokens marks every still-active token for a
+// user as used, without needing to know their hashes.
+func (s *Storage) InvalidateUserPasswordResetTokens(ctx context.Context, userID uuid.UUID) error {
+	if _, err := s.pool.Exec(ctx, sqlInvalidateUserPasswordResetTokens, userID); err != nil {
+		return fmt.Errorf("invalidate user password reset tokens: %w", err)
+	}
+	return nil
+}
+
+func (s *Storage) GetPasswordResetToken(ctx context.Context, tokenHash string) (PasswordResetToken, error) {
+	var token PasswordResetToken
+	err := s.pool.QueryRow(ctx, sqlGetPasswordResetToken, tokenHash).Scan(&token.UserID, &token.ExpiresAt, &token.UsedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return PasswordResetToken{}, ErrTokenNotFound
+	}
+	if err != nil {
+		return PasswordResetToken{}, fmt.Errorf("get password reset token: %w", err)
+	}
+	return token, nil
 }

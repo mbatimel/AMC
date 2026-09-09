@@ -13,6 +13,7 @@ import (
 	accessTransport "github.com/mbatimel/AMC/access/pkg/client/transport"
 	"github.com/mbatimel/AMC/auth/internal/client/fns"
 	"github.com/mbatimel/AMC/auth/internal/config"
+	"github.com/mbatimel/AMC/auth/internal/mailer"
 	authService "github.com/mbatimel/AMC/auth/internal/service"
 	postgres "github.com/mbatimel/AMC/auth/internal/storage/postgres"
 	customHandlers "github.com/mbatimel/AMC/auth/internal/transport/custom-handlers"
@@ -52,8 +53,14 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create S3 client")
 	}
+	mail := mailer.NewSMTPMailer(
+		log.Logger, cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword,
+		cfg.SMTPFrom, cfg.SMTPTLS, cfg.SMTPTimeout,
+	)
 	svc := authService.NewAuthApiService(log.Logger, postgresStorage, access, fnsClient,
-		authService.WithObjectStorage(s3Client, cfg.S3MaxFileSize))
+		authService.WithObjectStorage(s3Client, cfg.S3MaxFileSize),
+		authService.WithPasswordReset(mail, cfg.PublicFrontBaseURL, cfg.ResetTokenTTL),
+	)
 
 	registerIPRoutes := customHandlers.NewRegisterIPRoutes(svc, cfg.S3MaxFileSize)
 	maxBodySize := int(cfg.S3MaxFileSize) + (1 << 20)

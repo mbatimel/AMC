@@ -5,49 +5,71 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
 
 type Config struct {
-	PGHost           string
-	PGPort           string
-	PGDB             string
-	PGUser           string
-	PGPassword       string
-	BindAddr         string
-	AccessURL        string
-	FnsAddr          string
-	FnsKey           string
-	S3Endpoint       string
-	S3PublicEndpoint string
-	S3AccessKey      string
-	S3SecretKey      string
-	S3Bucket         string
-	S3Region         string
-	S3UseSSL         bool
-	S3MaxFileSize    int64
+	PGHost             string
+	PGPort             string
+	PGDB               string
+	PGUser             string
+	PGPassword         string
+	BindAddr           string
+	AccessURL          string
+	FnsAddr            string
+	FnsKey             string
+	S3Endpoint         string
+	S3PublicEndpoint   string
+	S3AccessKey        string
+	S3SecretKey        string
+	S3Bucket           string
+	S3Region           string
+	S3UseSSL           bool
+	S3MaxFileSize      int64
+	SMTPHost           string
+	SMTPPort           string
+	SMTPUsername       string
+	SMTPPassword       string
+	SMTPFrom           string
+	SMTPTLS            bool
+	SMTPTimeout        time.Duration
+	PublicFrontBaseURL string
+	ResetTokenTTL      time.Duration
 }
 
 func LoadConfig() Config {
 	cfg := Config{
-		PGHost:           GetEnv("PG_HOST", "localhost"),
-		PGPort:           GetEnv("PG_PORT", "5432"),
-		PGDB:             os.Getenv("PG_DB"),
-		PGUser:           os.Getenv("PG_USER"),
-		PGPassword:       os.Getenv("PG_PASSWORD"),
-		BindAddr:         GetEnv("BIND_ADDR", ":8081"),
-		AccessURL:        os.Getenv("ACCESS_URL"),
-		FnsAddr:          os.Getenv("API_FNS_ADDR"),
-		FnsKey:           os.Getenv("API_FNS_KEY"),
-		S3Endpoint:       os.Getenv("S3_ENDPOINT"),
-		S3PublicEndpoint: os.Getenv("S3_PUBLIC_ENDPOINT"),
-		S3AccessKey:      os.Getenv("S3_ACCESS_KEY"),
-		S3SecretKey:      os.Getenv("S3_SECRET_KEY"),
-		S3Bucket:         os.Getenv("S3_BUCKET"),
-		S3Region:         GetEnv("S3_REGION", "us-east-1"),
-		S3UseSSL:         getEnvBool("S3_USE_SSL", false),
-		S3MaxFileSize:    getEnvInt64("S3_MAX_FILE_SIZE", 10*1024*1024),
+		PGHost:             GetEnv("PG_HOST", "localhost"),
+		PGPort:             GetEnv("PG_PORT", "5432"),
+		PGDB:               os.Getenv("PG_DB"),
+		PGUser:             os.Getenv("PG_USER"),
+		PGPassword:         os.Getenv("PG_PASSWORD"),
+		BindAddr:           GetEnv("BIND_ADDR", ":8081"),
+		AccessURL:          os.Getenv("ACCESS_URL"),
+		FnsAddr:            os.Getenv("API_FNS_ADDR"),
+		FnsKey:             os.Getenv("API_FNS_KEY"),
+		S3Endpoint:         os.Getenv("S3_ENDPOINT"),
+		S3PublicEndpoint:   os.Getenv("S3_PUBLIC_ENDPOINT"),
+		S3AccessKey:        os.Getenv("S3_ACCESS_KEY"),
+		S3SecretKey:        os.Getenv("S3_SECRET_KEY"),
+		S3Bucket:           os.Getenv("S3_BUCKET"),
+		S3Region:           GetEnv("S3_REGION", "us-east-1"),
+		S3UseSSL:           getEnvBool("S3_USE_SSL", false),
+		S3MaxFileSize:      getEnvInt64("S3_MAX_FILE_SIZE", 10*1024*1024),
+		SMTPHost:           os.Getenv("SMTP_HOST"),
+		SMTPPort:           GetEnv("SMTP_PORT", "587"),
+		SMTPUsername:       os.Getenv("SMTP_USERNAME"),
+		SMTPPassword:       os.Getenv("SMTP_PASSWORD"),
+		SMTPFrom:           os.Getenv("SMTP_FROM"),
+		SMTPTLS:            true,
+		SMTPTimeout:        10 * time.Second,
+		PublicFrontBaseURL: os.Getenv("PUBLIC_FRONT_BASE_URL"),
+		ResetTokenTTL:      getEnvDuration("RESET_TOKEN_TTL", 30*time.Minute),
+	}
+	if cfg.PublicFrontBaseURL == "" {
+		log.Warn().Msg("PUBLIC_FRONT_BASE_URL is not set — password reset emails will contain a broken link")
 	}
 
 	if cfg.PGDB == "" || cfg.PGUser == "" || cfg.PGPassword == "" {
@@ -85,6 +107,18 @@ func getEnvInt64(key string, fallback int64) int64 {
 	parsed, err := strconv.ParseInt(value, 10, 64)
 	if err != nil || parsed <= 0 {
 		log.Fatal().Err(err).Str("key", key).Msg("invalid positive integer environment variable")
+	}
+	return parsed
+}
+
+func getEnvDuration(key string, fallback time.Duration) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	parsed, err := time.ParseDuration(value)
+	if err != nil || parsed <= 0 {
+		log.Fatal().Err(err).Str("key", key).Msg("invalid positive duration environment variable")
 	}
 	return parsed
 }

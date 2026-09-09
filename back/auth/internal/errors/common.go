@@ -57,6 +57,12 @@ var (
 		}
 		return err
 	}
+	TokenInvalidError = func() *Error {
+		return New("token is invalid", fasthttp.StatusBadRequest, ErrTokenInvalid)
+	}
+	TokenExpiredError = func() *Error {
+		return New("token is expired", fasthttp.StatusBadRequest, ErrTokenExpired)
+	}
 )
 
 const (
@@ -71,4 +77,6 @@ const (
 	ErrInnTaken           = "auth.errors.innTaken"           // ИНН уже зарегистрирован
 	ErrNotFound           = "auth.errors.notFound"           // Не найдено
 	ErrUserBlocked        = "auth.errors.userBlocked"        // Пользователь заблокирован
+	ErrTokenInvalid       = "auth.errors.tokenInvalid"       // Токен сброса пароля недействителен
+	ErrTokenExpired       = "auth.errors.tokenExpired"       // Токен сброса пароля просрочен
 )
