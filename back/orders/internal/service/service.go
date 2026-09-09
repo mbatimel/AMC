@@ -543,6 +543,7 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 			return response, customErrors.InternalServerError().SetOuterError(err)
 		}
 	}
+	_ = counterpartyRef // используется только в закомментированном ниже пуше в 1С
 
 	pushItems := make([]OnecOrderItem, 0, len(cartRows))
 	for _, row := range cartRows {
@@ -571,20 +572,26 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 		Total:             totals.Total,
 		Items:             orderItems,
 	}, func(ctx context.Context, orderID uuid.UUID, orderNumber string) (uuid.UUID, string, error) {
-		return s.onecPusher.PushOrder(ctx, OnecPushOrder{
-			ClientOrderID:    orderID,
-			OrderNumber:      orderNumber,
-			CounterpartyGUID: counterpartyRef.OneCGUID,
-			CounterpartyINN:  counterpartyRef.INN,
-			CounterpartyName: counterpartyRef.Name,
-			DeliveryType:     deliveryType,
-			DeliveryAddress:  deliveryAddress,
-			ContactName:      contactName,
-			Phone:            phone,
-			Email:            email,
-			Comment:          comment,
-			Items:            pushItems,
-		})
+		// TEMPORARY: 1С push disabled for the demo — HTTP-сервис amc-integration
+		// ещё не опубликован на стороне 1С, из-за чего оформление заказа падало
+		// целиком (см. back/integrations/README.md). Возвращаем "успех" без
+		// реального похода в 1С, чтобы заказ сохранялся. Вернуть вызов
+		// s.onecPusher.PushOrder(...), как только 1С-сервис поднимут.
+		return uuid.Nil, "", nil
+		// return s.onecPusher.PushOrder(ctx, OnecPushOrder{
+		// 	ClientOrderID:    orderID,
+		// 	OrderNumber:      orderNumber,
+		// 	CounterpartyGUID: counterpartyRef.OneCGUID,
+		// 	CounterpartyINN:  counterpartyRef.INN,
+		// 	CounterpartyName: counterpartyRef.Name,
+		// 	DeliveryType:     deliveryType,
+		// 	DeliveryAddress:  deliveryAddress,
+		// 	ContactName:      contactName,
+		// 	Phone:            phone,
+		// 	Email:            email,
+		// 	Comment:          comment,
+		// 	Items:            pushItems,
+		// })
 	})
 	if err != nil {
 		// InsertDeliveryAddress/InsertContact above committed on their own,
