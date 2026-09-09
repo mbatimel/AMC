@@ -368,3 +368,31 @@ func (m loggerAdminAPI) DeleteCertificate(ctx context.Context, userID uuid.UUID,
 	}(time.Now())
 	return m.next.DeleteCertificate(ctx, userID, certID)
 }
+
+func (m loggerAdminAPI) InviteAdmin(ctx context.Context, userID uuid.UUID, email string, name string) (response models.InviteAdminResponse, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AdminAPI").Str("method", "inviteAdmin").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			// Redact the generated password before logging — it must not land
+			// in the application log stream (see docs/superpowers/specs/2026-09-10-admin-invite-design.md).
+			redactedResponse := response
+			redactedResponse.Password = "REDACTED"
+			fields := map[string]interface{}{
+				"method": "adminAPI.inviteAdmin",
+				"request": viewer.Sprintf("%+v", requestAdminAPIInviteAdmin{
+					Email:  email,
+					Name:   name,
+					UserID: userID,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdminAPIInviteAdmin{Response: redactedResponse}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call inviteAdmin")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call inviteAdmin")
+	}(time.Now())
+	return m.next.InviteAdmin(ctx, userID, email, name)
+}

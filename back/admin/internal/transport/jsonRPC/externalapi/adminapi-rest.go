@@ -24,15 +24,15 @@ func (http *httpAdminAPI) serveLogin(ctx *fiber.Ctx) (err error) {
 
 	var request requestAdminAPILogin
 
-	if _email := ctx.Query("email"); _email != "" {
-		var email string
-		email = _email
-		request.Email = email
-	}
 	if _password := ctx.Query("password"); _password != "" {
 		var password string
 		password = _password
 		request.Password = password
+	}
+	if _email := ctx.Query("email"); _email != "" {
+		var email string
+		email = _email
+		request.Email = email
 	}
 
 	return customhandlers.Login(ctx, http.svc, request.Email, request.Password)
@@ -397,4 +397,31 @@ func (http *httpAdminAPI) serveDeleteCertificate(ctx *fiber.Ctx) (err error) {
 	}
 
 	return customhandlers.DeleteCertificate(ctx, http.svc, request.UserID, request.CertID)
+}
+func (http *httpAdminAPI) inviteAdmin(ctx context.Context, request requestAdminAPIInviteAdmin) (response responseAdminAPIInviteAdmin, err error) {
+
+	response.Response, err = http.svc.InviteAdmin(ctx, request.UserID, request.Email, request.Name)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAdminAPI) serveInviteAdmin(ctx *fiber.Ctx) (err error) {
+
+	var request requestAdminAPIInviteAdmin
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
+
+	if _userID := string(ctx.Request().Header.Peek("X-User-Id")); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.InviteAdmin(ctx, http.svc, request.UserID, request.Email, request.Name)
 }

@@ -364,3 +364,26 @@ func (m metricsAdminAPI) DeleteCertificate(ctx context.Context, userID uuid.UUID
 
 	return m.next.DeleteCertificate(ctx, userID, certID)
 }
+
+func (m metricsAdminAPI) InviteAdmin(ctx context.Context, userID uuid.UUID, email string, name string) (response models.InviteAdminResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("adminAPI", "inviteAdmin", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("adminAPI", "inviteAdmin", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("adminAPI", "inviteAdmin", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.InviteAdmin(ctx, userID, email, name)
+}

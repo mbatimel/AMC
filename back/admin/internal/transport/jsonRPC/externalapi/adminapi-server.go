@@ -26,6 +26,7 @@ type serverAdminAPI struct {
 	createCertificate      AdminAPICreateCertificate
 	updateCertificate      AdminAPIUpdateCertificate
 	deleteCertificate      AdminAPIDeleteCertificate
+	inviteAdmin            AdminAPIInviteAdmin
 }
 
 type MiddlewareSetAdminAPI interface {
@@ -45,6 +46,7 @@ type MiddlewareSetAdminAPI interface {
 	WrapCreateCertificate(m MiddlewareAdminAPICreateCertificate)
 	WrapUpdateCertificate(m MiddlewareAdminAPIUpdateCertificate)
 	WrapDeleteCertificate(m MiddlewareAdminAPIDeleteCertificate)
+	WrapInviteAdmin(m MiddlewareAdminAPIInviteAdmin)
 
 	WithMetrics()
 	WithLog()
@@ -57,6 +59,7 @@ func newServerAdminAPI(svc externalapi.AdminAPI) *serverAdminAPI {
 		deleteCertificate:      svc.DeleteCertificate,
 		deleteLegalDoc:         svc.DeleteLegalDoc,
 		getSession:             svc.GetSession,
+		inviteAdmin:            svc.InviteAdmin,
 		listAuditLog:           svc.ListAuditLog,
 		listCertificates:       svc.ListCertificates,
 		listLegalDocVersions:   svc.ListLegalDocVersions,
@@ -88,6 +91,7 @@ func (srv *serverAdminAPI) Wrap(m MiddlewareAdminAPI) {
 	srv.createCertificate = srv.svc.CreateCertificate
 	srv.updateCertificate = srv.svc.UpdateCertificate
 	srv.deleteCertificate = srv.svc.DeleteCertificate
+	srv.inviteAdmin = srv.svc.InviteAdmin
 }
 
 func (srv *serverAdminAPI) Login(ctx context.Context, email string, password string) (response models.LoginResponse, err error) {
@@ -150,6 +154,10 @@ func (srv *serverAdminAPI) DeleteCertificate(ctx context.Context, userID uuid.UU
 	return srv.deleteCertificate(ctx, userID, certID)
 }
 
+func (srv *serverAdminAPI) InviteAdmin(ctx context.Context, userID uuid.UUID, email string, name string) (response models.InviteAdminResponse, err error) {
+	return srv.inviteAdmin(ctx, userID, email, name)
+}
+
 func (srv *serverAdminAPI) WrapLogin(m MiddlewareAdminAPILogin) {
 	srv.login = m(srv.login)
 }
@@ -208,6 +216,10 @@ func (srv *serverAdminAPI) WrapUpdateCertificate(m MiddlewareAdminAPIUpdateCerti
 
 func (srv *serverAdminAPI) WrapDeleteCertificate(m MiddlewareAdminAPIDeleteCertificate) {
 	srv.deleteCertificate = m(srv.deleteCertificate)
+}
+
+func (srv *serverAdminAPI) WrapInviteAdmin(m MiddlewareAdminAPIInviteAdmin) {
+	srv.inviteAdmin = m(srv.inviteAdmin)
 }
 
 func (srv *serverAdminAPI) WithMetrics() {

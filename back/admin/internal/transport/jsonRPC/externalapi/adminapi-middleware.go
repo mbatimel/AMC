@@ -24,6 +24,7 @@ type AdminAPIListPublicCertificates func(ctx context.Context) (response models.L
 type AdminAPICreateCertificate func(ctx context.Context, userID uuid.UUID, title string, sortOrder int, isActive bool, fileName string, fileContentBase64 string) (response models.Certificate, err error)
 type AdminAPIUpdateCertificate func(ctx context.Context, userID uuid.UUID, certID uuid.UUID, title string, sortOrder int, isActive bool, fileName string, fileContentBase64 string) (response models.Certificate, err error)
 type AdminAPIDeleteCertificate func(ctx context.Context, userID uuid.UUID, certID uuid.UUID) (response models.DeleteCertificateResponse, err error)
+type AdminAPIInviteAdmin func(ctx context.Context, userID uuid.UUID, email string, name string) (response models.InviteAdminResponse, err error)
 
 type MiddlewareAdminAPI func(next externalapi.AdminAPI) externalapi.AdminAPI
 
@@ -42,3 +43,4 @@ type MiddlewareAdminAPIListPublicCertificates func(next AdminAPIListPublicCertif
 type MiddlewareAdminAPICreateCertificate func(next AdminAPICreateCertificate) AdminAPICreateCertificate
 type MiddlewareAdminAPIUpdateCertificate func(next AdminAPIUpdateCertificate) AdminAPIUpdateCertificate
 type MiddlewareAdminAPIDeleteCertificate func(next AdminAPIDeleteCertificate) AdminAPIDeleteCertificate
+type MiddlewareAdminAPIInviteAdmin func(next AdminAPIInviteAdmin) AdminAPIInviteAdmin

@@ -150,3 +150,13 @@ type requestAdminAPIDeleteCertificate struct {
 type responseAdminAPIDeleteCertificate struct {
 	Response models.DeleteCertificateResponse `json:"response,omitempty"`
 }
+
+type requestAdminAPIInviteAdmin struct {
+	UserID uuid.UUID `json:"userID,omitempty"`
+	Email  string    `json:"email,omitempty"`
+	Name   string    `json:"name,omitempty"`
+}
+
+type responseAdminAPIInviteAdmin struct {
+	Response models.InviteAdminResponse `json:"response,omitempty"`
+}
