@@ -1,23 +1,9 @@
-import { AppPath, getLegalDocPath } from '@/core/shared/router/paths';
+import { AppPath } from '@/core/shared/router/paths';
 
 export type FooterLinkItem = {
   href: string;
   label: string;
 };
-
-export const FOOTER_BRANDS = [
-  'Волжский инструмент',
-  'ВИЗ',
-  'Krotec',
-  'Schwert',
-  'Канаш',
-  'Delta',
-  'Белый Медведь',
-  'BOON',
-  'Камышин',
-  'Сервис Ключ',
-  'СТиЗ',
-];
 
 export const FOOTER_BRANDS_TITLE = 'Бренды на портале';
 
@@ -47,13 +33,6 @@ export const FOOTER_INFO_LINKS: FooterLinkItem[] = [
   { href: AppPath.Certificates, label: 'Сертификаты' },
   { href: AppPath.Contacts, label: 'Контакты' },
   { href: AppPath.Support, label: 'Поддержка' },
-];
-
-export const FOOTER_LEGAL_LINKS: FooterLinkItem[] = [
-  { href: getLegalDocPath('offer'), label: 'Оферта' },
-  { href: getLegalDocPath('privacy'), label: 'Конфиденциальность' },
-  { href: getLegalDocPath('consent'), label: 'Согласие на ПД' },
-  { href: getLegalDocPath('user-agreement'), label: 'Пользовательское соглашение' },
 ];
 
 export const FOOTER_COPYRIGHT = '© 2026, ООО ПО «Волжский инструмент». Все права защищены.';

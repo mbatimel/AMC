@@ -20,7 +20,8 @@ export const HomeContent = (): JSX.Element => {
     homePromosRequested,
   ]);
 
-  const { banners } = useContent();
+  const { banners, content: portalContent, isPending } = useContent();
+  const isHeroPending = isPending && !portalContent?.home;
 
   useEffect(() => {
     requestCategories();
@@ -29,7 +30,7 @@ export const HomeContent = (): JSX.Element => {
 
   return (
     <div className={clsx(styles.root)}>
-      <HomeHero content={content.hero} />
+      <HomeHero content={content.hero} isPending={isHeroPending} />
       {banners ? <HomeBanners banners={banners} /> : null}
       <HomePromos content={content.promos} />
       <HomeCategories content={content.categories} />

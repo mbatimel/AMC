@@ -33,9 +33,9 @@ export const Terms = (): JSX.Element => {
   return (
     <Page>
       <InfoPage
-        description={page?.description}
-        eyebrow="Сотрудничество"
-        title={page?.title || 'Условия работы'}
+        description={page?.description || undefined}
+        eyebrow={page?.eyebrow || undefined}
+        title={page?.title || undefined}
       >
         {isPending && !page ? (
           <InfoCard>

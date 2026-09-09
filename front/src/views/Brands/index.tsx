@@ -5,8 +5,7 @@ import { useUnit } from 'effector-react';
 import Link from 'next/link';
 import { useEffect } from 'react';
 
-import { AppPath } from '@/core/shared/router/paths';
-import { FOOTER_BRANDS } from '@/core/shared/ui/Footer/constants';
+import { getCatalogBrandPath } from '@/core/shared/router/paths';
 import { InfoCard, InfoPage, InfoPageSkeleton } from '@/core/shared/ui/InfoPage';
 import { Page } from '@/core/shared/ui/Page';
 
@@ -29,11 +28,7 @@ export const Brands = (): JSX.Element => {
 
   return (
     <Page>
-      <InfoPage
-        description="Собственное производство и партнёрские марки, представленные на портале."
-        eyebrow="Каталог"
-        title="Бренды"
-      >
+      <InfoPage title="Бренды">
         <InfoCard>
           {isPending && !hasApiBrands ? <InfoPageSkeleton /> : null}
           {error && !hasApiBrands ? <p className={clsx(styles.error)}>{error}</p> : null}
@@ -42,7 +37,10 @@ export const Brands = (): JSX.Element => {
             <ul className={clsx(styles.grid)}>
               {brands.map((brand) => (
                 <li key={brand.id}>
-                  <Link className={clsx(styles.card)} href={AppPath.Catalog}>
+                  <Link
+                    className={clsx(styles.card)}
+                    href={getCatalogBrandPath(brand.id, brand.name)}
+                  >
                     <span aria-hidden className={clsx(styles.logo)}>
                       {brand.name.slice(0, 2).toUpperCase()}
                     </span>
@@ -54,20 +52,8 @@ export const Brands = (): JSX.Element => {
             </ul>
           ) : null}
 
-          {!isPending && !hasApiBrands ? (
-            <ul className={clsx(styles.grid)}>
-              {FOOTER_BRANDS.map((brandName) => (
-                <li key={brandName}>
-                  <Link className={clsx(styles.card)} href={AppPath.Catalog}>
-                    <span aria-hidden className={clsx(styles.logo)}>
-                      {brandName.slice(0, 2).toUpperCase()}
-                    </span>
-                    <span className={clsx(styles.name)}>{brandName}</span>
-                    <span className={clsx(styles.action)}>Смотреть товары →</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          {!isPending && !error && !hasApiBrands ? (
+            <p className={clsx(styles.error)}>Бренды ещё не опубликованы.</p>
           ) : null}
         </InfoCard>
       </InfoPage>

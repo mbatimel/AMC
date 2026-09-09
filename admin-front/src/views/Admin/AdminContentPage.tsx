@@ -11,8 +11,9 @@ import type {
   ContentPageKey,
   HomePageContent,
   ListPageContent,
+  TermsBlock,
   TermsPageContent,
-} from '@/core/shared/api/content';
+} from '@/core/shared/server/portal/types';
 
 import { useContent } from '@/core/entities/content';
 import { CONTENT_PAGE_TITLES } from '@/core/shared/api/content';
@@ -403,10 +404,13 @@ const HomeEditor = ({ onChange, value }: EditorProps<HomePageContent>): JSX.Elem
 );
 
 const TermsEditor = ({ onChange, value }: EditorProps<TermsPageContent>): JSX.Element => {
-  const blocks = value.terms ?? [];
+  const blocks: TermsBlock[] = value.terms ?? [];
 
   return (
     <>
+      {field('terms-eyebrow', 'Надзаголовок', value.eyebrow ?? '', (eyebrow) =>
+        onChange({ eyebrow }),
+      )}
       {field('terms-title', 'Заголовок страницы', value.title, (title) => onChange({ title }))}
       {field('terms-description', 'Подзаголовок', value.description ?? '', (description) =>
         onChange({ description }),

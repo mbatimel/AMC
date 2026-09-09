@@ -27,18 +27,68 @@ import {
 
 const departmentIcons = [IconSupport, IconPhone, IconBuilding] as const;
 
+const ContactsSkeleton = (): JSX.Element => (
+  <div aria-busy="true" className={clsx(styles.root)} role="status">
+    <section className={clsx(styles.hero)}>
+      <div className={clsx(styles.heroInner)}>
+        <span className={clsx(styles.skeletonLine, styles.skeletonBadge)} />
+        <span className={clsx(styles.skeletonLine, styles.skeletonTitle)} />
+        <span className={clsx(styles.skeletonLine, styles.skeletonSubtitle)} />
+      </div>
+    </section>
+    <div className={clsx(styles.container)}>
+      <div className={clsx(styles.skeletonBlock)}>
+        <span className={clsx(styles.skeletonLine, styles.skeletonWide)} />
+        <span className={clsx(styles.skeletonLine, styles.skeletonWide)} />
+        <span className={clsx(styles.skeletonLine)} />
+      </div>
+    </div>
+  </div>
+);
+
 export const Contacts = (): JSX.Element => {
   const showToast = useUnit(toastShown);
   const { content, error, isPending } = useContent();
   const contacts = content?.contacts;
-  const title = contacts?.title ?? 'Контакты';
-  const subtitle = contacts?.subtitle ?? 'Контакты отделов и представительств компании.';
-  const workHours = contacts?.work_hours ?? '';
-  const managers = contacts?.managers ?? [];
-  const offices = contacts?.offices ?? [];
-  const requisiteItems = contacts?.requisite_items ?? [];
-  const warehouseCaption = contacts?.warehouse_map_caption ?? '';
-  const warehouseMapUrl = contacts?.warehouse_map_url ?? '';
+
+  if (isPending && !contacts) {
+    return (
+      <Page>
+        <ContactsSkeleton />
+      </Page>
+    );
+  }
+
+  if (error && !contacts) {
+    return (
+      <Page>
+        <div className={clsx(styles.root)}>
+          <div className={clsx(styles.container)}>
+            <p className={clsx(styles.error)}>{error}</p>
+          </div>
+        </div>
+      </Page>
+    );
+  }
+
+  if (!contacts) {
+    return (
+      <Page>
+        <div className={clsx(styles.root)}>
+          <div className={clsx(styles.container)}>
+            <p className={clsx(styles.status)}>Контент страницы пока не опубликован.</p>
+          </div>
+        </div>
+      </Page>
+    );
+  }
+
+  const workHours = contacts.work_hours ?? '';
+  const managers = contacts.managers ?? [];
+  const offices = contacts.offices ?? [];
+  const requisiteItems = contacts.requisite_items ?? [];
+  const warehouseCaption = contacts.warehouse_map_caption ?? '';
+  const warehouseMapUrl = contacts.warehouse_map_url ?? '';
   const hasWarehouseMap = Boolean(warehouseMapUrl && isYandexMapEmbedUrl(warehouseMapUrl));
 
   const copyRequisites = async (): Promise<void> => {
@@ -58,15 +108,14 @@ export const Contacts = (): JSX.Element => {
         <section className={clsx(styles.hero)}>
           <div className={clsx(styles.heroInner)}>
             {workHours ? <p className={clsx(styles.heroBadge)}>Мы на связи {workHours}</p> : null}
-            <h1 className={clsx(styles.heroTitle)}>{title}</h1>
-            {subtitle ? <p className={clsx(styles.heroDescription)}>{subtitle}</p> : null}
+            {contacts.title ? <h1 className={clsx(styles.heroTitle)}>{contacts.title}</h1> : null}
+            {contacts.subtitle ? (
+              <p className={clsx(styles.heroDescription)}>{contacts.subtitle}</p>
+            ) : null}
           </div>
         </section>
 
         <div className={clsx(styles.container)}>
-          {isPending && !contacts ? <p className={clsx(styles.status)}>Загрузка…</p> : null}
-          {error && !contacts ? <p className={clsx(styles.error)}>{error}</p> : null}
-
           {managers.length > 0 ? (
             <section aria-label="Отделы" className={clsx(styles.departments)}>
               {managers.map((manager, index) => {

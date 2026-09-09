@@ -218,6 +218,8 @@ export type TermsBlock = {
 export type TermsPageContent = {
   /** Подзаголовок под H1. */
   description: string;
+  /** Мелкая подпись над заголовком (eyebrow). */
+  eyebrow?: string;
   /** Упорядоченный список секций на странице. */
   terms: TermsBlock[];
   title: string;

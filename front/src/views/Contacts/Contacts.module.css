@@ -63,6 +63,58 @@
   color: var(--alert);
 }
 
+.skeletonBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-block: 8px;
+}
+
+.skeletonLine {
+  display: block;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 14%);
+  animation: contacts-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.skeletonBadge {
+  inline-size: 220px;
+  block-size: 28px;
+}
+
+.skeletonTitle {
+  inline-size: min(420px, 80%);
+  block-size: 40px;
+  margin-block-start: 8px;
+}
+
+.skeletonSubtitle {
+  inline-size: min(560px, 90%);
+  block-size: 18px;
+  margin-block-start: 10px;
+}
+
+.skeletonWide {
+  inline-size: 100%;
+  block-size: 16px;
+  background: #e6e9f0;
+}
+
+.skeletonBlock .skeletonLine:last-child {
+  inline-size: 70%;
+}
+
+@keyframes contacts-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 .departments {
   display: grid;
   gap: 16px;

@@ -214,3 +214,44 @@
     text-align: center;
   }
 }
+
+.skeletonLine {
+  display: block;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 18%);
+  animation: home-hero-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.skeletonBadge {
+  inline-size: 180px;
+  block-size: 28px;
+}
+
+.skeletonTitle {
+  inline-size: min(520px, 90%);
+  block-size: 44px;
+  margin-block-start: 16px;
+}
+
+.skeletonText {
+  inline-size: min(480px, 85%);
+  block-size: 16px;
+  margin-block-start: 14px;
+}
+
+.skeletonTextShort {
+  inline-size: min(320px, 70%);
+  block-size: 16px;
+  margin-block-start: 10px;
+}
+
+@keyframes home-hero-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}

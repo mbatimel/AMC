@@ -11,21 +11,24 @@ import styles from './Certificates.module.css';
 export const Certificates = (): JSX.Element => {
   const { certificates, content, error, isPending } = useContent();
   const intro = content?.certificates;
+  const showIntroSkeleton = isPending && !intro;
 
   return (
     <Page>
-      <InfoPage
-        description="Документы, подтверждающие соответствие продукции ГОСТ, ТУ и системе менеджмента качества."
-        eyebrow="Качество"
-        title={intro?.title ?? 'Сертификаты и лицензии'}
-      >
+      <InfoPage title={intro?.title || undefined}>
+        {showIntroSkeleton ? (
+          <InfoCard>
+            <InfoPageSkeleton />
+          </InfoCard>
+        ) : null}
+
         {intro?.text ? (
           <InfoCard>
             <InfoText text={intro.text} />
           </InfoCard>
         ) : null}
 
-        <InfoCard title="Перечень документов">
+        <InfoCard title={certificates.length > 0 ? 'Перечень документов' : undefined}>
           {isPending && certificates.length === 0 ? <InfoPageSkeleton /> : null}
           {error && certificates.length === 0 ? (
             <p className={clsx(styles.error)}>{error}</p>

@@ -1,6 +1,5 @@
 import type { ContentPageKey } from '@/core/shared/server/portal/types';
 
-import { createDefaultPortalState } from '@/core/shared/server/portal/defaults';
 import { apiFail, apiOk, readJsonBody } from '@/core/shared/server/portal/response';
 import {
   appendAuditEntry,
@@ -43,7 +42,7 @@ export const PUT = async (request: Request, context: RouteContext): Promise<Resp
 
   updatePortalState((draft) => {
     if (key === 'terms') {
-      draft.content.terms = mergeTerms(createDefaultPortalState().content.terms, body);
+      draft.content.terms = mergeTerms(body);
 
       return;
     }

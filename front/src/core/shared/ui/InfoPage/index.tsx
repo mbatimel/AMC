@@ -10,7 +10,7 @@ type InfoPageProps = {
   children: React.ReactNode;
   description?: string;
   eyebrow?: string;
-  title: string;
+  title?: string;
 };
 
 export const InfoPage = ({ children, description, eyebrow, title }: InfoPageProps): JSX.Element => {
@@ -19,7 +19,7 @@ export const InfoPage = ({ children, description, eyebrow, title }: InfoPageProp
       <section className={clsx(styles.hero)}>
         <div className={clsx(styles.heroInner)}>
           {eyebrow ? <p className={clsx(styles.eyebrow)}>{eyebrow}</p> : null}
-          <h1 className={clsx(styles.title)}>{title}</h1>
+          {title ? <h1 className={clsx(styles.title)}>{title}</h1> : null}
           {description ? <p className={clsx(styles.description)}>{description}</p> : null}
         </div>
       </section>
@@ -27,8 +27,12 @@ export const InfoPage = ({ children, description, eyebrow, title }: InfoPageProp
       <div className={clsx(styles.container)}>
         <nav aria-label="Хлебные крошки" className={clsx(styles.breadcrumbs)}>
           <Link href={AppPath.Home}>Главная</Link>
-          <span>/</span>
-          <span>{title}</span>
+          {title ? (
+            <>
+              <span>/</span>
+              <span>{title}</span>
+            </>
+          ) : null}
         </nav>
         {children}
       </div>

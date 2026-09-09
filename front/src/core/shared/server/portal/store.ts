@@ -32,7 +32,7 @@ const mergeAbout = (
 ): AboutPageContent => ({
   ...defaults,
   ...saved,
-  offices: saved?.offices?.length ? saved.offices : defaults.offices,
+  offices: saved?.offices ?? defaults.offices ?? [],
 });
 
 const mergeContacts = (
@@ -41,12 +41,10 @@ const mergeContacts = (
 ): ContactsPageContent => ({
   ...defaults,
   ...saved,
-  managers: saved?.managers ?? defaults.managers,
-  offices: saved?.offices?.length ? saved.offices : defaults.offices,
-  requisite_items: saved?.requisite_items?.length
-    ? saved.requisite_items
-    : defaults.requisite_items,
-  subtitle: saved?.subtitle || defaults.subtitle,
+  managers: saved?.managers ?? defaults.managers ?? [],
+  offices: saved?.offices ?? defaults.offices ?? [],
+  requisite_items: saved?.requisite_items ?? defaults.requisite_items ?? [],
+  subtitle: saved?.subtitle ?? defaults.subtitle ?? '',
 });
 
 const normalizeTermsBlock = (value: unknown): null | TermsBlock => {
@@ -62,22 +60,28 @@ const normalizeTermsBlock = (value: unknown): null | TermsBlock => {
   };
 };
 
-/** Поддерживает новый контракт и старый `{ title, text }`. */
-export const mergeTerms = (defaults: TermsPageContent, saved?: object): TermsPageContent => {
+const EMPTY_TERMS: TermsPageContent = {
+  description: '',
+  eyebrow: '',
+  terms: [],
+  title: '',
+};
+
+/** Нормализует terms без подмешивания маркетинговых дефолтов. Поддерживает legacy `{ title, text }`. */
+export const mergeTerms = (saved?: object): TermsPageContent => {
   if (!saved) {
-    return defaults;
+    return { ...EMPTY_TERMS };
   }
 
   const record = saved as Record<string, unknown>;
-  const title = typeof record.title === 'string' && record.title ? record.title : defaults.title;
-  const description =
-    typeof record.description === 'string' && record.description
-      ? record.description
-      : defaults.description;
+  const title = typeof record.title === 'string' ? record.title : '';
+  const description = typeof record.description === 'string' ? record.description : '';
+  const eyebrow = typeof record.eyebrow === 'string' ? record.eyebrow : '';
 
   if (Array.isArray(record.terms)) {
     return {
       description,
+      eyebrow,
       terms: record.terms
         .map(normalizeTermsBlock)
         .filter((block): block is TermsBlock => block !== null),
@@ -98,12 +102,13 @@ export const mergeTerms = (defaults: TermsPageContent, saved?: object): TermsPag
 
     return {
       description,
+      eyebrow,
       terms: [{ description: html, title: '' }],
       title,
     };
   }
 
-  return { ...defaults, description, title };
+  return { description, eyebrow, terms: [], title };
 };
 
 const mergePortalState = (defaults: PortalState, saved: PortalState): PortalState => ({
@@ -114,7 +119,7 @@ const mergePortalState = (defaults: PortalState, saved: PortalState): PortalStat
     ...saved.content,
     about: mergeAbout(defaults.content.about, saved.content?.about),
     contacts: mergeContacts(defaults.content.contacts, saved.content?.contacts),
-    terms: mergeTerms(defaults.content.terms, saved.content?.terms),
+    terms: mergeTerms(saved.content?.terms),
   },
 });
 
@@ -149,8 +154,8 @@ export const readPortalState = (): PortalState => {
 
   const state = portalGlobal.__portalState;
 
-  // Всегда отдаём контракт `{ title, description, terms[] }` (миграция с legacy `text`).
-  state.content.terms = mergeTerms(createDefaultPortalState().content.terms, state.content.terms);
+  // Всегда отдаём контракт `{ title, description, eyebrow, terms[] }` (миграция с legacy `text`).
+  state.content.terms = mergeTerms(state.content.terms);
 
   return state;
 };

@@ -11,7 +11,7 @@ import { AppPath, getCatalogPromotionPath } from '@/core/shared/router/paths';
 
 import type { HomeCategoryCard, HomePageContent, HomePromoCard } from './lib/types';
 
-import { catalogHref, HOME_PAGE_MOCK } from './lib/mocks';
+import { catalogHref } from './lib/mocks';
 
 const maxHomeCategories = 6;
 
@@ -77,8 +77,8 @@ export const fetchHomePromosFx = createEffect(async (): Promise<HomePromoCard[]>
   return toPromoCards(promotions.filter((promo) => promo.status === 'active'));
 });
 
-/** Каталог реальных категорий с главной; до загрузки — статичный fallback. */
-export const $homeCategories = createStore<HomeCategoryCard[]>(HOME_PAGE_MOCK.categories.items).on(
+/** Каталог реальных категорий с главной; до загрузки — пустой список. */
+export const $homeCategories = createStore<HomeCategoryCard[]>([]).on(
   fetchHomeCategoriesFx.doneData,
   (_, result) => result.items,
 );
@@ -122,21 +122,25 @@ const toHomeContent = (
 
   return {
     categories: {
-      ...HOME_PAGE_MOCK.categories,
+      eyebrow: 'Каталог',
       items: categories,
+      title: 'Популярные категории',
       totalItems: categoriesTotalItems,
+      viewAllHref: AppPath.Catalog,
+      viewAllLabel: 'Весь каталог',
     },
     hero: {
-      ...HOME_PAGE_MOCK.hero,
-      bullets: home && home.features.length > 0 ? home.features : HOME_PAGE_MOCK.hero.bullets,
-      description: home?.hero_subtitle || HOME_PAGE_MOCK.hero.description,
+      badge: '',
+      bullets: home?.features ?? [],
+      description: home?.hero_subtitle ?? '',
+      imageUrl: '/hero-workshop.png',
       primaryCta: {
         href: AppPath.Catalog,
-        label: home?.hero_button || HOME_PAGE_MOCK.hero.primaryCta.label,
+        label: home?.hero_button ?? '',
       },
       secondaryCta: { href: AppPath.Terms, label: 'Условия для оптовиков' },
-      stats: home && home.stats.length > 0 ? home.stats : HOME_PAGE_MOCK.hero.stats,
-      title: home?.hero_title || HOME_PAGE_MOCK.hero.title,
+      stats: home?.stats ?? [],
+      title: home?.hero_title ?? '',
     },
     promos: {
       items: promoCards,
