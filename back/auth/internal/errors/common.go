@@ -37,6 +37,26 @@ var (
 	RequisitesFileInvalidTypeError = func() *Error {
 		return New("requisitesFile invalid type", fasthttp.StatusBadRequest, ErrInvalidRequest).AddCause("field", "requisitesFile")
 	}
+	UserBlockedError = func(reason, contactName, contactPhone, contactEmail string) *Error {
+		err := New("user is blocked", fasthttp.StatusForbidden, ErrUserBlocked)
+		cause := make([]string, 0, 8)
+		if reason != "" {
+			cause = append(cause, "reason", reason)
+		}
+		if contactName != "" {
+			cause = append(cause, "contactName", contactName)
+		}
+		if contactPhone != "" {
+			cause = append(cause, "contactPhone", contactPhone)
+		}
+		if contactEmail != "" {
+			cause = append(cause, "contactEmail", contactEmail)
+		}
+		if len(cause) > 0 {
+			err = err.AddCause(cause...)
+		}
+		return err
+	}
 )
 
 const (
@@ -50,4 +70,5 @@ const (
 	ErrEmailTaken         = "auth.errors.emailTaken"         // Email уже зарегистрирован
 	ErrInnTaken           = "auth.errors.innTaken"           // ИНН уже зарегистрирован
 	ErrNotFound           = "auth.errors.notFound"           // Не найдено
+	ErrUserBlocked        = "auth.errors.userBlocked"        // Пользователь заблокирован
 )

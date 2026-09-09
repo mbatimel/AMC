@@ -130,6 +130,13 @@ func (s *service) LoginUser(ctx context.Context, email string, password string) 
 		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
 	}
 
+	if !user.IsActive {
+		return uuid.Nil, customErrors.UserBlockedError(
+			user.BlockedReason.String, user.BlockedContactName.String,
+			user.BlockedContactPhone.String, user.BlockedContactEmail.String,
+		)
+	}
+
 	if compareErr := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); compareErr != nil {
 		return uuid.Nil, customErrors.InvalidCredentialsError()
 	}

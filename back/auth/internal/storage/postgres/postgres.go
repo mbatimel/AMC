@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -52,10 +53,15 @@ var sqlInsertUserRole string
 const uniqueViolationCode = "23505"
 
 type User struct {
-	ID       uuid.UUID
-	Email    string
-	Password string
-	Status   string
+	ID                  uuid.UUID
+	Email               string
+	Password            string
+	Status              string
+	IsActive            bool
+	BlockedReason       sql.NullString
+	BlockedContactName  sql.NullString
+	BlockedContactPhone sql.NullString
+	BlockedContactEmail sql.NullString
 }
 
 type Storage struct {
@@ -81,7 +87,10 @@ type transaction interface {
 
 func (s *Storage) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	var user User
-	err := s.pool.QueryRow(ctx, sqlGetUserByEmail, email).Scan(&user.ID, &user.Email, &user.Password, &user.Status)
+	err := s.pool.QueryRow(ctx, sqlGetUserByEmail, email).Scan(
+		&user.ID, &user.Email, &user.Password, &user.Status, &user.IsActive,
+		&user.BlockedReason, &user.BlockedContactName, &user.BlockedContactPhone, &user.BlockedContactEmail,
+	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, ErrUserNotFound
 	}

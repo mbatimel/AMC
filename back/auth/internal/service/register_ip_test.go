@@ -22,9 +22,13 @@ type stubStorage struct {
 	fileName           string
 	innExists          bool
 	innExistsErr       error
+	getUserByEmailFn   func(context.Context, string) (postgres.User, error)
 }
 
 func (s *stubStorage) GetUserByEmail(ctx context.Context, email string) (postgres.User, error) {
+	if s.getUserByEmailFn != nil {
+		return s.getUserByEmailFn(ctx, email)
+	}
 	return postgres.User{}, postgres.ErrUserNotFound
 }
 

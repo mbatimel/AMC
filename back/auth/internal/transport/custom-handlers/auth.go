@@ -29,7 +29,7 @@ func LoginUser(ctx *fiber.Ctx, svc externalapi.AuthAPI, email string, password s
 		}
 		l := log.Info()
 		if err != nil {
-			if errors.Is(err, errors.ForbiddenError()) {
+			if errors.Is(err, errors.ForbiddenError()) || errors.Is(err, errors.UserBlockedError("", "", "", "")) {
 				l = log.Warn().Err(err)
 			} else {
 				l = log.Error().Err(err)
@@ -41,6 +41,9 @@ func LoginUser(ctx *fiber.Ctx, svc externalapi.AuthAPI, email string, password s
 
 	userID, err := svc.LoginUser(ctx.UserContext(), email, password)
 	if err != nil {
+		if blockedErr, ok := err.(*errors.Error); ok && errors.Is(err, errors.UserBlockedError("", "", "", "")) {
+			blockedErr.AddCause("siteDomain", ctx.Hostname())
+		}
 		sendResponse(ctx, log.Logger, nil, err)
 		return nil
 	}
