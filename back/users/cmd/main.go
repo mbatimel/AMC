@@ -11,6 +11,7 @@ import (
 
 	"github.com/mbatimel/AMC/users/internal/clients"
 	"github.com/mbatimel/AMC/users/internal/config"
+	"github.com/mbatimel/AMC/users/internal/mailer"
 	usersService "github.com/mbatimel/AMC/users/internal/service"
 	postgres "github.com/mbatimel/AMC/users/internal/storage/postgres"
 	transportHttp "github.com/mbatimel/AMC/users/internal/transport/http"
@@ -35,7 +36,11 @@ func main() {
 
 	postgresStorage := postgres.New(pool)
 	accessClient := clients.NewAccessClient(cfg.AccessURL)
-	svc := usersService.New(log.Logger, postgresStorage, accessClient)
+	mail := mailer.NewSMTPMailer(
+		log.Logger, cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword,
+		cfg.SMTPFrom, cfg.SMTPTLS, cfg.SMTPTimeout,
+	)
+	svc := usersService.New(log.Logger, postgresStorage, accessClient, mail)
 
 	app := externalapi.New(log.Logger, externalapi.UsersAPI(externalapi.NewUsersAPI(svc))).WithLog().WithMetrics()
 	server := &fasthttp.Server{Handler: app.Fiber().Handler()}

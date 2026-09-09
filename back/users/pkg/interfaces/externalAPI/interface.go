@@ -95,9 +95,9 @@ type UsersAPI interface {
 	// @tg http-path=/v1/users/:userID/deactivate
 	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:DeactivateUser
 	// @tg summary=`Деактивация пользователя`
-	// @tg desc=`Устанавливает неактивный статус пользователя`
+	// @tg desc=`Устанавливает неактивный статус пользователя, сохраняет причину блокировки и контакты (все поля тела запроса необязательные), отправляет пользователю email`
 	// @tg uuidPackage=github.com/google/uuid
-	DeactivateUser(ctx context.Context, userID uuid.UUID) (response models.DeactivateUserResponse, err error)
+	DeactivateUser(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error)
 
 	// GetProfile returns the current user's profile.
 	// @tg http-method=GET
