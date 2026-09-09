@@ -42,3 +42,19 @@ type requestAuthAPISendEmailVerification struct {
 
 // Formal exchange type, please do not delete.
 type responseAuthAPISendEmailVerification struct{}
+
+type requestAuthAPIRequestPasswordReset struct {
+	Email string `json:"email,omitempty"`
+}
+
+type responseAuthAPIRequestPasswordReset struct {
+	EmailSent bool `json:"emailSent,omitempty"`
+}
+
+type requestAuthAPIConfirmPasswordReset struct {
+	Token       string `json:"token,omitempty"`
+	NewPassword string `json:"newPassword,omitempty"`
+}
+
+// Formal exchange type, please do not delete.
+type responseAuthAPIConfirmPasswordReset struct{}

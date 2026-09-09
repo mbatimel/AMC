@@ -131,3 +131,50 @@ func (m loggerAuthAPI) SendEmailVerification(ctx context.Context, userID uuid.UU
 	}(time.Now())
 	return m.next.SendEmailVerification(ctx, userID)
 }
+
+func (m loggerAuthAPI) RequestPasswordReset(ctx context.Context, email string) (emailSent bool, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AuthAPI").Str("method", "requestPasswordReset").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"method":   "authAPI.requestPasswordReset",
+				"request":  viewer.Sprintf("%+v", requestAuthAPIRequestPasswordReset{Email: email}),
+				"response": viewer.Sprintf("%+v", responseAuthAPIRequestPasswordReset{EmailSent: emailSent}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call requestPasswordReset")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call requestPasswordReset")
+	}(time.Now())
+	return m.next.RequestPasswordReset(ctx, email)
+}
+
+func (m loggerAuthAPI) ConfirmPasswordReset(ctx context.Context, token string, newPassword string) (err error) {
+	logger := log.Ctx(ctx).With().Str("service", "AuthAPI").Str("method", "confirmPasswordReset").Logger()
+	defer func(_begin time.Time) {
+		logHandle := func(ev *zerolog.Event) {
+			// Never log the raw token or the new password — a leaked token
+			// is enough to take over the account until it expires, same
+			// sensitivity class as a password (see the same redaction on
+			// admin's InviteAdmin logger).
+			fields := map[string]interface{}{
+				"method": "authAPI.confirmPasswordReset",
+				"request": viewer.Sprintf("%+v", requestAuthAPIConfirmPasswordReset{
+					NewPassword: "REDACTED",
+					Token:       "REDACTED",
+				}),
+				"response": viewer.Sprintf("%+v", responseAuthAPIConfirmPasswordReset{}),
+			}
+			ev.Fields(fields).Str("took", time.Since(_begin).String())
+		}
+		if err != nil {
+			logger.Error().Err(err).Func(logHandle).Msg("call confirmPasswordReset")
+			return
+		}
+		logger.Info().Func(logHandle).Msg("call confirmPasswordReset")
+	}(time.Now())
+	return m.next.ConfirmPasswordReset(ctx, token, newPassword)
+}

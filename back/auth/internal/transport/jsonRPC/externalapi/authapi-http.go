@@ -48,4 +48,6 @@ func (http *httpAuthAPI) SetRoutes(route *fiber.App) {
 	route.Post("/api/v1/auth/change-password", http.serveChangePassword)
 	route.Post("/api/v1/auth/verify-email", http.serveVerifyEmailCode)
 	route.Post("/api/v1/auth/send-verification", http.serveSendEmailVerification)
+	route.Post("/api/v1/auth/password/reset/request", http.serveRequestPasswordReset)
+	route.Post("/api/v1/auth/password/reset/confirm", http.serveConfirmPasswordReset)
 }

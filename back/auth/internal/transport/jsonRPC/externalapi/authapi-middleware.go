@@ -13,6 +13,8 @@ type AuthAPILogoutUser func(ctx context.Context, userID uuid.UUID) (err error)
 type AuthAPIChangePassword func(ctx context.Context, userID uuid.UUID, oldPassword string, newPassword string) (err error)
 type AuthAPIVerifyEmailCode func(ctx context.Context, userID uuid.UUID, code int64) (err error)
 type AuthAPISendEmailVerification func(ctx context.Context, userID uuid.UUID) (err error)
+type AuthAPIRequestPasswordReset func(ctx context.Context, email string) (emailSent bool, err error)
+type AuthAPIConfirmPasswordReset func(ctx context.Context, token string, newPassword string) (err error)
 
 type MiddlewareAuthAPI func(next externalAPI.AuthAPI) externalAPI.AuthAPI
 
@@ -21,3 +23,5 @@ type MiddlewareAuthAPILogoutUser func(next AuthAPILogoutUser) AuthAPILogoutUser
 type MiddlewareAuthAPIChangePassword func(next AuthAPIChangePassword) AuthAPIChangePassword
 type MiddlewareAuthAPIVerifyEmailCode func(next AuthAPIVerifyEmailCode) AuthAPIVerifyEmailCode
 type MiddlewareAuthAPISendEmailVerification func(next AuthAPISendEmailVerification) AuthAPISendEmailVerification
+type MiddlewareAuthAPIRequestPasswordReset func(next AuthAPIRequestPasswordReset) AuthAPIRequestPasswordReset
+type MiddlewareAuthAPIConfirmPasswordReset func(next AuthAPIConfirmPasswordReset) AuthAPIConfirmPasswordReset

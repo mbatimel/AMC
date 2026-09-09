@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	uuid "github.com/google/uuid"
+	customhandlers "github.com/mbatimel/AMC/auth/internal/transport/custom-handlers"
 )
 
 func (http *httpAuthAPI) loginUser(ctx context.Context, request requestAuthAPILoginUser) (response responseAuthAPILoginUser, err error) {
@@ -202,4 +203,46 @@ func (http *httpAuthAPI) serveSendEmailVerification(ctx *fiber.Ctx) (err error) 
 		ctx.Status(fiber.StatusInternalServerError)
 	}
 	return sendResponse(ctx, err)
+}
+func (http *httpAuthAPI) requestPasswordReset(ctx context.Context, request requestAuthAPIRequestPasswordReset) (response responseAuthAPIRequestPasswordReset, err error) {
+
+	response.EmailSent, err = http.svc.RequestPasswordReset(ctx, request.Email)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAuthAPI) serveRequestPasswordReset(ctx *fiber.Ctx) (err error) {
+
+	var request requestAuthAPIRequestPasswordReset
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
+
+	return customhandlers.RequestPasswordReset(ctx, http.svc, request.Email)
+}
+func (http *httpAuthAPI) confirmPasswordReset(ctx context.Context, request requestAuthAPIConfirmPasswordReset) (response responseAuthAPIConfirmPasswordReset, err error) {
+
+	err = http.svc.ConfirmPasswordReset(ctx, request.Token, request.NewPassword)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpAuthAPI) serveConfirmPasswordReset(ctx *fiber.Ctx) (err error) {
+
+	var request requestAuthAPIConfirmPasswordReset
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
+
+	return customhandlers.ConfirmPasswordReset(ctx, http.svc, request.Token, request.NewPassword)
 }
