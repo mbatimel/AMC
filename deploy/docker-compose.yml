@@ -78,6 +78,13 @@ services:
       API_FNS_KEY: ${API_FNS_KEY}
       BIND_ADDR: ":8081"
       ACCESS_URL: "http://access:8080"
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      PUBLIC_FRONT_BASE_URL: ${PUBLIC_FRONT_BASE_URL:-}
+      RESET_TOKEN_TTL: ${RESET_TOKEN_TTL:-30m}
     depends_on:
       migrations:
         condition: service_completed_successfully
