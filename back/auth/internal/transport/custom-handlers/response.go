@@ -43,8 +43,15 @@ func sendResponse(ctx *fiber.Ctx, log zerolog.Logger, data interface{}, respErro
 		}
 
 		if customErr != nil {
-			response.AdditionalErrors = make(map[string]interface{})
-			response.AdditionalErrors["reason"] = customErr.ErrorText
+			if len(customErr.Cause) > 0 {
+				// Real structured cause (AddCause) takes priority — e.g. the
+				// blocked-user fields on LoginUser. Falls back to the old
+				// single "reason" field for errors that never called AddCause,
+				// so existing callers keep seeing the same shape as before.
+				response.AdditionalErrors = customErr.Cause
+			} else {
+				response.AdditionalErrors = map[string]interface{}{"reason": customErr.ErrorText}
+			}
 		}
 	}
 

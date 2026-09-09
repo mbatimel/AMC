@@ -75,7 +75,8 @@ func TestCreateIPUserLinksAndActivatesClientInTransaction(t *testing.T) {
 	createdID, err := storage.CreateIPUser(
 		context.Background(), "user@example.com", "hash", "Иванов", "Иван", "Иванович",
 		args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8],
-		args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], 3,
+		args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17],
+		"", "", 3,
 	)
 	if err != nil {
 		t.Fatalf("CreateIPUser() error = %v", err)
@@ -99,7 +100,8 @@ func TestCreateIPUserRollsBackWhenClientLinkFails(t *testing.T) {
 	_, err := storage.CreateIPUser(
 		context.Background(), "user@example.com", "hash", "Иванов", "Иван", "",
 		args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8],
-		args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], 3,
+		args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17],
+		"", "", 3,
 	)
 	if err == nil {
 		t.Fatal("CreateIPUser() error = nil")
@@ -133,7 +135,8 @@ func TestCreateIPUserIntegration(t *testing.T) {
 	userID, err := storage.CreateIPUser(
 		ctx, email, "hash", "Иванов", "Иван", "Иванович",
 		args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8],
-		args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], 3,
+		args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17],
+		"https://s3.example.com/requisites.pdf", "requisites.pdf", 3,
 	)
 	if err != nil {
 		t.Fatalf("CreateIPUser() error = %v", err)
@@ -174,7 +177,8 @@ func TestCreateIPUserIntegration(t *testing.T) {
 	_, err = storage.CreateIPUser(
 		ctx, email, "other-hash", "Петров", "Пётр", "",
 		duplicateArgs[0], duplicateArgs[1], duplicateArgs[2], duplicateArgs[3], duplicateArgs[4], duplicateArgs[5], duplicateArgs[6], duplicateArgs[7], duplicateArgs[8],
-		duplicateArgs[9], duplicateArgs[10], duplicateArgs[11], duplicateArgs[12], duplicateArgs[13], duplicateArgs[14], duplicateArgs[15], duplicateArgs[16], duplicateArgs[17], 3,
+		duplicateArgs[9], duplicateArgs[10], duplicateArgs[11], duplicateArgs[12], duplicateArgs[13], duplicateArgs[14], duplicateArgs[15], duplicateArgs[16], duplicateArgs[17],
+		"", "", 3,
 	)
 	if !errors.Is(err, ErrEmailTaken) {
 		t.Fatalf("duplicate CreateIPUser() error = %v, want ErrEmailTaken", err)

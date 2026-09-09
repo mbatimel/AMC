@@ -42,29 +42,6 @@ func (m metricsAuthAPI) LoginUser(ctx context.Context, email string, password st
 	return m.next.LoginUser(ctx, email, password)
 }
 
-func (m metricsAuthAPI) RegisterIP(ctx context.Context, email string, password string, fullName *string, shortName *string, inn *string, kpp *string, ogrn *string, okved *string, taxSystem *string, legalAddress *string, actualAddress *string, directorFullName *string, directorPosition *string, phone *string, additionalPhone *string, website *string, bankAccount *string, bankName *string, bankBik *string, correspondentAccount *string) (userID uuid.UUID, err error) {
-
-	defer func(_begin time.Time) {
-		var (
-			success = true
-			errCode int
-		)
-		if err != nil {
-			success = false
-			errCode = v2.StatusInternalServerError
-			ec, ok := err.(withErrorCode)
-			if ok {
-				errCode = ec.Code()
-			}
-		}
-		RequestCount.WithLabelValues("authAPI", "registerIP", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestCountAll.WithLabelValues("authAPI", "registerIP", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestLatency.WithLabelValues("authAPI", "registerIP", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
-	}(time.Now())
-
-	return m.next.RegisterIP(ctx, email, password, fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress, directorFullName, directorPosition, phone, additionalPhone, website, bankAccount, bankName, bankBik, correspondentAccount)
-}
-
 func (m metricsAuthAPI) LogoutUser(ctx context.Context, userID uuid.UUID) (err error) {
 
 	defer func(_begin time.Time) {
@@ -155,4 +132,50 @@ func (m metricsAuthAPI) SendEmailVerification(ctx context.Context, userID uuid.U
 	}(time.Now())
 
 	return m.next.SendEmailVerification(ctx, userID)
+}
+
+func (m metricsAuthAPI) RequestPasswordReset(ctx context.Context, email string) (emailSent bool, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("authAPI", "requestPasswordReset", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("authAPI", "requestPasswordReset", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("authAPI", "requestPasswordReset", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.RequestPasswordReset(ctx, email)
+}
+
+func (m metricsAuthAPI) ConfirmPasswordReset(ctx context.Context, token string, newPassword string) (err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("authAPI", "confirmPasswordReset", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("authAPI", "confirmPasswordReset", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("authAPI", "confirmPasswordReset", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.ConfirmPasswordReset(ctx, token, newPassword)
 }

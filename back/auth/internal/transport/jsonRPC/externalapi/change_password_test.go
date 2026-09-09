@@ -65,6 +65,14 @@ func (*changePasswordRecorder) SendEmailVerification(context.Context, uuid.UUID)
 	return nil
 }
 
+func (*changePasswordRecorder) RequestPasswordReset(context.Context, string) (bool, error) {
+	return true, nil
+}
+
+func (*changePasswordRecorder) ConfirmPasswordReset(context.Context, string, string) error {
+	return nil
+}
+
 func changePasswordTestApp(svc *changePasswordRecorder) *fiber.App {
 	app := fiber.New()
 	NewAuthAPI(svc).SetRoutes(app)

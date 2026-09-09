@@ -54,9 +54,9 @@ func ActivateUser(ctx *fiber.Ctx, svc externalapi.UsersAPI, userID uuid.UUID) er
 	})
 }
 
-func DeactivateUser(ctx *fiber.Ctx, svc externalapi.UsersAPI, userID uuid.UUID) error {
+func DeactivateUser(ctx *fiber.Ctx, svc externalapi.UsersAPI, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) error {
 	return handle(ctx, "post", "/v1/users/{userID}/deactivate", "DeactivateUser", map[string]interface{}{"userID": userID}, func() (interface{}, error) {
-		return svc.DeactivateUser(ctx.UserContext(), userID)
+		return svc.DeactivateUser(ctx.UserContext(), userID, reason, contactName, contactPhone, contactEmail)
 	})
 }
 

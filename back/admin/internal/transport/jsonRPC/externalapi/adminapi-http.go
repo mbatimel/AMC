@@ -58,4 +58,5 @@ func (http *httpAdminAPI) SetRoutes(route *fiber.App) {
 	route.Post("/api/v1/admin/certificates", http.serveCreateCertificate)
 	route.Patch("/api/v1/admin/certificates/:certID", http.serveUpdateCertificate)
 	route.Delete("/api/v1/admin/certificates/:certID", http.serveDeleteCertificate)
+	route.Post("/api/v1/admin/portal-users/invite", http.serveInviteAdmin)
 }

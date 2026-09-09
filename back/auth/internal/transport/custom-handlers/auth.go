@@ -29,7 +29,7 @@ func LoginUser(ctx *fiber.Ctx, svc externalapi.AuthAPI, email string, password s
 		}
 		l := log.Info()
 		if err != nil {
-			if errors.Is(err, errors.ForbiddenError()) {
+			if errors.Is(err, errors.ForbiddenError()) || errors.Is(err, errors.UserBlockedError("", "", "", "")) {
 				l = log.Warn().Err(err)
 			} else {
 				l = log.Error().Err(err)
@@ -41,6 +41,9 @@ func LoginUser(ctx *fiber.Ctx, svc externalapi.AuthAPI, email string, password s
 
 	userID, err := svc.LoginUser(ctx.UserContext(), email, password)
 	if err != nil {
+		if blockedErr, ok := err.(*errors.Error); ok && errors.Is(err, errors.UserBlockedError("", "", "", "")) {
+			blockedErr.AddCause("siteDomain", ctx.Hostname())
+		}
 		sendResponse(ctx, log.Logger, nil, err)
 		return nil
 	}
@@ -48,98 +51,6 @@ func LoginUser(ctx *fiber.Ctx, svc externalapi.AuthAPI, email string, password s
 	sendResponse(ctx, log.Logger, userID, nil)
 	return err
 }
-
-// derefStr returns the pointed-to string for logging, or nil if s is nil.
-func derefStr(s *string) interface{} {
-	if s == nil {
-		return nil
-	}
-	return *s
-}
-
-func RegisterIP(
-	ctx *fiber.Ctx,
-	svc externalapi.AuthAPI,
-	email string,
-	password string,
-	fullName *string,
-	shortName *string,
-	inn *string,
-	kpp *string,
-	ogrn *string,
-	okved *string,
-	taxSystem *string,
-	legalAddress *string,
-	actualAddress *string,
-	directorFullName *string,
-	directorPosition *string,
-	phone *string,
-	additionalPhone *string,
-	website *string,
-	bankAccount *string,
-	bankName *string,
-	bankBik *string,
-	correspondentAccount *string,
-) error {
-	var (
-		methodName = "RegisterIP"
-		err        error
-	)
-
-	defer func(begin time.Time) {
-		fields := map[string]interface{}{
-			"method":               "post",
-			"path":                 "/v1/auth/register/ip",
-			"methodName":           methodName,
-			"email":                email,
-			"fullName":             derefStr(fullName),
-			"shortName":            derefStr(shortName),
-			"inn":                  derefStr(inn),
-			"kpp":                  derefStr(kpp),
-			"ogrn":                 derefStr(ogrn),
-			"okved":                derefStr(okved),
-			"taxSystem":            derefStr(taxSystem),
-			"legalAddress":         derefStr(legalAddress),
-			"actualAddress":        derefStr(actualAddress),
-			"directorFullName":     derefStr(directorFullName),
-			"directorPosition":     derefStr(directorPosition),
-			"phone":                derefStr(phone),
-			"additionalPhone":      derefStr(additionalPhone),
-			"website":              derefStr(website),
-			"bankAccount":          derefStr(bankAccount),
-			"bankName":             derefStr(bankName),
-			"bankBik":              derefStr(bankBik),
-			"correspondentAccount": derefStr(correspondentAccount),
-			"took":                 time.Since(begin).String(),
-		}
-
-		l := log.Info()
-		if err != nil {
-			if errors.Is(err, errors.ForbiddenError()) {
-				l = log.Warn().Err(err)
-			} else {
-				l = log.Error().Err(err)
-			}
-		}
-
-		l.Fields(fields).Msg("call")
-	}(time.Now())
-
-	userID, err := svc.RegisterIP(
-		ctx.UserContext(), email, password,
-		fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
-		directorFullName, directorPosition, phone, additionalPhone, website,
-		bankAccount, bankName, bankBik, correspondentAccount,
-	)
-	if err != nil {
-		sendResponse(ctx, log.Logger, nil, err)
-		return nil
-	}
-
-	sendResponse(ctx, log.Logger, userID, nil)
-	return nil
-}
-
 
 func LogoutUser(
 	ctx *fiber.Ctx,
@@ -306,5 +217,73 @@ func SendEmailVerification(
 	}
 
 	sendResponse(ctx, log.Logger, nil, nil)
+	return nil
+}
+
+func RequestPasswordReset(ctx *fiber.Ctx, svc externalapi.AuthAPI, email string) error {
+	var (
+		methodName = "RequestPasswordReset"
+		err        error
+	)
+
+	defer func(begin time.Time) {
+		fields := map[string]interface{}{
+			"method":     "post",
+			"path":       "/v1/auth/password/reset/request",
+			"methodName": methodName,
+			"email":      email,
+			"took":       time.Since(begin).String(),
+		}
+		l := log.Info()
+		if err != nil {
+			l = log.Error().Err(err)
+		}
+		l.Fields(fields).Msg("call")
+	}(time.Now())
+
+	emailSent, err := svc.RequestPasswordReset(ctx.UserContext(), email)
+	if err != nil {
+		sendResponse(ctx, log.Logger, nil, err)
+		return nil
+	}
+
+	sendResponse(ctx, log.Logger, map[string]bool{"emailSent": emailSent}, nil)
+	return nil
+}
+
+// ConfirmPasswordReset intentionally never logs the raw token or the new
+// password — the token alone is enough to take over the account until it
+// expires, same sensitivity class as a password.
+func ConfirmPasswordReset(ctx *fiber.Ctx, svc externalapi.AuthAPI, token string, newPassword string) error {
+	var (
+		methodName = "ConfirmPasswordReset"
+		err        error
+	)
+
+	defer func(begin time.Time) {
+		fields := map[string]interface{}{
+			"method":     "post",
+			"path":       "/v1/auth/password/reset/confirm",
+			"methodName": methodName,
+			"took":       time.Since(begin).String(),
+		}
+		l := log.Info()
+		if err != nil {
+			if errors.Is(err, errors.TokenInvalidError()) || errors.Is(err, errors.TokenExpiredError()) {
+				l = log.Warn().Err(err)
+			} else {
+				l = log.Error().Err(err)
+			}
+		}
+		l.Fields(fields).Msg("call")
+	}(time.Now())
+
+	err = svc.ConfirmPasswordReset(ctx.UserContext(), token, newPassword)
+	if err != nil {
+		sendResponse(ctx, log.Logger, nil, err)
+		return nil
+	}
+
+	sendResponse(ctx, log.Logger, true, nil)
 	return nil
 }

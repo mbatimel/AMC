@@ -85,7 +85,11 @@ type responseUsersAPIActivateUser struct {
 }
 
 type requestUsersAPIDeactivateUser struct {
-	UserID uuid.UUID `json:"userID,omitempty"`
+	UserID       uuid.UUID `json:"userID,omitempty"`
+	Reason       string    `json:"reason,omitempty"`
+	ContactName  string    `json:"contactName,omitempty"`
+	ContactPhone string    `json:"contactPhone,omitempty"`
+	ContactEmail string    `json:"contactEmail,omitempty"`
 }
 
 type responseUsersAPIDeactivateUser struct {

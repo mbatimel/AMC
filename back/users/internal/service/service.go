@@ -33,6 +33,7 @@ type Storage interface {
 	UpdateUser(ctx context.Context, params internalModels.UpdateUserParams) (internalModels.User, error)
 	SoftDeleteUser(ctx context.Context, userID uuid.UUID) error
 	SetUserActive(ctx context.Context, userID uuid.UUID, active bool) (internalModels.User, error)
+	DeactivateUser(ctx context.Context, userID uuid.UUID, reason, contactName, contactPhone, contactEmail string) (internalModels.User, error)
 	GetProfile(ctx context.Context, userID uuid.UUID) (internalModels.User, *internalModels.Client, error)
 	UpdateProfile(ctx context.Context, params internalModels.UpdateProfileParams) (internalModels.User, *internalModels.Client, error)
 	ListUserClients(ctx context.Context, userID uuid.UUID) ([]internalModels.Client, error)
@@ -46,14 +47,20 @@ type Storage interface {
 	DeleteFavorites(ctx context.Context, userID uuid.UUID, clientID uuid.UUID, productIDs []uuid.UUID) (int, error)
 }
 
+// Mailer is implemented by internal/mailer.SMTPMailer.
+type Mailer interface {
+	Send(ctx context.Context, to string, subject string, body string) error
+}
+
 type Service struct {
 	logger       zerolog.Logger
 	storage      Storage
 	accessClient clients.AccessClient
+	mailer       Mailer
 }
 
-func New(logger zerolog.Logger, storage Storage, accessClient clients.AccessClient) *Service {
-	return &Service{logger: logger, storage: storage, accessClient: accessClient}
+func New(logger zerolog.Logger, storage Storage, accessClient clients.AccessClient, mailer Mailer) *Service {
+	return &Service{logger: logger, storage: storage, accessClient: accessClient, mailer: mailer}
 }
 
 func validation(field string) error {
@@ -151,19 +158,21 @@ func mapStorageError(err error) error {
 
 func modelUser(row internalModels.User) models.User {
 	user := models.User{
-		ID:          row.ID.String(),
-		Email:       row.Email,
-		Phone:       row.Phone,
-		FirstName:   row.FirstName,
-		LastName:    row.LastName,
-		MiddleName:  row.MiddleName,
-		Role:        row.Role,
-		Status:      row.Status,
-		CompanyName: row.CompanyName,
-		INN:         row.INN,
-		IsActive:    row.IsActive,
-		CreatedAt:   row.CreatedAt,
-		UpdatedAt:   row.UpdatedAt,
+		ID:                 row.ID.String(),
+		Email:              row.Email,
+		Phone:              row.Phone,
+		FirstName:          row.FirstName,
+		LastName:           row.LastName,
+		MiddleName:         row.MiddleName,
+		Role:               row.Role,
+		Status:             row.Status,
+		CompanyName:        row.CompanyName,
+		INN:                row.INN,
+		IsActive:           row.IsActive,
+		CreatedAt:          row.CreatedAt,
+		UpdatedAt:          row.UpdatedAt,
+		RequisitesFileURL:  row.RequisitesFileURL,
+		RequisitesFileName: row.RequisitesFileName,
 	}
 	if row.ClientID.Valid {
 		user.ClientID = row.ClientID.UUID.String()
@@ -196,16 +205,18 @@ func modelClient(row internalModels.Client) models.Client {
 
 func modelProfile(user internalModels.User, client *internalModels.Client) models.Profile {
 	profile := models.Profile{
-		UserID:     user.ID.String(),
-		Email:      user.Email,
-		Phone:      user.Phone,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		MiddleName: user.MiddleName,
-		Status:     user.Status,
-		IsActive:   user.IsActive,
-		CreatedAt:  user.CreatedAt,
-		UpdatedAt:  user.UpdatedAt,
+		UserID:             user.ID.String(),
+		Email:              user.Email,
+		Phone:              user.Phone,
+		FirstName:          user.FirstName,
+		LastName:           user.LastName,
+		MiddleName:         user.MiddleName,
+		Status:             user.Status,
+		IsActive:           user.IsActive,
+		RequisitesFileURL:  user.RequisitesFileURL,
+		RequisitesFileName: user.RequisitesFileName,
+		CreatedAt:          user.CreatedAt,
+		UpdatedAt:          user.UpdatedAt,
 	}
 	if user.ActiveClientID.Valid {
 		profile.ActiveClientID = user.ActiveClientID.UUID.String()
@@ -488,12 +499,50 @@ func (s *Service) ActivateUser(ctx context.Context, userID uuid.UUID) (response 
 	return models.ActivateUserResponse{User: modelUser(row)}, nil
 }
 
-func (s *Service) DeactivateUser(ctx context.Context, userID uuid.UUID) (response models.DeactivateUserResponse, err error) {
-	row, err := s.setUserActive(ctx, userID, false)
-	if err != nil {
+func (s *Service) DeactivateUser(ctx context.Context, userID uuid.UUID, reason, contactName, contactPhone, contactEmail string) (response models.DeactivateUserResponse, err error) {
+	if err = requireUserID(userID); err != nil {
 		return response, err
 	}
+	reason = strings.TrimSpace(reason)
+	contactName = strings.TrimSpace(contactName)
+	contactPhone = strings.TrimSpace(contactPhone)
+	contactEmail = strings.TrimSpace(contactEmail)
+
+	row, err := s.storage.DeactivateUser(ctx, userID, reason, contactName, contactPhone, contactEmail)
+	if err != nil {
+		return response, mapStorageError(err)
+	}
+
+	if s.mailer == nil {
+		s.logger.Error().Str("userID", userID.String()).Msg("deactivate user: mailer is not configured, block notification not sent")
+	} else if row.Email != "" {
+		if sendErr := s.mailer.Send(ctx, row.Email, "Ваш аккаунт заблокирован", deactivateUserEmailBody(reason, contactName, contactPhone, contactEmail)); sendErr != nil {
+			s.logger.Error().Err(sendErr).Str("userID", userID.String()).Msg("deactivate user: failed to send block notification email")
+		}
+	}
+
 	return models.DeactivateUserResponse{User: modelUser(row)}, nil
+}
+
+func deactivateUserEmailBody(reason, contactName, contactPhone, contactEmail string) string {
+	var b strings.Builder
+	b.WriteString("Ваша учётная запись была заблокирована администратором портала.\n")
+	if reason != "" {
+		b.WriteString("\nПричина: " + reason + "\n")
+	}
+	if contactName != "" || contactPhone != "" || contactEmail != "" {
+		b.WriteString("\nКонтакт для связи:\n")
+		if contactName != "" {
+			b.WriteString(contactName + "\n")
+		}
+		if contactPhone != "" {
+			b.WriteString(contactPhone + "\n")
+		}
+		if contactEmail != "" {
+			b.WriteString(contactEmail + "\n")
+		}
+	}
+	return b.String()
 }
 
 func (s *Service) setUserActive(ctx context.Context, userID uuid.UUID, active bool) (internalModels.User, error) {

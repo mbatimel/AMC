@@ -56,6 +56,7 @@ var (
 	sqlUpdateClient          = query("updateClient.sql")
 	sqlSoftDeleteUser        = query("softDeleteUser.sql")
 	sqlSetUserActive         = query("setUserActive.sql")
+	sqlDeactivateUser        = query("deactivateUser.sql")
 	sqlUpdateProfile         = query("updateProfile.sql")
 	sqlListUserClients       = query("listUserClients.sql")
 	sqlUserHasClient         = query("userHasClient.sql")
@@ -102,6 +103,8 @@ func scanUser(row rowScanner) (internalModels.User, error) {
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&user.DeletedAt,
+		&user.RequisitesFileURL,
+		&user.RequisitesFileName,
 	)
 	return user, err
 }
@@ -393,6 +396,19 @@ func (s *Storage) SetUserActive(ctx context.Context, userID uuid.UUID, active bo
 	tag, err := s.pool.Exec(ctx, sqlSetUserActive, userID, active, status)
 	if err != nil {
 		return internalModels.User{}, fmt.Errorf("set user active: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return internalModels.User{}, ErrUserNotFound
+	}
+	return s.GetUserByID(ctx, userID)
+}
+
+// DeactivateUser marks a user inactive and stores who blocked them and why,
+// so the info can be shown back on their next (rejected) login attempt.
+func (s *Storage) DeactivateUser(ctx context.Context, userID uuid.UUID, reason, contactName, contactPhone, contactEmail string) (internalModels.User, error) {
+	tag, err := s.pool.Exec(ctx, sqlDeactivateUser, userID, reason, contactName, contactPhone, contactEmail)
+	if err != nil {
+		return internalModels.User{}, fmt.Errorf("deactivate user: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
 		return internalModels.User{}, ErrUserNotFound

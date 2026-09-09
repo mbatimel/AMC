@@ -142,11 +142,11 @@ paths:
             description: Авторизация сотрудника портала по email и паролю
             parameters:
                 - in: query
-                  name: email
+                  name: password
                   schema:
                     type: string
                 - in: query
-                  name: password
+                  name: email
                   schema:
                     type: string
             responses:
@@ -1607,6 +1607,130 @@ paths:
                                         type: string
                                         example: content.api.errors.auth.internalError
                                         description: Заголовок ошибки
+    /api/v1/admin/portal-users/invite:
+        post:
+            tags:
+                - AdminAPI
+            summary: Приглашение администратора
+            description: Создаёт учётную запись администратора портала, генерирует пароль и отправляет приглашение на email
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestAdminAPIInviteAdmin'
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.auth.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.auth.forbidden
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.auth.accessDenied
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.auth.internalError
+                                        description: Заголовок ошибки
     /api/v1/certificates:
         get:
             tags:
@@ -1877,6 +2001,18 @@ components:
             properties:
                 deleted:
                     type: boolean
+        models.InviteAdminResponse:
+            type: object
+            properties:
+                email:
+                    type: string
+                emailSent:
+                    type: boolean
+                password:
+                    type: string
+                userId:
+                    type: string
+                    format: uuid
         models.LegalDoc:
             type: object
             properties:
@@ -2009,6 +2145,17 @@ components:
             type: object
         requestAdminAPIGetSession:
             type: object
+        requestAdminAPIInviteAdmin:
+            type: object
+            required:
+                - email
+                - name
+            properties:
+                email:
+                    type: string
+                name:
+                    type: string
+            description: Создаёт учётную запись администратора портала, генерирует пароль и отправляет приглашение на email
         requestAdminAPIListAuditLog:
             type: object
         requestAdminAPIListCertificates:
@@ -2103,6 +2250,14 @@ components:
                 response:
                     $ref: '#/components/schemas/models.SessionResponse'
             description: Проверка, что пользователь авторизован и имеет права администратора
+        responseAdminAPIInviteAdmin:
+            type: object
+            required:
+                - response
+            properties:
+                response:
+                    $ref: '#/components/schemas/models.InviteAdminResponse'
+            description: Создаёт учётную запись администратора портала, генерирует пароль и отправляет приглашение на email
         responseAdminAPIListAuditLog:
             type: object
             required:

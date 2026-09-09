@@ -16,6 +16,13 @@ type SessionResponse struct {
 	Role   string    `json:"role"`
 }
 
+type InviteAdminResponse struct {
+	UserID    uuid.UUID `json:"userId"`
+	Email     string    `json:"email"`
+	Password  string    `json:"password"`
+	EmailSent bool      `json:"emailSent"`
+}
+
 type AuditLogEntry struct {
 	ID         uuid.UUID `json:"id"`
 	CreatedAt  time.Time `json:"createdAt"`

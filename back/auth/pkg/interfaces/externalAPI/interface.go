@@ -35,36 +35,6 @@ type AuthAPI interface {
 		password string,
 	) (userID uuid.UUID, err error)
 
-	// RegisterIP ...
-	// @tg http-method=POST
-	// @tg http-path=/v1/auth/register/ip
-	// @tg uuidPackage=github.com/google/uuid
-	// @tg summary=`Регистрация ИП/организации`
-	// @tg desc=`Создание нового пользователя с реквизитами ИП/организации. Все поля кроме email и пароля необязательны.`
-	RegisterIP(
-		ctx context.Context,
-		email string,
-		password string,
-		fullName *string,
-		shortName *string,
-		inn *string,
-		kpp *string,
-		ogrn *string,
-		okved *string,
-		taxSystem *string,
-		legalAddress *string,
-		actualAddress *string,
-		directorFullName *string,
-		directorPosition *string,
-		phone *string,
-		additionalPhone *string,
-		website *string,
-		bankAccount *string,
-		bankName *string,
-		bankBik *string,
-		correspondentAccount *string,
-	) (userID uuid.UUID, err error)
-
 	// LogoutUser ...
 	// @tg http-method=POST
 	// @tg http-path=/v1/auth/logout
@@ -115,5 +85,28 @@ type AuthAPI interface {
 	SendEmailVerification(
 		ctx context.Context,
 		userID uuid.UUID,
+	) (err error)
+
+	// RequestPasswordReset ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/auth/password/reset/request
+	// @tg http-response=github.com/mbatimel/AMC/auth/internal/transport/custom-handlers:RequestPasswordReset
+	// @tg summary=`Запрос сброса пароля`
+	// @tg desc=`Публичная ручка (без сессии) для экрана "забыли пароль" — всегда отвечает одинаковым успехом, не раскрывая, существует ли аккаунт`
+	RequestPasswordReset(
+		ctx context.Context,
+		email string,
+	) (emailSent bool, err error)
+
+	// ConfirmPasswordReset ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/auth/password/reset/confirm
+	// @tg http-response=github.com/mbatimel/AMC/auth/internal/transport/custom-handlers:ConfirmPasswordReset
+	// @tg summary=`Установка нового пароля по токену`
+	// @tg desc=`Публичная ручка (без сессии) — токен из письма идентифицирует пользователя, старый пароль не требуется`
+	ConfirmPasswordReset(
+		ctx context.Context,
+		token string,
+		newPassword string,
 	) (err error)
 }

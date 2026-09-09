@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	_ "embed"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
@@ -13,13 +15,18 @@ import (
 )
 
 var (
-	ErrUserNotFound = errors.New("user not found")
-	ErrEmailTaken   = errors.New("email already taken")
-	ErrRoleNotFound = errors.New("role not found")
+	ErrUserNotFound  = errors.New("user not found")
+	ErrEmailTaken    = errors.New("email already taken")
+	ErrInnTaken      = errors.New("inn already taken")
+	ErrRoleNotFound  = errors.New("role not found")
+	ErrTokenNotFound = errors.New("password reset token not found")
 )
 
 //go:embed sql/getUserByEmail.sql
 var sqlGetUserByEmail string
+
+//go:embed sql/getCounterpartyByINN.sql
+var sqlGetCounterpartyByINN string
 
 //go:embed sql/getUserByID.sql
 var sqlGetUserByID string
@@ -45,13 +52,27 @@ var sqlGetRoleByCode string
 //go:embed sql/insertUserRole.sql
 var sqlInsertUserRole string
 
+//go:embed sql/insertPasswordResetToken.sql
+var sqlInsertPasswordResetToken string
+
+//go:embed sql/invalidateUserPasswordResetTokens.sql
+var sqlInvalidateUserPasswordResetTokens string
+
+//go:embed sql/getPasswordResetToken.sql
+var sqlGetPasswordResetToken string
+
 const uniqueViolationCode = "23505"
 
 type User struct {
-	ID       uuid.UUID
-	Email    string
-	Password string
-	Status   string
+	ID                  uuid.UUID
+	Email               string
+	Password            string
+	Status              string
+	IsActive            bool
+	BlockedReason       sql.NullString
+	BlockedContactName  sql.NullString
+	BlockedContactPhone sql.NullString
+	BlockedContactEmail sql.NullString
 }
 
 type Storage struct {
@@ -77,7 +98,10 @@ type transaction interface {
 
 func (s *Storage) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	var user User
-	err := s.pool.QueryRow(ctx, sqlGetUserByEmail, email).Scan(&user.ID, &user.Email, &user.Password, &user.Status)
+	err := s.pool.QueryRow(ctx, sqlGetUserByEmail, email).Scan(
+		&user.ID, &user.Email, &user.Password, &user.Status, &user.IsActive,
+		&user.BlockedReason, &user.BlockedContactName, &user.BlockedContactPhone, &user.BlockedContactEmail,
+	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, ErrUserNotFound
 	}
@@ -97,6 +121,19 @@ func (s *Storage) GetUserByID(ctx context.Context, userID uuid.UUID) (User, erro
 		return User{}, fmt.Errorf("get user by id: %w", err)
 	}
 	return user, nil
+}
+
+// CounterpartyINNExists reports whether a counterparty with the given inn already exists.
+func (s *Storage) CounterpartyINNExists(ctx context.Context, inn string) (bool, error) {
+	var id uuid.UUID
+	err := s.pool.QueryRow(ctx, sqlGetCounterpartyByINN, inn).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("get counterparty by inn: %w", err)
+	}
+	return true, nil
 }
 
 // assignRole looks up roleCode and links userID to it inside the given transaction.
@@ -125,6 +162,7 @@ func (s *Storage) CreateIPUser(
 	fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
 	directorFullName, directorPosition, phone, additionalPhone, website,
 	bankAccount, bankName, bankBik, correspondentAccount *string,
+	requisitesFileURL, requisitesFileName string,
 	roleCode int,
 ) (uuid.UUID, error) {
 	tx, err := s.beginTx(ctx)
@@ -138,8 +176,13 @@ func (s *Storage) CreateIPUser(
 		fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
 		directorFullName, directorPosition, phone, additionalPhone, email, website,
 		bankAccount, bankName, bankBik, correspondentAccount,
+		requisitesFileURL, requisitesFileName,
 	).Scan(&counterpartyID)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode && pgErr.ConstraintName == "uq_counterparties_inn" {
+			return uuid.UUID{}, ErrInnTaken
+		}
 		return uuid.UUID{}, fmt.Errorf("insert counterparty: %w", err)
 	}
 
@@ -216,4 +259,41 @@ func (s *Storage) UpdateUserPassword(ctx context.Context, userID uuid.UUID, pass
 		return ErrUserNotFound
 	}
 	return nil
+}
+
+type PasswordResetToken struct {
+	UserID    uuid.UUID
+	ExpiresAt time.Time
+	UsedAt    sql.NullTime
+}
+
+// CreatePasswordResetToken stores the hash of a freshly generated reset
+// token. The raw token itself is never persisted — only its SHA-256 hash,
+// so a database leak alone cannot be used to reset anyone's password.
+func (s *Storage) CreatePasswordResetToken(ctx context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error {
+	if _, err := s.pool.Exec(ctx, sqlInsertPasswordResetToken, userID, tokenHash, expiresAt); err != nil {
+		return fmt.Errorf("insert password reset token: %w", err)
+	}
+	return nil
+}
+
+// InvalidateUserPasswordResetTokens marks every still-active token for a
+// user as used, without needing to know their hashes.
+func (s *Storage) InvalidateUserPasswordResetTokens(ctx context.Context, userID uuid.UUID) error {
+	if _, err := s.pool.Exec(ctx, sqlInvalidateUserPasswordResetTokens, userID); err != nil {
+		return fmt.Errorf("invalidate user password reset tokens: %w", err)
+	}
+	return nil
+}
+
+func (s *Storage) GetPasswordResetToken(ctx context.Context, tokenHash string) (PasswordResetToken, error) {
+	var token PasswordResetToken
+	err := s.pool.QueryRow(ctx, sqlGetPasswordResetToken, tokenHash).Scan(&token.UserID, &token.ExpiresAt, &token.UsedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return PasswordResetToken{}, ErrTokenNotFound
+	}
+	if err != nil {
+		return PasswordResetToken{}, fmt.Errorf("get password reset token: %w", err)
+	}
+	return token, nil
 }

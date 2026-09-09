@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/mbatimel/AMC/objectstorage"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp"
@@ -12,8 +13,10 @@ import (
 	accessTransport "github.com/mbatimel/AMC/access/pkg/client/transport"
 	"github.com/mbatimel/AMC/auth/internal/client/fns"
 	"github.com/mbatimel/AMC/auth/internal/config"
+	"github.com/mbatimel/AMC/auth/internal/mailer"
 	authService "github.com/mbatimel/AMC/auth/internal/service"
 	postgres "github.com/mbatimel/AMC/auth/internal/storage/postgres"
+	customHandlers "github.com/mbatimel/AMC/auth/internal/transport/custom-handlers"
 	transportHttp "github.com/mbatimel/AMC/auth/internal/transport/http"
 	"github.com/mbatimel/AMC/auth/internal/transport/jsonRPC/externalapi"
 )
@@ -38,11 +41,38 @@ func main() {
 	postgresStorage := postgres.New(pool)
 	access := accessTransport.NewClientAccessAPI(cfg.AccessURL)
 	fnsClient := fns.New(cfg.FnsAddr, cfg.FnsKey, log.Logger)
-	svc := authService.NewAuthApiService(log.Logger, postgresStorage, access, fnsClient)
+	s3Client, err := objectstorage.New(objectstorage.Config{
+		Endpoint:       cfg.S3Endpoint,
+		PublicEndpoint: cfg.S3PublicEndpoint,
+		AccessKey:      cfg.S3AccessKey,
+		SecretKey:      cfg.S3SecretKey,
+		Bucket:         cfg.S3Bucket,
+		Region:         cfg.S3Region,
+		UseSSL:         cfg.S3UseSSL,
+	})
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create S3 client")
+	}
+	mail := mailer.NewSMTPMailer(
+		log.Logger, cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword,
+		cfg.SMTPFrom, cfg.SMTPTLS, cfg.SMTPTimeout,
+	)
+	svc := authService.NewAuthApiService(log.Logger, postgresStorage, access, fnsClient,
+		authService.WithObjectStorage(s3Client, cfg.S3MaxFileSize),
+		authService.WithPasswordReset(mail, cfg.PublicFrontBaseURL, cfg.ResetTokenTTL),
+	)
 
-	app := externalapi.New(log.Logger, externalapi.AuthAPI(externalapi.NewAuthAPI(svc))).WithLog().WithMetrics()
+	registerIPRoutes := customHandlers.NewRegisterIPRoutes(svc, cfg.S3MaxFileSize)
+	maxBodySize := int(cfg.S3MaxFileSize) + (1 << 20)
+
+	app := externalapi.New(log.Logger,
+		externalapi.MaxBodySize(maxBodySize),
+		externalapi.AuthAPI(externalapi.NewAuthAPI(svc)),
+		externalapi.Service(registerIPRoutes),
+	).WithLog().WithMetrics()
 	server := &fasthttp.Server{
-		Handler: app.Fiber().Handler(),
+		Handler:            app.Fiber().Handler(),
+		MaxRequestBodySize: maxBodySize,
 	}
 
 	healthServer := transportHttp.NewHealthServer()

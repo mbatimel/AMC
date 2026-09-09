@@ -173,4 +173,14 @@ type AdminAPI interface {
 	// @tg uuidPackage=github.com/google/uuid
 	// @tg certID.format=uuid
 	DeleteCertificate(ctx context.Context, userID uuid.UUID, certID uuid.UUID) (response models.DeleteCertificateResponse, err error)
+
+	// InviteAdmin ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/admin/portal-users/invite
+	// @tg http-headers=userID|X-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/admin/internal/transport/custom-handlers:InviteAdmin
+	// @tg summary=`Приглашение администратора`
+	// @tg desc=`Создаёт учётную запись администратора портала, генерирует пароль и отправляет приглашение на email`
+	// @tg uuidPackage=github.com/google/uuid
+	InviteAdmin(ctx context.Context, userID uuid.UUID, email string, name string) (response models.InviteAdminResponse, err error)
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -46,7 +47,24 @@ var sqlGetBannerDelay string
 //go:embed sql/updateBannerDelay.sql
 var sqlUpdateBannerDelay string
 
+//go:embed sql/insertAdminUser.sql
+var sqlInsertAdminUser string
+
+//go:embed sql/getRoleByCode.sql
+var sqlGetRoleByCode string
+
+//go:embed sql/insertUserRole.sql
+var sqlInsertUserRole string
+
 var ErrBannerNotFound = errors.New("banner not found")
+
+var ErrEmailTaken = errors.New("email already taken")
+
+const uniqueViolationCode = "23505"
+
+// roleCodeAdmin matches the "admin" role seeded in the shared roles table
+// (back/migrations/pkg/migrations/data/20260705171948_access_roles.sql).
+const roleCodeAdmin = 0
 
 type AuditLogEntry struct {
 	ID          uuid.UUID
@@ -272,4 +290,38 @@ func (s *Storage) UpdateBannerDelay(ctx context.Context, delaySec int) error {
 		return fmt.Errorf("update banner delay: %w", err)
 	}
 	return nil
+}
+
+// CreateAdminUser creates a bare user (email + password hash, no counterparty)
+// and assigns the admin role, in one transaction.
+func (s *Storage) CreateAdminUser(ctx context.Context, email, passwordHash string) (uuid.UUID, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return uuid.UUID{}, fmt.Errorf("begin create admin user transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var userID uuid.UUID
+	if err = tx.QueryRow(ctx, sqlInsertAdminUser, email, passwordHash).Scan(&userID); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
+			return uuid.UUID{}, ErrEmailTaken
+		}
+		return uuid.UUID{}, fmt.Errorf("insert admin user: %w", err)
+	}
+
+	var roleID uuid.UUID
+	if err = tx.QueryRow(ctx, sqlGetRoleByCode, roleCodeAdmin).Scan(&roleID); err != nil {
+		return uuid.UUID{}, fmt.Errorf("get admin role: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx, sqlInsertUserRole, userID, roleID); err != nil {
+		return uuid.UUID{}, fmt.Errorf("insert user role: %w", err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return uuid.UUID{}, fmt.Errorf("commit create admin user transaction: %w", err)
+	}
+
+	return userID, nil
 }

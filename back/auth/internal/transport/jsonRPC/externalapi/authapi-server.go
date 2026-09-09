@@ -11,21 +11,23 @@ import (
 type serverAuthAPI struct {
 	svc                   externalAPI.AuthAPI
 	loginUser             AuthAPILoginUser
-	registerIP            AuthAPIRegisterIP
 	logoutUser            AuthAPILogoutUser
 	changePassword        AuthAPIChangePassword
 	verifyEmailCode       AuthAPIVerifyEmailCode
 	sendEmailVerification AuthAPISendEmailVerification
+	requestPasswordReset  AuthAPIRequestPasswordReset
+	confirmPasswordReset  AuthAPIConfirmPasswordReset
 }
 
 type MiddlewareSetAuthAPI interface {
 	Wrap(m MiddlewareAuthAPI)
 	WrapLoginUser(m MiddlewareAuthAPILoginUser)
-	WrapRegisterIP(m MiddlewareAuthAPIRegisterIP)
 	WrapLogoutUser(m MiddlewareAuthAPILogoutUser)
 	WrapChangePassword(m MiddlewareAuthAPIChangePassword)
 	WrapVerifyEmailCode(m MiddlewareAuthAPIVerifyEmailCode)
 	WrapSendEmailVerification(m MiddlewareAuthAPISendEmailVerification)
+	WrapRequestPasswordReset(m MiddlewareAuthAPIRequestPasswordReset)
+	WrapConfirmPasswordReset(m MiddlewareAuthAPIConfirmPasswordReset)
 
 	WithMetrics()
 	WithLog()
@@ -34,9 +36,10 @@ type MiddlewareSetAuthAPI interface {
 func newServerAuthAPI(svc externalAPI.AuthAPI) *serverAuthAPI {
 	return &serverAuthAPI{
 		changePassword:        svc.ChangePassword,
+		confirmPasswordReset:  svc.ConfirmPasswordReset,
 		loginUser:             svc.LoginUser,
 		logoutUser:            svc.LogoutUser,
-		registerIP:            svc.RegisterIP,
+		requestPasswordReset:  svc.RequestPasswordReset,
 		sendEmailVerification: svc.SendEmailVerification,
 		svc:                   svc,
 		verifyEmailCode:       svc.VerifyEmailCode,
@@ -46,19 +49,16 @@ func newServerAuthAPI(svc externalAPI.AuthAPI) *serverAuthAPI {
 func (srv *serverAuthAPI) Wrap(m MiddlewareAuthAPI) {
 	srv.svc = m(srv.svc)
 	srv.loginUser = srv.svc.LoginUser
-	srv.registerIP = srv.svc.RegisterIP
 	srv.logoutUser = srv.svc.LogoutUser
 	srv.changePassword = srv.svc.ChangePassword
 	srv.verifyEmailCode = srv.svc.VerifyEmailCode
 	srv.sendEmailVerification = srv.svc.SendEmailVerification
+	srv.requestPasswordReset = srv.svc.RequestPasswordReset
+	srv.confirmPasswordReset = srv.svc.ConfirmPasswordReset
 }
 
 func (srv *serverAuthAPI) LoginUser(ctx context.Context, email string, password string) (userID uuid.UUID, err error) {
 	return srv.loginUser(ctx, email, password)
-}
-
-func (srv *serverAuthAPI) RegisterIP(ctx context.Context, email string, password string, fullName *string, shortName *string, inn *string, kpp *string, ogrn *string, okved *string, taxSystem *string, legalAddress *string, actualAddress *string, directorFullName *string, directorPosition *string, phone *string, additionalPhone *string, website *string, bankAccount *string, bankName *string, bankBik *string, correspondentAccount *string) (userID uuid.UUID, err error) {
-	return srv.registerIP(ctx, email, password, fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress, directorFullName, directorPosition, phone, additionalPhone, website, bankAccount, bankName, bankBik, correspondentAccount)
 }
 
 func (srv *serverAuthAPI) LogoutUser(ctx context.Context, userID uuid.UUID) (err error) {
@@ -77,12 +77,16 @@ func (srv *serverAuthAPI) SendEmailVerification(ctx context.Context, userID uuid
 	return srv.sendEmailVerification(ctx, userID)
 }
 
-func (srv *serverAuthAPI) WrapLoginUser(m MiddlewareAuthAPILoginUser) {
-	srv.loginUser = m(srv.loginUser)
+func (srv *serverAuthAPI) RequestPasswordReset(ctx context.Context, email string) (emailSent bool, err error) {
+	return srv.requestPasswordReset(ctx, email)
 }
 
-func (srv *serverAuthAPI) WrapRegisterIP(m MiddlewareAuthAPIRegisterIP) {
-	srv.registerIP = m(srv.registerIP)
+func (srv *serverAuthAPI) ConfirmPasswordReset(ctx context.Context, token string, newPassword string) (err error) {
+	return srv.confirmPasswordReset(ctx, token, newPassword)
+}
+
+func (srv *serverAuthAPI) WrapLoginUser(m MiddlewareAuthAPILoginUser) {
+	srv.loginUser = m(srv.loginUser)
 }
 
 func (srv *serverAuthAPI) WrapLogoutUser(m MiddlewareAuthAPILogoutUser) {
@@ -99,6 +103,14 @@ func (srv *serverAuthAPI) WrapVerifyEmailCode(m MiddlewareAuthAPIVerifyEmailCode
 
 func (srv *serverAuthAPI) WrapSendEmailVerification(m MiddlewareAuthAPISendEmailVerification) {
 	srv.sendEmailVerification = m(srv.sendEmailVerification)
+}
+
+func (srv *serverAuthAPI) WrapRequestPasswordReset(m MiddlewareAuthAPIRequestPasswordReset) {
+	srv.requestPasswordReset = m(srv.requestPasswordReset)
+}
+
+func (srv *serverAuthAPI) WrapConfirmPasswordReset(m MiddlewareAuthAPIConfirmPasswordReset) {
+	srv.confirmPasswordReset = m(srv.confirmPasswordReset)
 }
 
 func (srv *serverAuthAPI) WithMetrics() {

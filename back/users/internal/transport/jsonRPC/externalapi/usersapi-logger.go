@@ -179,13 +179,19 @@ func (m loggerUsersAPI) ActivateUser(ctx context.Context, userID uuid.UUID) (res
 	return m.next.ActivateUser(ctx, userID)
 }
 
-func (m loggerUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID) (response models.DeactivateUserResponse, err error) {
+func (m loggerUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "UsersAPI").Str("method", "deactivateUser").Logger()
 	defer func(_begin time.Time) {
 		logHandle := func(ev *zerolog.Event) {
 			fields := map[string]interface{}{
-				"method":   "usersAPI.deactivateUser",
-				"request":  viewer.Sprintf("%+v", requestUsersAPIDeactivateUser{UserID: userID}),
+				"method": "usersAPI.deactivateUser",
+				"request": viewer.Sprintf("%+v", requestUsersAPIDeactivateUser{
+					ContactEmail: contactEmail,
+					ContactName:  contactName,
+					ContactPhone: contactPhone,
+					Reason:       reason,
+					UserID:       userID,
+				}),
 				"response": viewer.Sprintf("%+v", responseUsersAPIDeactivateUser{Response: response}),
 			}
 			ev.Fields(fields).Str("took", time.Since(_begin).String())
@@ -196,7 +202,7 @@ func (m loggerUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID) (r
 		}
 		logger.Info().Func(logHandle).Msg("call deactivateUser")
 	}(time.Now())
-	return m.next.DeactivateUser(ctx, userID)
+	return m.next.DeactivateUser(ctx, userID, reason, contactName, contactPhone, contactEmail)
 }
 
 func (m loggerUsersAPI) GetProfile(ctx context.Context, userID uuid.UUID) (response models.GetProfileResponse, err error) {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 
@@ -32,6 +33,9 @@ func (s *Service) CheckAccess(ctx context.Context, userID uuid.UUID, role int) (
 	}
 
 	actualRoleCode, err := s.repository.GetUserRoleCode(ctx, userID)
+	if errors.Is(err, accesserrors.ErrUserRoleNotFound) {
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}

@@ -158,7 +158,7 @@ func (m metricsUsersAPI) ActivateUser(ctx context.Context, userID uuid.UUID) (re
 	return m.next.ActivateUser(ctx, userID)
 }
 
-func (m metricsUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID) (response models.DeactivateUserResponse, err error) {
+func (m metricsUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error) {
 
 	defer func(_begin time.Time) {
 		var (
@@ -178,7 +178,7 @@ func (m metricsUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID) (
 		RequestLatency.WithLabelValues("usersAPI", "deactivateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
 	}(time.Now())
 
-	return m.next.DeactivateUser(ctx, userID)
+	return m.next.DeactivateUser(ctx, userID, reason, contactName, contactPhone, contactEmail)
 }
 
 func (m metricsUsersAPI) GetProfile(ctx context.Context, userID uuid.UUID) (response models.GetProfileResponse, err error) {

@@ -15,7 +15,7 @@ type UsersAPIListUsers func(ctx context.Context, q string, role string, status s
 type UsersAPIUpdateUser func(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive *bool) (response models.UpdateUserResponse, err error)
 type UsersAPIDeleteUser func(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error)
 type UsersAPIActivateUser func(ctx context.Context, userID uuid.UUID) (response models.ActivateUserResponse, err error)
-type UsersAPIDeactivateUser func(ctx context.Context, userID uuid.UUID) (response models.DeactivateUserResponse, err error)
+type UsersAPIDeactivateUser func(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error)
 type UsersAPIGetProfile func(ctx context.Context, userID uuid.UUID) (response models.GetProfileResponse, err error)
 type UsersAPIUpdateProfile func(ctx context.Context, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string) (response models.UpdateProfileResponse, err error)
 type UsersAPIListUserClients func(ctx context.Context, userID uuid.UUID) (response models.ListUserClientsResponse, err error)

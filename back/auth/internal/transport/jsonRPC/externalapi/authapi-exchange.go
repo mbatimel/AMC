@@ -12,33 +12,6 @@ type responseAuthAPILoginUser struct {
 	UserID uuid.UUID `json:"userID,omitempty"`
 }
 
-type requestAuthAPIRegisterIP struct {
-	Email                string  `json:"email,omitempty"`
-	Password             string  `json:"password,omitempty"`
-	FullName             *string `json:"fullName,omitempty"`
-	ShortName            *string `json:"shortName,omitempty"`
-	Inn                  *string `json:"inn,omitempty"`
-	Kpp                  *string `json:"kpp,omitempty"`
-	Ogrn                 *string `json:"ogrn,omitempty"`
-	Okved                *string `json:"okved,omitempty"`
-	TaxSystem            *string `json:"taxSystem,omitempty"`
-	LegalAddress         *string `json:"legalAddress,omitempty"`
-	ActualAddress        *string `json:"actualAddress,omitempty"`
-	DirectorFullName     *string `json:"directorFullName,omitempty"`
-	DirectorPosition     *string `json:"directorPosition,omitempty"`
-	Phone                *string `json:"phone,omitempty"`
-	AdditionalPhone      *string `json:"additionalPhone,omitempty"`
-	Website              *string `json:"website,omitempty"`
-	BankAccount          *string `json:"bankAccount,omitempty"`
-	BankName             *string `json:"bankName,omitempty"`
-	BankBik              *string `json:"bankBik,omitempty"`
-	CorrespondentAccount *string `json:"correspondentAccount,omitempty"`
-}
-
-type responseAuthAPIRegisterIP struct {
-	UserID uuid.UUID `json:"userID,omitempty"`
-}
-
 type requestAuthAPILogoutUser struct {
 	UserID uuid.UUID `json:"userID,omitempty"`
 }
@@ -69,3 +42,19 @@ type requestAuthAPISendEmailVerification struct {
 
 // Formal exchange type, please do not delete.
 type responseAuthAPISendEmailVerification struct{}
+
+type requestAuthAPIRequestPasswordReset struct {
+	Email string `json:"email,omitempty"`
+}
+
+type responseAuthAPIRequestPasswordReset struct {
+	EmailSent bool `json:"emailSent,omitempty"`
+}
+
+type requestAuthAPIConfirmPasswordReset struct {
+	Token       string `json:"token,omitempty"`
+	NewPassword string `json:"newPassword,omitempty"`
+}
+
+// Formal exchange type, please do not delete.
+type responseAuthAPIConfirmPasswordReset struct{}
