@@ -3,6 +3,7 @@ FROM golang:1.25-alpine AS builder
 WORKDIR /src
 
 COPY back/access ./access
+COPY back/objectstorage ./objectstorage
 COPY back/auth/go.mod back/auth/go.sum ./auth/
 WORKDIR /src/auth
 RUN go mod download
