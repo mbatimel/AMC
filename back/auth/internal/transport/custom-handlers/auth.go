@@ -219,3 +219,71 @@ func SendEmailVerification(
 	sendResponse(ctx, log.Logger, nil, nil)
 	return nil
 }
+
+func RequestPasswordReset(ctx *fiber.Ctx, svc externalapi.AuthAPI, email string) error {
+	var (
+		methodName = "RequestPasswordReset"
+		err        error
+	)
+
+	defer func(begin time.Time) {
+		fields := map[string]interface{}{
+			"method":     "post",
+			"path":       "/v1/auth/password/reset/request",
+			"methodName": methodName,
+			"email":      email,
+			"took":       time.Since(begin).String(),
+		}
+		l := log.Info()
+		if err != nil {
+			l = log.Error().Err(err)
+		}
+		l.Fields(fields).Msg("call")
+	}(time.Now())
+
+	emailSent, err := svc.RequestPasswordReset(ctx.UserContext(), email)
+	if err != nil {
+		sendResponse(ctx, log.Logger, nil, err)
+		return nil
+	}
+
+	sendResponse(ctx, log.Logger, map[string]bool{"emailSent": emailSent}, nil)
+	return nil
+}
+
+// ConfirmPasswordReset intentionally never logs the raw token or the new
+// password — the token alone is enough to take over the account until it
+// expires, same sensitivity class as a password.
+func ConfirmPasswordReset(ctx *fiber.Ctx, svc externalapi.AuthAPI, token string, newPassword string) error {
+	var (
+		methodName = "ConfirmPasswordReset"
+		err        error
+	)
+
+	defer func(begin time.Time) {
+		fields := map[string]interface{}{
+			"method":     "post",
+			"path":       "/v1/auth/password/reset/confirm",
+			"methodName": methodName,
+			"took":       time.Since(begin).String(),
+		}
+		l := log.Info()
+		if err != nil {
+			if errors.Is(err, errors.TokenInvalidError()) || errors.Is(err, errors.TokenExpiredError()) {
+				l = log.Warn().Err(err)
+			} else {
+				l = log.Error().Err(err)
+			}
+		}
+		l.Fields(fields).Msg("call")
+	}(time.Now())
+
+	err = svc.ConfirmPasswordReset(ctx.UserContext(), token, newPassword)
+	if err != nil {
+		sendResponse(ctx, log.Logger, nil, err)
+		return nil
+	}
+
+	sendResponse(ctx, log.Logger, true, nil)
+	return nil
+}

@@ -86,4 +86,27 @@ type AuthAPI interface {
 		ctx context.Context,
 		userID uuid.UUID,
 	) (err error)
+
+	// RequestPasswordReset ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/auth/password/reset/request
+	// @tg http-response=github.com/mbatimel/AMC/auth/internal/transport/custom-handlers:RequestPasswordReset
+	// @tg summary=`Запрос сброса пароля`
+	// @tg desc=`Публичная ручка (без сессии) для экрана "забыли пароль" — всегда отвечает одинаковым успехом, не раскрывая, существует ли аккаунт`
+	RequestPasswordReset(
+		ctx context.Context,
+		email string,
+	) (emailSent bool, err error)
+
+	// ConfirmPasswordReset ...
+	// @tg http-method=POST
+	// @tg http-path=/v1/auth/password/reset/confirm
+	// @tg http-response=github.com/mbatimel/AMC/auth/internal/transport/custom-handlers:ConfirmPasswordReset
+	// @tg summary=`Установка нового пароля по токену`
+	// @tg desc=`Публичная ручка (без сессии) — токен из письма идентифицирует пользователя, старый пароль не требуется`
+	ConfirmPasswordReset(
+		ctx context.Context,
+		token string,
+		newPassword string,
+	) (err error)
 }
