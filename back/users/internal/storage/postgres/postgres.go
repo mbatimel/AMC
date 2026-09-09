@@ -103,6 +103,8 @@ func scanUser(row rowScanner) (internalModels.User, error) {
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&user.DeletedAt,
+		&user.RequisitesFileURL,
+		&user.RequisitesFileName,
 	)
 	return user, err
 }

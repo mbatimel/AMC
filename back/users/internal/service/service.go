@@ -158,19 +158,21 @@ func mapStorageError(err error) error {
 
 func modelUser(row internalModels.User) models.User {
 	user := models.User{
-		ID:          row.ID.String(),
-		Email:       row.Email,
-		Phone:       row.Phone,
-		FirstName:   row.FirstName,
-		LastName:    row.LastName,
-		MiddleName:  row.MiddleName,
-		Role:        row.Role,
-		Status:      row.Status,
-		CompanyName: row.CompanyName,
-		INN:         row.INN,
-		IsActive:    row.IsActive,
-		CreatedAt:   row.CreatedAt,
-		UpdatedAt:   row.UpdatedAt,
+		ID:                 row.ID.String(),
+		Email:              row.Email,
+		Phone:              row.Phone,
+		FirstName:          row.FirstName,
+		LastName:           row.LastName,
+		MiddleName:         row.MiddleName,
+		Role:               row.Role,
+		Status:             row.Status,
+		CompanyName:        row.CompanyName,
+		INN:                row.INN,
+		IsActive:           row.IsActive,
+		CreatedAt:          row.CreatedAt,
+		UpdatedAt:          row.UpdatedAt,
+		RequisitesFileURL:  row.RequisitesFileURL,
+		RequisitesFileName: row.RequisitesFileName,
 	}
 	if row.ClientID.Valid {
 		user.ClientID = row.ClientID.UUID.String()
@@ -203,16 +205,18 @@ func modelClient(row internalModels.Client) models.Client {
 
 func modelProfile(user internalModels.User, client *internalModels.Client) models.Profile {
 	profile := models.Profile{
-		UserID:     user.ID.String(),
-		Email:      user.Email,
-		Phone:      user.Phone,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		MiddleName: user.MiddleName,
-		Status:     user.Status,
-		IsActive:   user.IsActive,
-		CreatedAt:  user.CreatedAt,
-		UpdatedAt:  user.UpdatedAt,
+		UserID:             user.ID.String(),
+		Email:              user.Email,
+		Phone:              user.Phone,
+		FirstName:          user.FirstName,
+		LastName:           user.LastName,
+		MiddleName:         user.MiddleName,
+		Status:             user.Status,
+		IsActive:           user.IsActive,
+		RequisitesFileURL:  user.RequisitesFileURL,
+		RequisitesFileName: user.RequisitesFileName,
+		CreatedAt:          user.CreatedAt,
+		UpdatedAt:          user.UpdatedAt,
 	}
 	if user.ActiveClientID.Valid {
 		profile.ActiveClientID = user.ActiveClientID.UUID.String()

@@ -3,39 +3,43 @@ package models
 import "time"
 
 type User struct {
-	ID             string     `json:"id"`
-	Email          string     `json:"email"`
-	Phone          string     `json:"phone"`
-	FirstName      string     `json:"first_name"`
-	LastName       string     `json:"last_name"`
-	MiddleName     string     `json:"middle_name"`
-	Role           string     `json:"role"`
-	Status         string     `json:"status"`
-	ClientID       string     `json:"client_id"`
-	CompanyName    string     `json:"company_name"`
-	INN            string     `json:"inn"`
-	IsActive       bool       `json:"is_active"`
-	ActiveClientID string     `json:"active_client_id"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
-	DeletedAt      *time.Time `json:"deleted_at,omitempty"`
+	ID                 string     `json:"id"`
+	Email              string     `json:"email"`
+	Phone              string     `json:"phone"`
+	FirstName          string     `json:"first_name"`
+	LastName           string     `json:"last_name"`
+	MiddleName         string     `json:"middle_name"`
+	Role               string     `json:"role"`
+	Status             string     `json:"status"`
+	ClientID           string     `json:"client_id"`
+	CompanyName        string     `json:"company_name"`
+	INN                string     `json:"inn"`
+	IsActive           bool       `json:"is_active"`
+	ActiveClientID     string     `json:"active_client_id"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
+	DeletedAt          *time.Time `json:"deleted_at,omitempty"`
+	RequisitesFileURL  string     `json:"requisites_file_url"`
+	RequisitesFileName string     `json:"requisites_file_name"`
 }
 
 type UserListItem = User
 
 type Profile struct {
-	UserID         string    `json:"user_id"`
-	Email          string    `json:"email"`
-	Phone          string    `json:"phone"`
-	FirstName      string    `json:"first_name"`
-	LastName       string    `json:"last_name"`
-	MiddleName     string    `json:"middle_name"`
-	Status         string    `json:"status"`
-	IsActive       bool      `json:"is_active"`
-	ActiveClientID string    `json:"active_client_id"`
-	ActiveClient   *Client   `json:"active_client,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	UserID             string    `json:"user_id"`
+	Email              string    `json:"email"`
+	Phone              string    `json:"phone"`
+	FirstName          string    `json:"first_name"`
+	LastName           string    `json:"last_name"`
+	MiddleName         string    `json:"middle_name"`
+	Status             string    `json:"status"`
+	IsActive           bool      `json:"is_active"`
+	ActiveClientID     string    `json:"active_client_id"`
+	ActiveClient       *Client   `json:"active_client,omitempty"`
+	RequisitesFileURL  string    `json:"requisites_file_url"`
+	RequisitesFileName string    `json:"requisites_file_name"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
 }
 
 type Client struct {

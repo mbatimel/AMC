@@ -8,22 +8,24 @@ import (
 )
 
 type User struct {
-	ID             uuid.UUID
-	Email          string
-	Phone          string
-	FirstName      string
-	LastName       string
-	MiddleName     string
-	Role           string
-	Status         string
-	ClientID       uuid.NullUUID
-	CompanyName    string
-	INN            string
-	IsActive       bool
-	ActiveClientID uuid.NullUUID
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	DeletedAt      sql.NullTime
+	ID                 uuid.UUID
+	Email              string
+	Phone              string
+	FirstName          string
+	LastName           string
+	MiddleName         string
+	Role               string
+	Status             string
+	ClientID           uuid.NullUUID
+	CompanyName        string
+	INN                string
+	IsActive           bool
+	ActiveClientID     uuid.NullUUID
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
+	DeletedAt          sql.NullTime
+	RequisitesFileURL  string
+	RequisitesFileName string
 }
 
 type Client struct {

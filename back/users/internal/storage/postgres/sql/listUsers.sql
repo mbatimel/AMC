@@ -14,7 +14,9 @@ SELECT
     u.active_client_id,
     u.created_at,
     u.updated_at,
-    u.deleted_at
+    u.deleted_at,
+    COALESCE(client_info.requisites_file_url, ''),
+    COALESCE(client_info.requisites_file_name, '')
 FROM users u
 LEFT JOIN LATERAL (
     SELECT r.name, r.code
