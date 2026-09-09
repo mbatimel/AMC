@@ -45,47 +45,6 @@ func (m loggerAuthAPI) LoginUser(ctx context.Context, email string, password str
 	return m.next.LoginUser(ctx, email, password)
 }
 
-func (m loggerAuthAPI) RegisterIP(ctx context.Context, email string, password string, fullName *string, shortName *string, inn *string, kpp *string, ogrn *string, okved *string, taxSystem *string, legalAddress *string, actualAddress *string, directorFullName *string, directorPosition *string, phone *string, additionalPhone *string, website *string, bankAccount *string, bankName *string, bankBik *string, correspondentAccount *string) (userID uuid.UUID, err error) {
-	logger := log.Ctx(ctx).With().Str("service", "AuthAPI").Str("method", "registerIP").Logger()
-	defer func(_begin time.Time) {
-		logHandle := func(ev *zerolog.Event) {
-			fields := map[string]interface{}{
-				"method": "authAPI.registerIP",
-				"request": viewer.Sprintf("%+v", requestAuthAPIRegisterIP{
-					ActualAddress:        actualAddress,
-					AdditionalPhone:      additionalPhone,
-					BankAccount:          bankAccount,
-					BankBik:              bankBik,
-					BankName:             bankName,
-					CorrespondentAccount: correspondentAccount,
-					DirectorFullName:     directorFullName,
-					DirectorPosition:     directorPosition,
-					Email:                email,
-					FullName:             fullName,
-					Inn:                  inn,
-					Kpp:                  kpp,
-					LegalAddress:         legalAddress,
-					Ogrn:                 ogrn,
-					Okved:                okved,
-					Password:             password,
-					Phone:                phone,
-					ShortName:            shortName,
-					TaxSystem:            taxSystem,
-					Website:              website,
-				}),
-				"response": viewer.Sprintf("%+v", responseAuthAPIRegisterIP{UserID: userID}),
-			}
-			ev.Fields(fields).Str("took", time.Since(_begin).String())
-		}
-		if err != nil {
-			logger.Error().Err(err).Func(logHandle).Msg("call registerIP")
-			return
-		}
-		logger.Info().Func(logHandle).Msg("call registerIP")
-	}(time.Now())
-	return m.next.RegisterIP(ctx, email, password, fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress, directorFullName, directorPosition, phone, additionalPhone, website, bankAccount, bankName, bankBik, correspondentAccount)
-}
-
 func (m loggerAuthAPI) LogoutUser(ctx context.Context, userID uuid.UUID) (err error) {
 	logger := log.Ctx(ctx).With().Str("service", "AuthAPI").Str("method", "logoutUser").Logger()
 	defer func(_begin time.Time) {

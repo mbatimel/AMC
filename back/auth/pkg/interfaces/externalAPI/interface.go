@@ -35,36 +35,6 @@ type AuthAPI interface {
 		password string,
 	) (userID uuid.UUID, err error)
 
-	// RegisterIP ...
-	// @tg http-method=POST
-	// @tg http-path=/v1/auth/register/ip
-	// @tg uuidPackage=github.com/google/uuid
-	// @tg summary=`Регистрация ИП/организации`
-	// @tg desc=`Создание нового пользователя с реквизитами ИП/организации. Все поля кроме email и пароля необязательны.`
-	RegisterIP(
-		ctx context.Context,
-		email string,
-		password string,
-		fullName *string,
-		shortName *string,
-		inn *string,
-		kpp *string,
-		ogrn *string,
-		okved *string,
-		taxSystem *string,
-		legalAddress *string,
-		actualAddress *string,
-		directorFullName *string,
-		directorPosition *string,
-		phone *string,
-		additionalPhone *string,
-		website *string,
-		bankAccount *string,
-		bankName *string,
-		bankBik *string,
-		correspondentAccount *string,
-	) (userID uuid.UUID, err error)
-
 	// LogoutUser ...
 	// @tg http-method=POST
 	// @tg http-path=/v1/auth/logout
