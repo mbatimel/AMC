@@ -80,7 +80,8 @@ func main() {
 		externalapi.Service(companyRequestRoutes),
 	).WithLog().WithMetrics()
 	server := &fasthttp.Server{
-		Handler: app.Fiber().Handler(),
+		Handler:            app.Fiber().Handler(),
+		MaxRequestBodySize: requestBodyLimit(cfg.S3MaxFileSize),
 	}
 
 	healthServer := transportHttp.NewHealthServer()
