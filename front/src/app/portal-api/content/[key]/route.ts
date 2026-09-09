@@ -1,22 +1,17 @@
 import type { ContentPageKey } from '@/core/shared/server/portal/types';
 
+import { createDefaultPortalState } from '@/core/shared/server/portal/defaults';
 import { apiFail, apiOk, readJsonBody } from '@/core/shared/server/portal/response';
 import {
   appendAuditEntry,
+  mergeTerms,
   readPortalState,
   updatePortalState,
 } from '@/core/shared/server/portal/store';
 
 export const dynamic = 'force-dynamic';
 
-const PAGE_KEYS: ContentPageKey[] = [
-  'about',
-  'certificates',
-  'contacts',
-  'home',
-  'promo',
-  'terms',
-];
+const PAGE_KEYS: ContentPageKey[] = ['about', 'certificates', 'contacts', 'home', 'promo', 'terms'];
 
 const isPageKey = (value: string): value is ContentPageKey =>
   PAGE_KEYS.includes(value as ContentPageKey);
@@ -47,6 +42,12 @@ export const PUT = async (request: Request, context: RouteContext): Promise<Resp
   }
 
   updatePortalState((draft) => {
+    if (key === 'terms') {
+      draft.content.terms = mergeTerms(createDefaultPortalState().content.terms, body);
+
+      return;
+    }
+
     const pages = draft.content as unknown as Record<string, Record<string, unknown>>;
 
     pages[key] = { ...pages[key], ...body };

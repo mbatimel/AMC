@@ -1,4 +1,4 @@
-import { combine, createEffect, createEvent, createStore, sample } from 'effector';
+import { createEffect, createEvent, createStore, sample } from 'effector';
 
 import { $userId, sessionEnded } from '@/core/entities/session';
 import {
@@ -43,6 +43,8 @@ const writeFavorites = (ids: string[]): void => {
 export const favoritesHydrated = createEvent();
 export const favoriteToggled = createEvent<string>();
 
+const favoritesLocalLoaded = createEvent<string[]>();
+
 const persistFavoritesFx = createEffect((ids: string[]) => {
   writeFavorites(ids);
 });
@@ -69,8 +71,18 @@ const syncFavoriteFx = createEffect(
   },
 );
 
+/** Локальный hydrate — один раз на вкладку (useFavorites может монтироваться многократно). */
+const $isLocalHydrated = createStore(false)
+  .on(favoritesLocalLoaded, () => true)
+  .reset(sessionEnded);
+
+/** Для какого userId уже забрали remote-список. */
+const $remoteFetchedForUserId = createStore<null | string>(null)
+  .on(fetchRemoteFavoritesFx.done, (_, { params }) => params)
+  .reset(sessionEnded);
+
 export const $favoriteIds = createStore<string[]>([])
-  .on(favoritesHydrated, () => readFavorites())
+  .on(favoritesLocalLoaded, (_, ids) => ids)
   .on(fetchRemoteFavoritesFx.doneData, (_, ids) => ids)
   .on(favoriteToggled, (state, productId) =>
     state.includes(productId) ? state.filter((id) => id !== productId) : [...state, productId],
@@ -83,23 +95,47 @@ sample({
   target: persistFavoritesFx,
 });
 
-/* eslint-disable perfectionist/sort-objects -- effector sample: clock -> source -> filter -> fn -> target */
 sample({
-  clock: [favoritesHydrated, $userId],
-  source: $userId,
-  filter: isUserId,
+  clock: fetchRemoteFavoritesFx.doneData,
+  target: persistFavoritesFx,
+});
+
+/* eslint-disable perfectionist/sort-objects -- effector sample: clock -> source -> filter -> fn -> target */
+
+sample({
+  clock: favoritesHydrated,
+  source: $isLocalHydrated,
+  filter: (hydrated) => !hydrated,
+  fn: () => readFavorites(),
+  target: favoritesLocalLoaded,
+});
+
+sample({
+  clock: [favoritesLocalLoaded, $userId],
+  source: {
+    fetchedFor: $remoteFetchedForUserId,
+    pending: fetchRemoteFavoritesFx.pending,
+    userId: $userId,
+  },
+  filter: ({ fetchedFor, pending, userId }) =>
+    !pending && isUserId(userId) && userId !== fetchedFor,
+  fn: ({ userId }) => userId as string,
   target: fetchRemoteFavoritesFx,
 });
 
 sample({
   clock: favoriteToggled,
-  source: combine($userId, $favoriteIds),
-  filter: ([userId]) => isUserId(userId),
-  fn: ([userId, ids], productID) => ({
+  source: {
+    ids: $favoriteIds,
+    userId: $userId,
+  },
+  filter: ({ userId }) => isUserId(userId),
+  fn: ({ ids, userId }, productID) => ({
     productID,
     shouldAdd: ids.includes(productID),
     userId: userId as string,
   }),
   target: syncFavoriteFx,
 });
+
 /* eslint-enable perfectionist/sort-objects */

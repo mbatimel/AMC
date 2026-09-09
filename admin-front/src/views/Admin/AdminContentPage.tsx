@@ -11,7 +11,7 @@ import type {
   ContentPageKey,
   HomePageContent,
   ListPageContent,
-  TextPageContent,
+  TermsPageContent,
 } from '@/core/shared/api/content';
 
 import { useContent } from '@/core/entities/content';
@@ -27,7 +27,6 @@ type AdminContentPageProps = {
   pageKey: ContentPageKey;
 };
 
-const isTextPage = (key: ContentPageKey): boolean => key === 'terms';
 const isListPage = (key: ContentPageKey): boolean => key === 'certificates' || key === 'promo';
 
 export const AdminContentPage = ({ pageKey }: AdminContentPageProps): JSX.Element => {
@@ -89,8 +88,8 @@ export const AdminContentPage = ({ pageKey }: AdminContentPageProps): JSX.Elemen
             <AboutEditor onChange={patch} value={draft as unknown as AboutPageContent} />
           ) : null}
 
-          {isTextPage(pageKey) ? (
-            <TextEditor onChange={patch} value={draft as unknown as TextPageContent} />
+          {pageKey === 'terms' ? (
+            <TermsEditor onChange={patch} value={draft as unknown as TermsPageContent} />
           ) : null}
 
           {isListPage(pageKey) ? (
@@ -130,86 +129,166 @@ const field = (
   </div>
 );
 
-const AboutEditor = ({ onChange, value }: EditorProps<AboutPageContent>): JSX.Element => (
-  <>
-    {field('about-title', 'Заголовок страницы', value.title, (title) => onChange({ title }))}
-    {field('about-hero-badge', 'Бейдж в шапке', value.hero_badge ?? '', (hero_badge) =>
-      onChange({ hero_badge }),
-    )}
-    {field(
-      'about-hero-subtitle',
-      'Подзаголовок в шапке',
-      value.hero_subtitle ?? '',
-      (hero_subtitle) => onChange({ hero_subtitle }),
-    )}
-    {field(
-      'about-profile-badge',
-      'Бейдж блока «Кто мы»',
-      value.profile_badge ?? '',
-      (profile_badge) => onChange({ profile_badge }),
-    )}
-    {field(
-      'about-profile-title',
-      'Заголовок блока «Кто мы»',
-      value.profile_title ?? '',
-      (profile_title) => onChange({ profile_title }),
-    )}
-    <HtmlEditor
-      label="Текст «Кто мы»"
-      onChange={(text) => onChange({ text })}
-      rows={10}
-      value={value.text}
-    />
-    {field(
-      'about-directions-badge',
-      'Бейдж «Ассортимент»',
-      value.directions_badge ?? '',
-      (directions_badge) => onChange({ directions_badge }),
-    )}
-    {field(
-      'about-directions-title',
-      'Заголовок «Ассортимент»',
-      value.directions_title ?? '',
-      (directions_title) => onChange({ directions_title }),
-    )}
-    {field(
-      'about-directions-subtitle',
-      'Подзаголовок «Ассортимент»',
-      value.directions_subtitle ?? '',
-      (directions_subtitle) => onChange({ directions_subtitle }),
-    )}
-    {field('about-offices-badge', 'Бейдж «География»', value.offices_badge ?? '', (offices_badge) =>
-      onChange({ offices_badge }),
-    )}
-    {field(
-      'about-offices-title',
-      'Заголовок «География»',
-      value.offices_title ?? '',
-      (offices_title) => onChange({ offices_title }),
-    )}
-    {field(
-      'about-offices-subtitle',
-      'Подзаголовок «География»',
-      value.offices_subtitle ?? '',
-      (offices_subtitle) => onChange({ offices_subtitle }),
-    )}
-    {field('about-cta-badge', 'Бейдж призыва', value.cta_badge ?? '', (cta_badge) =>
-      onChange({ cta_badge }),
-    )}
-    {field('about-cta-title', 'Заголовок призыва', value.cta_title ?? '', (cta_title) =>
-      onChange({ cta_title }),
-    )}
-    {field('about-cta-text', 'Текст призыва', value.cta_text ?? '', (cta_text) =>
-      onChange({ cta_text }),
-    )}
-    {field('about-cta-button', 'Текст кнопки заявки', value.cta_button ?? '', (cta_button) =>
-      onChange({ cta_button }),
-    )}
-    {field('about-cta-hint', 'Подсказка про email', value.cta_hint ?? '', (cta_hint) =>
-      onChange({ cta_hint }),
-    )}
-  </>
-);
+const AboutEditor = ({ onChange, value }: EditorProps<AboutPageContent>): JSX.Element => {
+  const offices = value.offices ?? [];
+
+  return (
+    <>
+      {field('about-title', 'Заголовок страницы', value.title, (title) => onChange({ title }))}
+      {field('about-hero-badge', 'Бейдж в шапке', value.hero_badge ?? '', (hero_badge) =>
+        onChange({ hero_badge }),
+      )}
+      {field(
+        'about-hero-subtitle',
+        'Подзаголовок в шапке',
+        value.hero_subtitle ?? '',
+        (hero_subtitle) => onChange({ hero_subtitle }),
+      )}
+      {field(
+        'about-profile-badge',
+        'Бейдж блока «Кто мы»',
+        value.profile_badge ?? '',
+        (profile_badge) => onChange({ profile_badge }),
+      )}
+      {field(
+        'about-profile-title',
+        'Заголовок блока «Кто мы»',
+        value.profile_title ?? '',
+        (profile_title) => onChange({ profile_title }),
+      )}
+      <HtmlEditor
+        label="Текст «Кто мы»"
+        onChange={(text) => onChange({ text })}
+        rows={10}
+        value={value.text}
+      />
+      {field(
+        'about-directions-badge',
+        'Бейдж «Ассортимент»',
+        value.directions_badge ?? '',
+        (directions_badge) => onChange({ directions_badge }),
+      )}
+      {field(
+        'about-directions-title',
+        'Заголовок «Ассортимент»',
+        value.directions_title ?? '',
+        (directions_title) => onChange({ directions_title }),
+      )}
+      {field(
+        'about-directions-subtitle',
+        'Подзаголовок «Ассортимент»',
+        value.directions_subtitle ?? '',
+        (directions_subtitle) => onChange({ directions_subtitle }),
+      )}
+      {field(
+        'about-offices-badge',
+        'Бейдж «География»',
+        value.offices_badge ?? '',
+        (offices_badge) => onChange({ offices_badge }),
+      )}
+      {field(
+        'about-offices-title',
+        'Заголовок «География»',
+        value.offices_title ?? '',
+        (offices_title) => onChange({ offices_title }),
+      )}
+      {field(
+        'about-offices-subtitle',
+        'Подзаголовок «География»',
+        value.offices_subtitle ?? '',
+        (offices_subtitle) => onChange({ offices_subtitle }),
+      )}
+
+      <div className={clsx(styles.field)}>
+        <span className={clsx(styles.label)}>Представительства</span>
+        <div className={clsx(styles.listEditor)}>
+          {offices.map((office, index) => (
+            <div className={clsx(styles.formGrid)} key={`about-office-${index}`}>
+              <input
+                aria-label={`Город ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    offices: offices.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, city: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="Город"
+                value={office.city}
+              />
+              <input
+                aria-label={`Описание ${index + 1}`}
+                className={clsx(styles.input)}
+                onChange={(event) =>
+                  onChange({
+                    offices: offices.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, description: event.target.value } : item,
+                    ),
+                  })
+                }
+                placeholder="Описание / адрес"
+                value={office.description}
+              />
+              <label className={clsx(styles.checkboxRow)}>
+                <input
+                  checked={Boolean(office.is_main)}
+                  onChange={(event) =>
+                    onChange({
+                      offices: offices.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, is_main: event.target.checked } : item,
+                      ),
+                    })
+                  }
+                  type="checkbox"
+                />
+                Главный офис
+              </label>
+              <button
+                className={clsx(styles.smallButton, styles.smallButtonDanger)}
+                onClick={() =>
+                  onChange({
+                    offices: offices.filter((_, itemIndex) => itemIndex !== index),
+                  })
+                }
+                type="button"
+              >
+                Удалить
+              </button>
+            </div>
+          ))}
+          <button
+            className={clsx(styles.smallButton)}
+            onClick={() =>
+              onChange({
+                offices: [...offices, { city: '', description: '', is_main: false }],
+              })
+            }
+            type="button"
+          >
+            Добавить представительство
+          </button>
+        </div>
+      </div>
+
+      {field('about-cta-badge', 'Бейдж призыва', value.cta_badge ?? '', (cta_badge) =>
+        onChange({ cta_badge }),
+      )}
+      {field('about-cta-title', 'Заголовок призыва', value.cta_title ?? '', (cta_title) =>
+        onChange({ cta_title }),
+      )}
+      {field('about-cta-text', 'Текст призыва', value.cta_text ?? '', (cta_text) =>
+        onChange({ cta_text }),
+      )}
+      {field('about-cta-button', 'Текст кнопки заявки', value.cta_button ?? '', (cta_button) =>
+        onChange({ cta_button }),
+      )}
+      {field('about-cta-hint', 'Подсказка про email', value.cta_hint ?? '', (cta_hint) =>
+        onChange({ cta_hint }),
+      )}
+    </>
+  );
+};
 
 const HomeEditor = ({ onChange, value }: EditorProps<HomePageContent>): JSX.Element => (
   <>
@@ -323,27 +402,128 @@ const HomeEditor = ({ onChange, value }: EditorProps<HomePageContent>): JSX.Elem
   </>
 );
 
-const TextEditor = ({ onChange, value }: EditorProps<TextPageContent>): JSX.Element => (
-  <>
-    <div className={clsx(styles.field)}>
-      <label className={clsx(styles.label)} htmlFor="text-title">
-        Заголовок страницы
-      </label>
-      <input
-        className={clsx(styles.input)}
-        id="text-title"
-        onChange={(event) => onChange({ title: event.target.value })}
-        value={value.title}
-      />
-    </div>
-    <HtmlEditor
-      label="Текст"
-      onChange={(text) => onChange({ text })}
-      rows={14}
-      value={value.text}
-    />
-  </>
-);
+const TermsEditor = ({ onChange, value }: EditorProps<TermsPageContent>): JSX.Element => {
+  const blocks = value.terms ?? [];
+
+  return (
+    <>
+      {field('terms-title', 'Заголовок страницы', value.title, (title) => onChange({ title }))}
+      {field('terms-description', 'Подзаголовок', value.description ?? '', (description) =>
+        onChange({ description }),
+      )}
+
+      <div className={clsx(styles.field)}>
+        <span className={clsx(styles.label)}>Блоки условий</span>
+        <p className={clsx(styles.hint)}>
+          Порядок блоков на странице совпадает с порядком в списке.
+        </p>
+        <div className={clsx(styles.listEditor)}>
+          {blocks.map((block, index) => (
+            <div className={clsx(styles.card)} key={`terms-block-${index}`}>
+              <div className={clsx(styles.form)}>
+                {field(
+                  `terms-block-title-${index}`,
+                  `Заголовок блока ${index + 1}`,
+                  block.title,
+                  (title) =>
+                    onChange({
+                      terms: blocks.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, title } : item,
+                      ),
+                    }),
+                )}
+                <HtmlEditor
+                  label="Текст блока"
+                  onChange={(description) =>
+                    onChange({
+                      terms: blocks.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, description } : item,
+                      ),
+                    })
+                  }
+                  rows={6}
+                  value={block.description}
+                />
+                <div className={clsx(styles.actionsRow)}>
+                  <button
+                    className={clsx(styles.smallButton)}
+                    disabled={index === 0}
+                    onClick={() => {
+                      if (index === 0) {
+                        return;
+                      }
+
+                      const next = [...blocks];
+                      const previous = next[index - 1];
+                      const current = next[index];
+
+                      if (!previous || !current) {
+                        return;
+                      }
+
+                      next[index - 1] = current;
+                      next[index] = previous;
+                      onChange({ terms: next });
+                    }}
+                    type="button"
+                  >
+                    Выше
+                  </button>
+                  <button
+                    className={clsx(styles.smallButton)}
+                    disabled={index >= blocks.length - 1}
+                    onClick={() => {
+                      if (index >= blocks.length - 1) {
+                        return;
+                      }
+
+                      const next = [...blocks];
+                      const current = next[index];
+                      const following = next[index + 1];
+
+                      if (!current || !following) {
+                        return;
+                      }
+
+                      next[index] = following;
+                      next[index + 1] = current;
+                      onChange({ terms: next });
+                    }}
+                    type="button"
+                  >
+                    Ниже
+                  </button>
+                  <button
+                    className={clsx(styles.smallButton, styles.smallButtonDanger)}
+                    onClick={() =>
+                      onChange({
+                        terms: blocks.filter((_, itemIndex) => itemIndex !== index),
+                      })
+                    }
+                    type="button"
+                  >
+                    Удалить блок
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+          <button
+            className={clsx(styles.smallButton, styles.smallButtonPrimary)}
+            onClick={() =>
+              onChange({
+                terms: [...blocks, { description: '', title: '' }],
+              })
+            }
+            type="button"
+          >
+            Добавить блок
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 const ListEditor = ({ onChange, value }: EditorProps<ListPageContent>): JSX.Element => (
   <>

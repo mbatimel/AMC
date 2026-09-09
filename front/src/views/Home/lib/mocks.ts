@@ -59,6 +59,7 @@ export const HOME_PAGE_MOCK: HomePageContent = {
       },
     ],
     title: 'Популярные категории',
+    totalItems: 18,
     viewAllHref: AppPath.Catalog,
     viewAllLabel: 'Весь каталог',
   },

@@ -46,3 +46,14 @@ h6 {
   letter-spacing: 0.15px;
   overflow-wrap: break-word;
 }
+
+/* HeroUI рисует * через ::after и наследует мелкий font-size лейбла (11px). */
+/* stylelint-disable-next-line selector-class-pattern */
+.label--required::after,
+[data-required='true'] > .label::after {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 18px;
+  vertical-align: middle;
+  margin-inline-start: 0;
+}

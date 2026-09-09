@@ -148,9 +148,24 @@ export const listAllUsersRequest = async (
   return items;
 };
 
+const parseUserPayload = (data: unknown): null | RealUser => {
+  if (typeof data !== 'object' || data === null) {
+    return null;
+  }
+
+  const record = data as Record<string, unknown>;
+
+  // Get/Activate/Deactivate отдают `{ user: User }`, список — элементы напрямую.
+  if ('user' in record) {
+    return parseUser(record.user);
+  }
+
+  return parseUser(data);
+};
+
 export const getUserRequest = async (userId: string): Promise<RealUser> => {
   const data = await request(`/api/v1/users/${userId}`);
-  const user = parseUser(data);
+  const user = parseUserPayload(data);
 
   if (!user) {
     throw new UsersApiError(500, 'Некорректный ответ сервиса пользователей');
@@ -166,7 +181,7 @@ export const setUserActiveRequest = async (
   const data = await request(`/api/v1/users/${userId}/${isActive ? 'activate' : 'deactivate'}`, {
     method: 'POST',
   });
-  const user = parseUser(data);
+  const user = parseUserPayload(data);
 
   if (!user) {
     throw new UsersApiError(500, 'Некорректный ответ сервиса пользователей');

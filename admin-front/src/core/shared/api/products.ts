@@ -8,6 +8,7 @@ export type Brand = {
 
 export type Category = {
   id: string;
+  items_count: number;
   name: string;
   parent_id?: string;
   slug?: string;
@@ -338,6 +339,7 @@ export const listCategoriesRequest = async (): Promise<Category[]> => {
 
       return {
         id,
+        items_count: asNumber(record.items_count),
         name,
         parent_id: asString(record.parent_id) || undefined,
         slug: asString(record.slug) || undefined,

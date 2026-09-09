@@ -1,7 +1,13 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import type { AboutPageContent, ContactsPageContent, PortalState } from './types';
+import type {
+  AboutPageContent,
+  ContactsPageContent,
+  PortalState,
+  TermsBlock,
+  TermsPageContent,
+} from './types';
 
 import { createDefaultPortalState } from './defaults';
 
@@ -26,6 +32,7 @@ const mergeAbout = (
 ): AboutPageContent => ({
   ...defaults,
   ...saved,
+  offices: saved?.offices?.length ? saved.offices : defaults.offices,
 });
 
 const mergeContacts = (
@@ -42,6 +49,63 @@ const mergeContacts = (
   subtitle: saved?.subtitle || defaults.subtitle,
 });
 
+const normalizeTermsBlock = (value: unknown): null | TermsBlock => {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  return {
+    description: typeof record.description === 'string' ? record.description : '',
+    title: typeof record.title === 'string' ? record.title : '',
+  };
+};
+
+/** Поддерживает новый контракт и старый `{ title, text }`. */
+export const mergeTerms = (defaults: TermsPageContent, saved?: object): TermsPageContent => {
+  if (!saved) {
+    return defaults;
+  }
+
+  const record = saved as Record<string, unknown>;
+  const title = typeof record.title === 'string' && record.title ? record.title : defaults.title;
+  const description =
+    typeof record.description === 'string' && record.description
+      ? record.description
+      : defaults.description;
+
+  if (Array.isArray(record.terms)) {
+    return {
+      description,
+      terms: record.terms
+        .map(normalizeTermsBlock)
+        .filter((block): block is TermsBlock => block !== null),
+      title,
+    };
+  }
+
+  if (typeof record.text === 'string' && record.text.trim().length > 0) {
+    const raw = record.text.trim();
+    const html = raw.includes('<')
+      ? raw
+      : raw
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => `<p>${line}</p>`)
+          .join('');
+
+    return {
+      description,
+      terms: [{ description: html, title: '' }],
+      title,
+    };
+  }
+
+  return { ...defaults, description, title };
+};
+
 const mergePortalState = (defaults: PortalState, saved: PortalState): PortalState => ({
   ...defaults,
   ...saved,
@@ -50,6 +114,7 @@ const mergePortalState = (defaults: PortalState, saved: PortalState): PortalStat
     ...saved.content,
     about: mergeAbout(defaults.content.about, saved.content?.about),
     contacts: mergeContacts(defaults.content.contacts, saved.content?.contacts),
+    terms: mergeTerms(defaults.content.terms, saved.content?.terms),
   },
 });
 
@@ -82,7 +147,12 @@ export const readPortalState = (): PortalState => {
     portalGlobal.__portalState = readFromDisk() ?? createDefaultPortalState();
   }
 
-  return portalGlobal.__portalState;
+  const state = portalGlobal.__portalState;
+
+  // Всегда отдаём контракт `{ title, description, terms[] }` (миграция с legacy `text`).
+  state.content.terms = mergeTerms(createDefaultPortalState().content.terms, state.content.terms);
+
+  return state;
 };
 
 export const updatePortalState = (updater: (state: PortalState) => void): PortalState => {

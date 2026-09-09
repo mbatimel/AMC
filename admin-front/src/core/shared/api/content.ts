@@ -11,6 +11,7 @@ import { portalRequest } from './portalClient';
 export type { LegalDoc, LegalDocVersion } from './legalDocs';
 export { fetchLegalDocsRequest } from './legalDocs';
 export type {
+  AboutOfficeItem,
   AboutPageContent,
   BannerItem,
   BannersSettings,
@@ -21,7 +22,8 @@ export type {
   ContentPages,
   HomePageContent,
   ListPageContent,
-  TextPageContent,
+  TermsBlock,
+  TermsPageContent,
 } from '@/core/shared/server/portal/types';
 
 export const CONTENT_PAGE_TITLES: Record<ContentPageKey, string> = {
@@ -52,16 +54,16 @@ export const updateContentPageRequest = <K extends ContentPageKey>(
     path: `/content/${key}`,
   });
 
-export const fetchBannersRequest = (): Promise<BannersSettings> =>
-  portalRequest({ fallback: 'Не удалось загрузить баннеры', path: '/banners' });
+export const fetchBannersRequest = async (): Promise<BannersSettings> => {
+  const response = await fetch('/api/v1/banners');
 
-export const updateBannersRequest = (payload: BannersSettings): Promise<BannersSettings> =>
-  portalRequest({
-    body: payload,
-    fallback: 'Не удалось сохранить баннеры',
-    method: 'PUT',
-    path: '/banners',
-  });
+  if (!response.ok) {
+    throw new Error(await parseApiErrorMessage(response, 'Не удалось загрузить баннеры'));
+  }
+
+  return assertApiSuccess(await response.json(), 'Не удалось загрузить баннеры')
+    .data as BannersSettings;
+};
 
 const bannerAdminRequest = async <T>(
   userId: string,

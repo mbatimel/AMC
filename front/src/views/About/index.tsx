@@ -45,6 +45,14 @@ export const About = (): JSX.Element => {
   const officesBadge = about?.offices_badge || ABOUT_OFFICES_BADGE;
   const officesTitle = about?.offices_title || ABOUT_OFFICES_TITLE;
   const officesSubtitle = about?.offices_subtitle || ABOUT_OFFICES_SUBTITLE;
+  const offices =
+    about?.offices && about.offices.length > 0
+      ? about.offices.map((office) => ({
+          city: office.city,
+          description: office.description,
+          isMain: Boolean(office.is_main),
+        }))
+      : ABOUT_OFFICES;
   const ctaBadge = about?.cta_badge || ABOUT_CTA_BADGE;
   const ctaTitle = about?.cta_title || ABOUT_CTA_TITLE;
   const ctaText = about?.cta_text || ABOUT_CTA_TEXT;
@@ -113,7 +121,7 @@ export const About = (): JSX.Element => {
             </div>
 
             <div className={clsx(styles.officesGrid)}>
-              {ABOUT_OFFICES.map((office) => (
+              {offices.map((office) => (
                 <article className={clsx(styles.officeCard)} key={office.city}>
                   <div className={clsx(styles.officeHeader)}>
                     <span aria-hidden className={clsx(styles.officePin)}>

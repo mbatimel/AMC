@@ -306,34 +306,36 @@ export const CabinetProfile = (): JSX.Element => {
               <div className={clsx(styles.clientsList)}>
                 {clients.map((item) => (
                   <Card key={item.client.id}>
-                    <Card.Content className={clsx(styles.clientRow)}>
-                      <div>
-                        <div className={clsx(styles.clientName)}>
-                          <Card.Title>
-                            {item.client.company_name || item.client.contact_name || 'Клиент'}
-                          </Card.Title>
-                          {item.is_active ? (
-                            <Chip className={clsx(styles.badge)} color="accent" size="sm">
-                              <Chip.Label>Активный</Chip.Label>
-                            </Chip>
-                          ) : null}
+                    <Card.Content>
+                      <div className={clsx(styles.clientRow)}>
+                        <div>
+                          <div className={clsx(styles.clientName)}>
+                            <Card.Title>
+                              {item.client.company_name || item.client.contact_name || 'Клиент'}
+                            </Card.Title>
+                            {item.is_active ? (
+                              <Chip className={clsx(styles.badge)} color="accent" size="sm">
+                                <Chip.Label>Активный</Chip.Label>
+                              </Chip>
+                            ) : null}
+                          </div>
+                          <Card.Description>
+                            {[item.client.inn && `ИНН ${item.client.inn}`, item.client.company_type]
+                              .filter(Boolean)
+                              .join(' · ') || item.client.id}
+                          </Card.Description>
                         </div>
-                        <Card.Description>
-                          {[item.client.inn && `ИНН ${item.client.inn}`, item.client.company_type]
-                            .filter(Boolean)
-                            .join(' · ') || item.client.id}
-                        </Card.Description>
+                        {!item.is_active ? (
+                          <Button
+                            isDisabled={pending}
+                            onPress={() => activateClient(item.client.id)}
+                            size="sm"
+                            variant="secondary"
+                          >
+                            Сделать активным
+                          </Button>
+                        ) : null}
                       </div>
-                      {!item.is_active ? (
-                        <Button
-                          isDisabled={pending}
-                          onPress={() => activateClient(item.client.id)}
-                          size="sm"
-                          variant="secondary"
-                        >
-                          Сделать активным
-                        </Button>
-                      ) : null}
                     </Card.Content>
                   </Card>
                 ))}

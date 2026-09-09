@@ -81,11 +81,13 @@ export const CheckoutForm = ({ cityName, error, onSubmit }: CheckoutFormProps): 
           value={deliveryType}
         >
           {DELIVERY_OPTIONS.map((option) => (
-            <Radio className={clsx(styles.deliveryOption)} key={option.value} value={option.value}>
-              <Radio.Control className={clsx(styles.deliveryControl)}>
-                <Radio.Indicator />
-              </Radio.Control>
-              <span className={clsx(styles.deliveryLabel)}>{option.label(cityName)}</span>
+            <Radio key={option.value} value={option.value}>
+              <Radio.Content className={clsx(styles.deliveryOption)}>
+                <Radio.Control className={clsx(styles.deliveryControl)}>
+                  <Radio.Indicator />
+                </Radio.Control>
+                <span className={clsx(styles.deliveryLabel)}>{option.label(cityName)}</span>
+              </Radio.Content>
             </Radio>
           ))}
         </RadioGroup>

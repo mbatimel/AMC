@@ -41,4 +41,11 @@ sample({
   target: fetchFavoriteProductsFx,
 });
 
+sample({
+  clock: $favoriteIds,
+  filter: (ids) => ids.length === 0,
+  fn: () => [] as Product[],
+  target: $favoriteProducts,
+});
+
 /* eslint-enable perfectionist/sort-objects */

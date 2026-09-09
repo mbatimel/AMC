@@ -59,8 +59,15 @@
     "typescript-eslint": "^8.62.0"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.0.0",
     "@heroui/react": "^3.2.1",
     "@heroui/styles": "^3.2.1",
+    "@tiptap/core": "^3.31.3",
+    "@tiptap/extension-link": "^3.31.3",
+    "@tiptap/extension-text-style": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/react": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
     "clsx": "^2.1.1",
     "effector": "^23.4.4",
     "effector-react": "^23.3.0",
@@ -70,6 +77,6 @@
     "react-dom": "^19.2.7"
   },
   "resolutions": {
-    "react-grab": "0.1.50"
+    "react-grab": "0.2.0"
   }
 }

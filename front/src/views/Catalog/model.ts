@@ -124,12 +124,21 @@ const $catalogRawTotal = createStore(0).on(
 export const $catalogProducts = combine(
   $catalogRawProducts,
   $catalogFilters,
-  (products, filters) => {
+  $favoriteIds,
+  $previouslyOrderedIds,
+  (products, filters, favoriteIds, previouslyOrderedIds) => {
     if (!filters.promotionID && !filters.collection) {
       return products;
     }
 
-    return paginateProducts(applyClientCatalogFilters(products, filters), filters.page);
+    const scoped =
+      filters.collection === 'favorites'
+        ? products.filter((product) => favoriteIds.includes(product.id))
+        : filters.collection === 'ordered'
+          ? products.filter((product) => previouslyOrderedIds.includes(product.id))
+          : products;
+
+    return paginateProducts(applyClientCatalogFilters(scoped, filters), filters.page);
   },
 );
 
@@ -137,15 +146,32 @@ export const $catalogTotal = combine(
   $catalogRawProducts,
   $catalogRawTotal,
   $catalogFilters,
-  (products, rawTotal, filters) =>
-    filters.promotionID || filters.collection
-      ? applyClientCatalogFilters(products, filters).length
-      : rawTotal,
+  $favoriteIds,
+  $previouslyOrderedIds,
+  (products, rawTotal, filters, favoriteIds, previouslyOrderedIds) => {
+    if (!filters.promotionID && !filters.collection) {
+      return rawTotal;
+    }
+
+    const scoped =
+      filters.collection === 'favorites'
+        ? products.filter((product) => favoriteIds.includes(product.id))
+        : filters.collection === 'ordered'
+          ? products.filter((product) => previouslyOrderedIds.includes(product.id))
+          : products;
+
+    return applyClientCatalogFilters(scoped, filters).length;
+  },
 );
 
 export const $categories = createStore<Category[]>([]).on(
   fetchCategoriesFx.doneData,
-  (_, categories) => categories,
+  (_, result) => result.items,
+);
+
+export const $categoriesTotalItems = createStore(0).on(
+  fetchCategoriesFx.doneData,
+  (_, result) => result.totalItems,
 );
 
 /** До первого запроса — true, чтобы не мелькал empty state до useEffect. */
@@ -167,9 +193,14 @@ const $isCategoriesFetched = createStore(false)
   .on(fetchCategoriesFx, () => true)
   .on(fetchCategoriesFx.fail, () => false);
 
-/** Последний успешно запрошенный ключ продуктов (API-поля / promo id). */
+/** Последний успешно запрошенный ключ продуктов (API-поля / promo / ids коллекции). */
 const $productsQueryKey = createStore<null | string>(null)
-  .on(fetchCatalogProductsFx, (_, { filters }) => toCatalogProductsQueryKey(filters))
+  .on(fetchCatalogProductsFx, (_, params) =>
+    toCatalogProductsQueryKey(params.filters, {
+      favoriteIds: params.favoriteIds,
+      previouslyOrderedIds: params.previouslyOrderedIds,
+    }),
+  )
   .on(fetchCatalogProductsFx.fail, () => null);
 
 const $canFetchCategories = combine(
@@ -203,8 +234,53 @@ sample({
     previouslyOrderedIds: $previouslyOrderedIds,
     userId: $userId,
   },
-  filter: ({ key, pending }, filters) => !pending && toCatalogProductsQueryKey(filters) !== key,
+  filter: ({ favoriteIds, key, pending, previouslyOrderedIds }, filters) =>
+    !pending && toCatalogProductsQueryKey(filters, { favoriteIds, previouslyOrderedIds }) !== key,
   fn: ({ favoriteIds, previouslyOrderedIds, userId }, filters) => ({
+    favoriteIds,
+    filters,
+    previouslyOrderedIds,
+    userId,
+  }),
+  target: fetchCatalogProductsFx,
+});
+
+sample({
+  clock: $favoriteIds,
+  source: {
+    filters: $catalogFilters,
+    key: $productsQueryKey,
+    pending: fetchCatalogProductsFx.pending,
+    previouslyOrderedIds: $previouslyOrderedIds,
+    userId: $userId,
+  },
+  filter: ({ filters, key, pending, previouslyOrderedIds }, favoriteIds) =>
+    !pending &&
+    filters.collection === 'favorites' &&
+    toCatalogProductsQueryKey(filters, { favoriteIds, previouslyOrderedIds }) !== key,
+  fn: ({ filters, previouslyOrderedIds, userId }, favoriteIds) => ({
+    favoriteIds,
+    filters,
+    previouslyOrderedIds,
+    userId,
+  }),
+  target: fetchCatalogProductsFx,
+});
+
+sample({
+  clock: $previouslyOrderedIds,
+  source: {
+    favoriteIds: $favoriteIds,
+    filters: $catalogFilters,
+    key: $productsQueryKey,
+    pending: fetchCatalogProductsFx.pending,
+    userId: $userId,
+  },
+  filter: ({ favoriteIds, filters, key, pending }, previouslyOrderedIds) =>
+    !pending &&
+    filters.collection === 'ordered' &&
+    toCatalogProductsQueryKey(filters, { favoriteIds, previouslyOrderedIds }) !== key,
+  fn: ({ favoriteIds, filters, userId }, previouslyOrderedIds) => ({
     favoriteIds,
     filters,
     previouslyOrderedIds,

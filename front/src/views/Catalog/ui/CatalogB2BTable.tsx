@@ -116,14 +116,9 @@ export const CatalogB2BTable = ({
                     <Link className={clsx(styles.nameLink)} href={getProductPath(product.id)}>
                       {product.name}
                     </Link>
-                    {isFavorite(product.id) || isPreviouslyOrdered(product.id) ? (
+                    {isPreviouslyOrdered(product.id) ? (
                       <p className={clsx(styles.marks)}>
-                        {isFavorite(product.id) ? (
-                          <span className={clsx(styles.mark)}>В моём избранном</span>
-                        ) : null}
-                        {isPreviouslyOrdered(product.id) ? (
-                          <span className={clsx(styles.mark)}>Ранее заказывали</span>
-                        ) : null}
+                        <span className={clsx(styles.mark)}>Ранее заказывали</span>
                       </p>
                     ) : null}
                     <p className={clsx(styles.compactMeta)}>{formatCompactMeta(product)}</p>
@@ -191,7 +186,12 @@ export const CatalogB2BTable = ({
                     }
                     type="button"
                   >
-                    <IconFavorite currentColor="currentColor" height={16} width={16} />
+                    <IconFavorite
+                      currentColor="currentColor"
+                      filled={isFavorite(product.id)}
+                      height={16}
+                      width={16}
+                    />
                   </button>
                   <QuantityStepper
                     className={clsx(styles.stepper)}

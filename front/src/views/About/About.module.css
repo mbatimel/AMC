@@ -116,15 +116,8 @@
 }
 
 .profileText {
-  display: flex;
   max-inline-size: 820px;
-  flex-direction: column;
-  gap: 14px;
   margin-inline: auto;
-}
-
-.profileText p {
-  margin: 0;
   color: #3d4558;
   font-size: 15px;
   line-height: 1.7;

@@ -2,6 +2,7 @@ export type HomeCategoriesContent = {
   eyebrow: string;
   items: HomeCategoryCard[];
   title: string;
+  totalItems: number;
   viewAllHref: string;
   viewAllLabel: string;
 };

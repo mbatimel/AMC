@@ -23,7 +23,10 @@ export const HomeCategories = ({ content }: HomeCategoriesProps): JSX.Element =>
             <h2 className={clsx(styles.title)}>{content.title}</h2>
           </div>
           <Link className={clsx(styles.viewAll)} href={content.viewAllHref}>
-            {content.viewAllLabel}
+            <span>{content.viewAllLabel}</span>
+            {content.totalItems > 0 ? (
+              <span className={clsx(styles.viewAllCount)}>{content.totalItems}</span>
+            ) : null}
           </Link>
         </div>
 

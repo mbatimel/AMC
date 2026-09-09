@@ -134,14 +134,25 @@ export const countActiveFilters = (filters: CatalogFilters): number => {
   return count;
 };
 
-/** Ключ загрузки: для акции — только promotionID; иначе поля listProducts + page. */
-export const toCatalogProductsQueryKey = (filters: CatalogFilters): string => {
+/** Ключ загрузки: для коллекций включает актуальные id, иначе кэш показывает чужие товары. */
+export const toCatalogProductsQueryKey = (
+  filters: CatalogFilters,
+  options?: { favoriteIds?: string[]; previouslyOrderedIds?: string[] },
+): string => {
   if (filters.promotionID) {
     return `promo\u001f${filters.promotionID}`;
   }
 
-  if (filters.collection) {
-    return `collection\u001f${filters.collection}\u001f${String(filters.page)}`;
+  if (filters.collection === 'favorites') {
+    const ids = [...(options?.favoriteIds ?? [])].sort().join(',');
+
+    return `collection\u001ffavorites\u001f${ids}\u001f${String(filters.page)}`;
+  }
+
+  if (filters.collection === 'ordered') {
+    const ids = [...(options?.previouslyOrderedIds ?? [])].sort().join(',');
+
+    return `collection\u001fordered\u001f${ids}\u001f${String(filters.page)}`;
   }
 
   return [

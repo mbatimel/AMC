@@ -1,6 +1,11 @@
-import clsx from 'clsx';
+'use client';
 
-import { looksLikeHtml, sanitizeHtml } from '@/core/shared/lib/sanitizeHtml';
+import { EditorContent, useEditor } from '@tiptap/react';
+import clsx from 'clsx';
+import { useEffect, useState } from 'react';
+
+import { createRichTextExtensions } from '@/core/shared/lib/richTextExtensions';
+import { toRichTextHtml } from '@/core/shared/lib/sanitizeHtml';
 
 import styles from './HtmlContent.module.css';
 
@@ -10,22 +15,27 @@ type HtmlContentProps = {
 };
 
 export const HtmlContent = ({ className, text }: HtmlContentProps): JSX.Element => {
-  if (looksLikeHtml(text)) {
-    return (
-      <div
-        className={clsx(styles.root, className)}
-        dangerouslySetInnerHTML={{ __html: sanitizeHtml(text) }}
-      />
-    );
+  const content = toRichTextHtml(text);
+  const [extensions] = useState(createRichTextExtensions);
+
+  const editor = useEditor({
+    content,
+    editable: false,
+    extensions,
+    immediatelyRender: false,
+  });
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    editor.commands.setContent(content, { emitUpdate: false });
+  }, [content, editor]);
+
+  if (!content) {
+    return <div className={clsx(styles.root, className)} />;
   }
 
-  const paragraphs = text.split('\n').filter((line) => line.trim().length > 0);
-
-  return (
-    <div className={clsx(styles.root, className)}>
-      {paragraphs.map((paragraph, index) => (
-        <p key={`${index}-${paragraph.slice(0, 12)}`}>{paragraph}</p>
-      ))}
-    </div>
-  );
+  return <EditorContent className={clsx(styles.root, className)} editor={editor} />;
 };

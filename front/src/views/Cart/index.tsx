@@ -259,18 +259,13 @@ export const CartPage = (): JSX.Element => {
                 <h2 className={clsx(styles.summaryTitle)}>Итого по заказу</h2>
                 <div className={clsx(styles.summaryRow)}>
                   <span>Сумма позиций</span>
-                  <strong>{formatPrice(cart.subtotal || cart.total)}</strong>
+                  <strong>{formatPrice(cart.total)}</strong>
                 </div>
+                <p className={clsx(styles.vatHint)}>НДС 22%</p>
                 {cart.discount_total > 0 ? (
                   <div className={clsx(styles.summaryRow, styles.discount)}>
                     <span>Скидка от объёма</span>
                     <strong>−{formatPrice(cart.discount_total)}</strong>
-                  </div>
-                ) : null}
-                {cart.vat > 0 ? (
-                  <div className={clsx(styles.summaryRow)}>
-                    <span>в т.ч. НДС 20%</span>
-                    <strong>{formatPrice(cart.vat)}</strong>
                   </div>
                 ) : null}
                 <div className={clsx(styles.totalRow)}>

@@ -8,6 +8,7 @@ import { useContent } from '@/core/entities/content';
 
 import styles from '../Home.module.css';
 import { $homeContent, homeCategoriesRequested, homePromosRequested } from '../model';
+import { HomeBanners } from './HomeBanners';
 import { HomeCategories } from './HomeCategories';
 import { HomeHero } from './HomeHero';
 import { HomePromos } from './HomePromos';
@@ -19,7 +20,7 @@ export const HomeContent = (): JSX.Element => {
     homePromosRequested,
   ]);
 
-  useContent();
+  const { banners } = useContent();
 
   useEffect(() => {
     requestCategories();
@@ -29,6 +30,7 @@ export const HomeContent = (): JSX.Element => {
   return (
     <div className={clsx(styles.root)}>
       <HomeHero content={content.hero} />
+      {banners ? <HomeBanners banners={banners} /> : null}
       <HomePromos content={content.promos} />
       <HomeCategories content={content.categories} />
     </div>

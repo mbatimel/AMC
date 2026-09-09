@@ -1,16 +1,21 @@
 import type { IconProps } from './types';
 
+type IconFavoriteProps = IconProps & {
+  filled?: boolean;
+};
+
 export const IconFavorite = ({
   className,
   currentColor = 'currentColor',
+  filled = false,
   height = 18,
   width = 18,
-}: IconProps): JSX.Element => {
+}: IconFavoriteProps): JSX.Element => {
   return (
     <svg
       aria-hidden
       className={className}
-      fill="none"
+      fill={filled ? currentColor : 'none'}
       height={height}
       viewBox="0 0 18 18"
       width={width}

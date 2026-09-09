@@ -62,8 +62,15 @@ const parseUserId = (data: unknown): string => {
   throw new AuthApiError(500, 'Некорректный ответ сервера');
 };
 
-const localizeAuthError = (message: string): string => {
+const FIELD_LABELS: Record<string, string> = {
+  email: 'E-mail',
+  inn: 'ИНН',
+  password: 'Пароль',
+};
+
+const localizeAuthError = (message: string, field?: string): string => {
   const normalized = message.trim().toLowerCase();
+  const fieldLabel = field ? (FIELD_LABELS[field] ?? field) : undefined;
 
   if (
     normalized === 'invalid email or password' ||
@@ -74,6 +81,33 @@ const localizeAuthError = (message: string): string => {
 
   if (normalized === 'unauthorized' || normalized === 'unauthorised') {
     return 'Неверный email или пароль';
+  }
+
+  if (normalized === 'inn is empty' || normalized.startsWith('inn is empty')) {
+    return 'Укажите ИНН';
+  }
+
+  if (normalized === 'inn is invalid' || normalized.startsWith('inn is invalid')) {
+    return 'ИНН не найден или указан неверно';
+  }
+
+  if (normalized.includes('inn not valid') || normalized.includes('inn should be')) {
+    return 'Введите корректный ИНН';
+  }
+
+  if (normalized === 'email already registered' || normalized.includes('email already')) {
+    return 'Пользователь с таким email уже зарегистрирован';
+  }
+
+  if (normalized === 'validation failed' || normalized.startsWith('validation failed')) {
+    return fieldLabel
+      ? `Проверьте поле «${fieldLabel}»`
+      : 'Проверьте правильность заполнения формы';
+  }
+
+  if (fieldLabel && normalized.includes(':')) {
+    // «inn is empty: inn» и подобные сырые строки
+    return localizeAuthError(normalized.split(':')[0] ?? normalized);
   }
 
   return message;
@@ -89,16 +123,17 @@ const parseErrorMessage = async (response: Response): Promise<string> => {
 
       if (typeof errorText === 'string' && errorText.length > 0) {
         const cause = record.Cause ?? record.cause;
+        let field: string | undefined;
 
-        if (typeof cause === 'object' && cause !== null && 'field' in cause) {
-          const field = (cause as { field?: unknown }).field;
+        if (typeof cause === 'object' && cause !== null) {
+          const causeRecord = cause as Record<string, unknown>;
 
-          if (typeof field === 'string' && field.length > 0) {
-            return localizeAuthError(`${errorText}: ${field}`);
+          if (typeof causeRecord.field === 'string' && causeRecord.field.length > 0) {
+            field = causeRecord.field;
           }
         }
 
-        return localizeAuthError(errorText);
+        return localizeAuthError(errorText, field);
       }
 
       if (typeof record.message === 'string' && record.message.length > 0) {

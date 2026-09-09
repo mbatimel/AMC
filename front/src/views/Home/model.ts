@@ -5,7 +5,7 @@ import type { Category } from '@/core/shared/api/products';
 import type { Promotion } from '@/core/shared/api/promotions';
 
 import { $content } from '@/core/entities/content';
-import { listCategoriesRequest, listProductsRequest } from '@/core/shared/api/products';
+import { listCategoriesRequest } from '@/core/shared/api/products';
 import { listPromotionsRequest } from '@/core/shared/api/promotions';
 import { AppPath, getCatalogPromotionPath } from '@/core/shared/router/paths';
 
@@ -43,31 +43,33 @@ const toPromoCards = (promotions: Promotion[]): HomePromoCard[] =>
     };
   });
 
-const toCategoryCard = async (category: Category): Promise<HomeCategoryCard> => {
-  const { pagination } = await listProductsRequest({ categoryID: category.id, limit: 1 });
-
-  return {
-    href: catalogHref(category.id),
-    id: category.id,
-    imageUrl: null,
-    name: category.name,
-    positionsCount: pagination.total,
-  };
-};
+const toCategoryCard = (category: Category): HomeCategoryCard => ({
+  href: catalogHref(category.id),
+  id: category.id,
+  imageUrl: null,
+  name: category.name,
+  positionsCount: category.items_count,
+});
 
 export const homeCategoriesRequested = createEvent();
 export const homePromosRequested = createEvent();
 
-export const fetchHomeCategoriesFx = createEffect(async (): Promise<HomeCategoryCard[]> => {
-  const categories = await listCategoriesRequest();
+export const fetchHomeCategoriesFx = createEffect(
+  async (): Promise<{
+    items: HomeCategoryCard[];
+    totalItems: number;
+  }> => {
+    const { items, totalItems } = await listCategoriesRequest();
 
-  return Promise.all(
-    categories
-      .filter((category) => !category.parent_id)
-      .slice(0, maxHomeCategories)
-      .map(toCategoryCard),
-  );
-});
+    return {
+      items: items
+        .filter((category) => !category.parent_id)
+        .slice(0, maxHomeCategories)
+        .map(toCategoryCard),
+      totalItems,
+    };
+  },
+);
 
 export const fetchHomePromosFx = createEffect(async (): Promise<HomePromoCard[]> => {
   const promotions = await listPromotionsRequest();
@@ -78,7 +80,12 @@ export const fetchHomePromosFx = createEffect(async (): Promise<HomePromoCard[]>
 /** Каталог реальных категорий с главной; до загрузки — статичный fallback. */
 export const $homeCategories = createStore<HomeCategoryCard[]>(HOME_PAGE_MOCK.categories.items).on(
   fetchHomeCategoriesFx.doneData,
-  (_, items) => items,
+  (_, result) => result.items,
+);
+
+export const $homeCategoriesTotalItems = createStore(0).on(
+  fetchHomeCategoriesFx.doneData,
+  (_, result) => result.totalItems,
 );
 
 export const $homePromos = createStore<HomePromoCard[]>([]).on(
@@ -108,12 +115,17 @@ sample({
 const toHomeContent = (
   content: ContentPages | null,
   categories: HomeCategoryCard[],
+  categoriesTotalItems: number,
   promoCards: HomePromoCard[],
 ): HomePageContent => {
   const home = content?.home;
 
   return {
-    categories: { ...HOME_PAGE_MOCK.categories, items: categories },
+    categories: {
+      ...HOME_PAGE_MOCK.categories,
+      items: categories,
+      totalItems: categoriesTotalItems,
+    },
     hero: {
       ...HOME_PAGE_MOCK.hero,
       bullets: home && home.features.length > 0 ? home.features : HOME_PAGE_MOCK.hero.bullets,
@@ -136,4 +148,10 @@ const toHomeContent = (
 /**
  * Контент главной: редактор админки (home), реальные акции и каталог категорий.
  */
-export const $homeContent = combine($content, $homeCategories, $homePromos, toHomeContent);
+export const $homeContent = combine(
+  $content,
+  $homeCategories,
+  $homeCategoriesTotalItems,
+  $homePromos,
+  toHomeContent,
+);

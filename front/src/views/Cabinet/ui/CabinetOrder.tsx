@@ -29,8 +29,8 @@ import {
   cabinetOrderOpened,
 } from '../model/orderDetail';
 import { $profile } from '../model/profile';
-import { CabinetOrderFeedback } from './CabinetOrderFeedback';
 import styles from './CabinetOrder.module.css';
+import { CabinetOrderFeedback } from './CabinetOrderFeedback';
 
 type CabinetOrderProps = {
   orderId: string;
@@ -229,10 +229,6 @@ export const CabinetOrder = ({ orderId }: CabinetOrderProps): JSX.Element => {
                 </tbody>
               </table>
               <div className={clsx(styles.totals)}>
-                <div className={clsx(styles.totalRow)}>
-                  <span>в т.ч. НДС 20%</span>
-                  <strong>{formatPrice(order.vat)}</strong>
-                </div>
                 <div className={clsx(styles.totalRow, styles.totalStrong)}>
                   <span>Итого</span>
                   <strong>{formatPrice(order.total)}</strong>

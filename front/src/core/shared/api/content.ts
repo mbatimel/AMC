@@ -20,7 +20,8 @@ export type {
   ContentPages,
   HomePageContent,
   ListPageContent,
-  TextPageContent,
+  TermsBlock,
+  TermsPageContent,
 } from '@/core/shared/server/portal/types';
 
 export const CONTENT_PAGE_TITLES: Record<ContentPageKey, string> = {
@@ -61,11 +62,3 @@ export const fetchBannersRequest = async (): Promise<BannersSettings> => {
   return assertApiSuccess(await response.json(), 'Не удалось загрузить баннеры')
     .data as BannersSettings;
 };
-
-export const updateBannersRequest = (payload: BannersSettings): Promise<BannersSettings> =>
-  portalRequest({
-    body: payload,
-    fallback: 'Не удалось сохранить баннеры',
-    method: 'PUT',
-    path: '/banners',
-  });

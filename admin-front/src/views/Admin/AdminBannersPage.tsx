@@ -18,6 +18,7 @@ import {
 import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
 import { createClientId } from '@/core/shared/lib/createClientId';
 import { IMAGE_FILE_ACCEPT, IMAGE_FILE_HINT } from '@/core/shared/lib/fileToBase64';
+import { DateTimeField } from '@/core/shared/ui/DateTimeField';
 
 import styles from './Admin.module.css';
 import bannerStyles from './AdminBanners.module.css';
@@ -268,24 +269,18 @@ export const AdminBannersPage = (): JSX.Element => {
                     value={item.link}
                   />
                 </label>
-                <label className={clsx(styles.field)}>
-                  Показывать с
-                  <input
-                    className={clsx(styles.input)}
-                    onChange={(event) => patchItem(index, { dateFrom: event.target.value })}
-                    type="date"
-                    value={item.dateFrom}
-                  />
-                </label>
-                <label className={clsx(styles.field)}>
-                  Показывать по
-                  <input
-                    className={clsx(styles.input)}
-                    onChange={(event) => patchItem(index, { dateTo: event.target.value })}
-                    type="date"
-                    value={item.dateTo}
-                  />
-                </label>
+                <DateTimeField
+                  granularity="day"
+                  label="Показывать с"
+                  onChange={(dateFrom) => patchItem(index, { dateFrom })}
+                  value={item.dateFrom ?? ''}
+                />
+                <DateTimeField
+                  granularity="day"
+                  label="Показывать по"
+                  onChange={(dateTo) => patchItem(index, { dateTo })}
+                  value={item.dateTo ?? ''}
+                />
               </div>
               <DocumentFileField
                 accept={IMAGE_FILE_ACCEPT}

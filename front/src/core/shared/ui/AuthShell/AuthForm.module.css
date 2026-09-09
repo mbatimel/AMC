@@ -25,7 +25,6 @@
 }
 
 .label::after {
-  margin-inline-start: 4px;
   color: var(--header-brand);
   font-size: 18px;
   font-weight: 700;

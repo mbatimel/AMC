@@ -22,7 +22,111 @@
   background: var(--palette-ulight);
 }
 
-.area {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 13px;
+.toolActive {
+  border-color: var(--header-brand);
+  background: #fde8e8;
+  color: var(--header-brand);
 }
+
+.toolbarDivider {
+  align-self: stretch;
+  border-inline-start: 1px solid var(--border);
+  margin-inline: 4px;
+}
+
+.shell {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--palette-white);
+}
+
+.shell:focus-within {
+  border-color: var(--header-brand);
+  outline: 2px solid rgb(224 40 40 / 18%);
+}
+
+.editor {
+  min-block-size: 220px;
+  padding-block: 12px;
+  padding-inline: 14px;
+}
+
+/* stylelint-disable selector-class-pattern -- классы TipTap / ProseMirror */
+.editor :global(.tiptap),
+.editor :global(.ProseMirror) {
+  min-block-size: 196px;
+  outline: none;
+  color: var(--palette-black);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.editor :global(.tiptap p),
+.editor :global(.ProseMirror p) {
+  margin: 0;
+  margin-block-end: 12px;
+}
+
+.editor :global(.tiptap p:last-child),
+.editor :global(.ProseMirror p:last-child) {
+  margin-block-end: 0;
+}
+
+.editor :global(.tiptap ul),
+.editor :global(.ProseMirror ul),
+.editor :global(.tiptap ol),
+.editor :global(.ProseMirror ol) {
+  margin: 0;
+  margin-block-end: 12px;
+  padding-inline-start: 1.4em;
+}
+
+.editor :global(.tiptap ul),
+.editor :global(.ProseMirror ul) {
+  list-style: disc;
+}
+
+.editor :global(.tiptap ol),
+.editor :global(.ProseMirror ol) {
+  list-style: decimal;
+}
+
+.editor :global(.tiptap li),
+.editor :global(.ProseMirror li) {
+  margin: 0;
+  margin-block-end: 8px;
+}
+
+.editor :global(.tiptap li:last-child),
+.editor :global(.ProseMirror li:last-child) {
+  margin-block-end: 0;
+}
+
+.editor :global(.tiptap a),
+.editor :global(.ProseMirror a) {
+  color: var(--header-brand);
+  text-decoration: underline;
+}
+
+.editor :global(.rich-text-size-s) {
+  font-size: 0.875em;
+}
+
+.editor :global(.rich-text-size-m) {
+  font-size: 1em;
+}
+
+.editor :global(.rich-text-size-l) {
+  font-size: 1.25em;
+}
+
+.editor :global(.tiptap p.is-editor-empty:first-child::before),
+.editor :global(.ProseMirror p.is-editor-empty:first-child::before) {
+  float: inline-start;
+  block-size: 0;
+  color: #9aa3b5;
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+/* stylelint-enable selector-class-pattern */

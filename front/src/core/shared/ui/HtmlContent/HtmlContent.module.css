@@ -4,30 +4,95 @@
   line-height: 1.6;
 }
 
-.root p {
-  margin: 0 0 12px;
+/* stylelint-disable selector-class-pattern -- классы TipTap / ProseMirror */
+.root :global(.tiptap),
+.root :global(.ProseMirror) {
+  outline: none;
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
 }
 
-.root p:last-child {
+.root :global(.tiptap p),
+.root :global(.ProseMirror p) {
+  margin: 0;
+  margin-block-end: 12px;
+}
+
+.root :global(.tiptap p:last-child),
+.root :global(.ProseMirror p:last-child) {
   margin-block-end: 0;
 }
 
-.root a {
+.root :global(.tiptap a),
+.root :global(.ProseMirror a) {
   color: var(--header-brand);
   text-decoration: underline;
 }
 
-.root a:hover {
+.root :global(.tiptap a:hover),
+.root :global(.ProseMirror a:hover) {
   color: var(--header-brand-hover);
 }
 
-.root strong,
-.root b {
+.root :global(.tiptap strong),
+.root :global(.ProseMirror strong),
+.root :global(.tiptap b),
+.root :global(.ProseMirror b) {
   font-weight: 700;
 }
 
-.root ul,
-.root ol {
-  margin: 0 0 12px;
-  padding-inline-start: 20px;
+.root :global(.tiptap ul),
+.root :global(.ProseMirror ul),
+.root :global(.tiptap ol),
+.root :global(.ProseMirror ol) {
+  margin: 0;
+  margin-block-end: 12px;
+  padding-inline-start: 1.4em;
 }
+
+.root :global(.tiptap ul),
+.root :global(.ProseMirror ul) {
+  list-style: disc;
+}
+
+.root :global(.tiptap ol),
+.root :global(.ProseMirror ol) {
+  list-style: decimal;
+}
+
+.root :global(.tiptap li),
+.root :global(.ProseMirror li) {
+  margin: 0;
+  margin-block-end: 8px;
+  padding-inline-start: 0.2em;
+}
+
+.root :global(.tiptap li:last-child),
+.root :global(.ProseMirror li:last-child) {
+  margin-block-end: 0;
+}
+
+.root :global(.tiptap li > p),
+.root :global(.ProseMirror li > p) {
+  margin: 0;
+  margin-block-end: 8px;
+}
+
+.root :global(.tiptap li > p:last-child),
+.root :global(.ProseMirror li > p:last-child) {
+  margin-block-end: 0;
+}
+
+.root :global(.rich-text-size-s) {
+  font-size: 0.875em;
+}
+
+.root :global(.rich-text-size-m) {
+  font-size: 1em;
+}
+
+.root :global(.rich-text-size-l) {
+  font-size: 1.25em;
+}
+/* stylelint-enable selector-class-pattern */

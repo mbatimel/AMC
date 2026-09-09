@@ -7,7 +7,13 @@
  * достаточно было поменять базовый URL в `core/shared/api/*`.
  */
 
-export type AboutPageContent = TextPageContent & {
+export type AboutOfficeItem = {
+  city: string;
+  description: string;
+  is_main?: boolean;
+};
+
+export type AboutPageContent = {
   cta_badge?: string;
   cta_button?: string;
   cta_hint?: string;
@@ -18,11 +24,14 @@ export type AboutPageContent = TextPageContent & {
   directions_title?: string;
   hero_badge?: string;
   hero_subtitle?: string;
+  offices?: AboutOfficeItem[];
   offices_badge?: string;
   offices_subtitle?: string;
   offices_title?: string;
   profile_badge?: string;
   profile_title?: string;
+  text: string;
+  title: string;
 };
 
 export type AuditLogEntry = {
@@ -88,7 +97,7 @@ export type ContentPages = {
   contacts: ContactsPageContent;
   home: HomePageContent;
   promo: ListPageContent;
-  terms: TextPageContent;
+  terms: TermsPageContent;
 };
 
 export type EmailLogEntry = {
@@ -200,7 +209,16 @@ export type SupportRequestSource = 'assistant' | 'form';
 
 export type SupportRequestStatus = 'closed' | 'in_progress' | 'new';
 
-export type TextPageContent = {
-  text: string;
+export type TermsBlock = {
+  /** HTML из редактора (strong/em/a/p/br/ul/ol/li/span). */
+  description: string;
+  title: string;
+};
+
+export type TermsPageContent = {
+  /** Подзаголовок под H1. */
+  description: string;
+  /** Упорядоченный список секций на странице. */
+  terms: TermsBlock[];
   title: string;
 };

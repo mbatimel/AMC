@@ -40,7 +40,6 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     items: [
       { href: AppPath.Users, label: 'Пользователи портала' },
-      { href: AppPath.SignupRequests, label: 'Заявки на регистрацию' },
       { href: AppPath.Feedback, label: 'Отзывы по заказам' },
       { href: AppPath.Support, label: 'Обращения поддержки' },
     ],

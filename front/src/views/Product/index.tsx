@@ -234,7 +234,12 @@ export const ProductPage = (): JSX.Element => {
                       onPress={() => favorites.toggleFavorite(product.id)}
                       variant="outline"
                     >
-                      <IconFavorite currentColor="currentColor" height={18} width={18} />
+                      <IconFavorite
+                        currentColor="currentColor"
+                        filled={favorites.isFavorite(product.id)}
+                        height={18}
+                        width={18}
+                      />
                     </Button>
                   </div>
 

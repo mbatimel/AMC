@@ -13,7 +13,7 @@ import { formatAdminDateTime } from './lib/nav';
 import { $auditLog, adminAuditLogOpened } from './model/audit';
 import { $adminProducts, $adminProductsTotal, adminCatalogOpened } from './model/catalog';
 import { $adminSupport, adminSupportOpened } from './model/feedback';
-import { $signupRequests, adminUsersOpened } from './model/users';
+import { adminUsersOpened } from './model/users';
 import { AdminPageHeader } from './ui/AdminPageHeader';
 
 export const AdminDashboardPage = (): JSX.Element => {
@@ -21,7 +21,6 @@ export const AdminDashboardPage = (): JSX.Element => {
   const [
     products,
     productsTotal,
-    signupRequests,
     supportRequests,
     auditLog,
     openCatalog,
@@ -31,7 +30,6 @@ export const AdminDashboardPage = (): JSX.Element => {
   ] = useUnit([
     $adminProducts,
     $adminProductsTotal,
-    $signupRequests,
     $adminSupport,
     $auditLog,
     adminCatalogOpened,
@@ -50,15 +48,11 @@ export const AdminDashboardPage = (): JSX.Element => {
   const withoutPhoto = products.filter((product) => (product.images ?? []).length === 0).length;
   const unpublished = products.filter((product) => product.is_published === false).length;
   const activeBanners = (banners?.items ?? []).filter((item) => item.is_active).length;
-  const pendingSignups = signupRequests.filter((item) => item.status === 'pending').length;
   const openSupportCount = supportRequests.filter((item) => item.status !== 'closed').length;
 
   return (
     <>
-      <AdminPageHeader
-        subtitle="Администратор портала · что требует внимания"
-        title="Сводка"
-      />
+      <AdminPageHeader subtitle="Администратор портала · что требует внимания" title="Сводка" />
 
       <div className={clsx(styles.kpiGrid)}>
         <article className={clsx(styles.kpi)}>
@@ -77,13 +71,6 @@ export const AdminDashboardPage = (): JSX.Element => {
           <p className={clsx(styles.kpiLabel)}>Активные баннеры</p>
           <p className={clsx(styles.kpiValue)}>{activeBanners}</p>
           <p className={clsx(styles.kpiHint)}>на главной странице</p>
-        </article>
-        <article className={clsx(styles.kpi)}>
-          <p className={clsx(styles.kpiLabel)}>Заявки на регистрацию</p>
-          <p className={clsx(styles.kpiValue, pendingSignups > 0 && styles.kpiValueAlert)}>
-            {pendingSignups}
-          </p>
-          <p className={clsx(styles.kpiHint)}>ожидают решения</p>
         </article>
         <article className={clsx(styles.kpi)}>
           <p className={clsx(styles.kpiLabel)}>Обращения поддержки</p>
@@ -154,8 +141,8 @@ export const AdminDashboardPage = (): JSX.Element => {
           <Link className={clsx(styles.smallButton)} href={AppPath.Products}>
             Товары
           </Link>
-          <Link className={clsx(styles.smallButton)} href={AppPath.SignupRequests}>
-            Заявки
+          <Link className={clsx(styles.smallButton)} href={AppPath.Users}>
+            Пользователи
           </Link>
           <Link className={clsx(styles.smallButton)} href={AppPath.Support}>
             Обращения

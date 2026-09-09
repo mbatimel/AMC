@@ -8,9 +8,15 @@ export type Brand = {
 
 export type Category = {
   id: string;
+  items_count: number;
   name: string;
   parent_id?: string;
   slug?: string;
+};
+
+export type ListCategoriesResult = {
+  items: Category[];
+  totalItems: number;
 };
 
 export type ListProductsParams = {
@@ -314,7 +320,7 @@ export const getProductRequest = async (productId: string): Promise<Product> => 
   return parseProduct(data);
 };
 
-export const listCategoriesRequest = async (): Promise<Category[]> => {
+export const listCategoriesRequest = async (): Promise<ListCategoriesResult> => {
   const response = await fetch('/api/v1/categories?limit=100&offset=0');
 
   if (!response.ok) {
@@ -325,12 +331,19 @@ export const listCategoriesRequest = async (): Promise<Category[]> => {
   }
 
   const data: unknown = await response.json();
+  const record = assertApiSuccess(data, 'Не удалось загрузить категории');
+  const payload = record.data;
 
-  return parseNamedList(
+  if (typeof payload !== 'object' || payload === null) {
+    throw new ProductsApiError(500, 'Не удалось загрузить категории');
+  }
+
+  const payloadRecord = payload as Record<string, unknown>;
+  const items = parseNamedList(
     data,
-    (record) => {
-      const id = asString(record.id);
-      const name = asString(record.name);
+    (item) => {
+      const id = asString(item.id);
+      const name = asString(item.name);
 
       if (!id || !name) {
         return null;
@@ -338,13 +351,19 @@ export const listCategoriesRequest = async (): Promise<Category[]> => {
 
       return {
         id,
+        items_count: asNumber(item.items_count),
         name,
-        parent_id: asString(record.parent_id) || undefined,
-        slug: asString(record.slug) || undefined,
+        parent_id: asString(item.parent_id) || undefined,
+        slug: asString(item.slug) || undefined,
       };
     },
     'Не удалось загрузить категории',
   );
+
+  return {
+    items,
+    totalItems: asNumber(payloadRecord.total_items),
+  };
 };
 
 export const listBrandsRequest = async (): Promise<Brand[]> => {

@@ -1,6 +1,7 @@
 .root {
-  background: #fff;
+  background: #f5f7fb;
   padding-block: 48px 64px;
+  border-block-start: 1px solid #e3e7f0;
 }
 
 .container {
@@ -52,6 +53,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   border-radius: 10px;
   background: var(--header-brand);
   color: #fff;
@@ -61,6 +63,16 @@
   padding-inline: 16px;
   text-decoration: none;
   white-space: nowrap;
+}
+
+.viewAllCount {
+  border-radius: 999px;
+  background: rgb(255 255 255 / 22%);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  padding-block: 4px;
+  padding-inline: 8px;
 }
 
 .viewAll:hover {

@@ -139,7 +139,7 @@ export const AdminUsersPage = (): JSX.Element => {
             {clients.length === 0 ? (
               <tr>
                 <td className={clsx(styles.empty)} colSpan={6}>
-                  Клиентов пока нет. Учётные записи создаются после одобрения заявок на регистрацию.
+                  Клиентов пока нет.
                 </td>
               </tr>
             ) : null}

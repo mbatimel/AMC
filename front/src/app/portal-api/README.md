@@ -1,14 +1,20 @@
 # portal-api — временный backend портальных модулей
 
 Здесь лежат Next.js route handlers для модулей, у которых **нет своего
-Go-сервиса**: контент публичных страниц, баннеры, юридические документы,
-заявки на регистрацию, отзывы по заказам, обращения в поддержку и локальный
-журнал действий.
+Go-сервиса**: контент публичных страниц, заявки на регистрацию, отзывы по
+заказам, обращения в поддержку и локальный журнал действий.
 
-Причина: `back/assistant`, `back/billing`, `back/forecasting`, `back/platforms`
-и `back/warehouses` помечены как «работы не производятся», а `back/admin`
-реализует только `login / logout / session / audit-log`. Чтобы админка и
-публичные страницы были рабочими, эти данные обслуживаются фронтом.
+Причина: часть сервисов ещё не реализована в Go, а `back/admin` закрывает
+не все портальные сценарии. Чтобы админка и публичные страницы были
+рабочими, эти данные обслуживаются фронтом.
+
+## Уже на Go (не через portal-api)
+
+| Модуль        | Публично                   | Админ                             |
+| ------------- | -------------------------- | --------------------------------- |
+| Баннеры       | `GET /api/v1/banners`      | CRUD `/api/v1/admin/banners`      |
+| Юр. документы | `GET /api/v1/legal-docs`   | CRUD `/api/v1/admin/legal-docs`   |
+| Сертификаты   | `GET /api/v1/certificates` | CRUD `/api/v1/admin/certificates` |
 
 ## Контракт
 
@@ -23,22 +29,20 @@ Go-сервиса**: контент публичных страниц, банн�
 
 ## Эндпоинты
 
-| Метод    | Путь                              | Назначение                                                                               |
-| -------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
-| GET      | `/portal-api/content`             | Контент всех публичных страниц                                                           |
-| GET/PUT  | `/portal-api/content/:key`        | Чтение и правка страницы (`home`, `about`, `terms`, `promo`, `certificates`, `contacts`) |
-| GET/PUT  | `/portal-api/banners`             | Баннеры главной + интервал смены                                                         |
-| GET      | `/portal-api/legal`               | Список юридических документов                                                            |
-| GET/PUT  | `/portal-api/legal/:id`           | Документ и публикация новой версии                                                       |
-| GET/POST | `/portal-api/signup-requests`     | Заявки на регистрацию                                                                    |
-| PATCH    | `/portal-api/signup-requests/:id` | Одобрение / отклонение заявки                                                            |
-| GET/POST | `/portal-api/support`             | Обращения в поддержку                                                                    |
-| PATCH    | `/portal-api/support/:id`         | Статус и ответ по обращению                                                              |
-| GET/POST | `/portal-api/feedback`            | Отзывы по заказам                                                                        |
-| GET/POST | `/portal-api/portal-users`        | Пользователи портала и приглашения                                                       |
-| PATCH    | `/portal-api/portal-users/:id`    | Блокировка / сброс пароля                                                                |
-| GET/POST | `/portal-api/audit-log`           | Локальный журнал действий                                                                |
-| POST     | `/portal-api/assistant`           | ИИ-помощник по подбору инструмента (DeepSeek + поиск по каталогу)                        |
+| Метод    | Путь                                     | Назначение                                                                               |
+| -------- | ---------------------------------------- | ---------------------------------------------------------------------------------------- |
+| GET      | `/portal-api/content`                    | Контент всех публичных страниц                                                           |
+| GET/PUT  | `/portal-api/content/:key`               | Чтение и правка страницы (`home`, `about`, `terms`, `promo`, `certificates`, `contacts`) |
+| GET/POST | `/portal-api/signup-requests`            | Заявки на регистрацию                                                                    |
+| PATCH    | `/portal-api/signup-requests/:id`        | Одобрение / отклонение заявки                                                            |
+| POST     | `/portal-api/signup-requests/:id/reject` | Отклонение заявки с причиной                                                             |
+| GET/POST | `/portal-api/support`                    | Обращения в поддержку                                                                    |
+| PATCH    | `/portal-api/support/:id`                | Статус и ответ по обращению                                                              |
+| GET/POST | `/portal-api/feedback`                   | Отзывы по заказам                                                                        |
+| GET/POST | `/portal-api/portal-users`               | Пользователи портала и приглашения                                                       |
+| PATCH    | `/portal-api/portal-users/:id`           | Блокировка / сброс пароля                                                                |
+| GET/POST | `/portal-api/audit-log`                  | Локальный журнал действий                                                                |
+| POST     | `/portal-api/assistant`                  | ИИ-помощник по подбору инструмента (DeepSeek + поиск по каталогу)                        |
 
 ## ИИ-помощник
 
@@ -91,7 +95,6 @@ DeepSeek. Ключ читается из `DEEPSEEK_API_KEY` **только на 
 
 1. Реализовать эндпоинты в `back/admin` (или отдельном сервисе) — таблицы
    описаны в `docs/portal-content-schema.sql`.
-2. Выставить `NEXT_PUBLIC_PORTAL_API_PREFIX=/api/v1`.
-3. Удалить каталог `src/app/portal-api` и `src/core/shared/server/portal`.
-
-Фронтенд-код (`views/*`, `core/entities/*`) при этом не меняется.
+2. Переключить клиенты с `portalRequest` на `/api/v1/...`.
+3. Удалить соответствующий handler из `src/app/portal-api` (и целиком каталог,
+   когда не останется ни одного модуля).

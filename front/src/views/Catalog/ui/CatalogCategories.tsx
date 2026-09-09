@@ -95,6 +95,7 @@ export const CatalogCategories = ({
               />
               <span className={clsx(styles.itemLabel)}>{node.name}</span>
             </span>
+            <span className={clsx(styles.count)}>{node.items_count}</span>
           </button>
         </div>
         {hasChildren && isExpanded ? (

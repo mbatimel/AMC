@@ -38,6 +38,7 @@ const CatalogContent = (): JSX.Element => {
   const {
     activeFilterCount,
     categories,
+    categoriesTotalItems,
     error,
     favorites,
     filters,
@@ -116,7 +117,7 @@ const CatalogContent = (): JSX.Element => {
             onSelectCollection={(collection) => patchFilters({ categoryID: undefined, collection })}
             selectedCategoryId={filters.categoryID}
             selectedCollection={filters.collection}
-            totalAll={total}
+            totalAll={categoriesTotalItems}
           />
 
           <div className={clsx(styles.main)}>
