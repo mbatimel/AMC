@@ -4,29 +4,44 @@ import (
 	"bufio"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
 
 type Config struct {
-	PGHost     string
-	PGPort     string
-	PGDB       string
-	PGUser     string
-	PGPassword string
-	BindAddr   string
-	AccessURL  string
+	PGHost       string
+	PGPort       string
+	PGDB         string
+	PGUser       string
+	PGPassword   string
+	BindAddr     string
+	AccessURL    string
+	SMTPHost     string
+	SMTPPort     string
+	SMTPUsername string
+	SMTPPassword string
+	SMTPFrom     string
+	SMTPTLS      bool
+	SMTPTimeout  time.Duration
 }
 
 func LoadConfig() Config {
 	cfg := Config{
-		PGHost:     GetEnv("PG_HOST", "localhost"),
-		PGPort:     GetEnv("PG_PORT", "5432"),
-		PGDB:       os.Getenv("PG_DB"),
-		PGUser:     os.Getenv("PG_USER"),
-		PGPassword: os.Getenv("PG_PASSWORD"),
-		BindAddr:   GetEnv("BIND_ADDR", ":8083"),
-		AccessURL:  os.Getenv("ACCESS_URL"),
+		PGHost:       GetEnv("PG_HOST", "localhost"),
+		PGPort:       GetEnv("PG_PORT", "5432"),
+		PGDB:         os.Getenv("PG_DB"),
+		PGUser:       os.Getenv("PG_USER"),
+		PGPassword:   os.Getenv("PG_PASSWORD"),
+		BindAddr:     GetEnv("BIND_ADDR", ":8083"),
+		AccessURL:    os.Getenv("ACCESS_URL"),
+		SMTPHost:     os.Getenv("SMTP_HOST"),
+		SMTPPort:     GetEnv("SMTP_PORT", "587"),
+		SMTPUsername: os.Getenv("SMTP_USERNAME"),
+		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
+		SMTPFrom:     os.Getenv("SMTP_FROM"),
+		SMTPTLS:      true,
+		SMTPTimeout:  10 * time.Second,
 	}
 	if cfg.PGDB == "" || cfg.PGUser == "" || cfg.PGPassword == "" {
 		log.Fatal().Msg("PG_DB, PG_USER and PG_PASSWORD must be specified")

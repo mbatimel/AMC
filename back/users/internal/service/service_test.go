@@ -23,6 +23,7 @@ type fakeStorage struct {
 	updateUserFn          func(context.Context, internalModels.UpdateUserParams) (internalModels.User, error)
 	softDeleteUserFn      func(context.Context, uuid.UUID) error
 	setUserActiveFn       func(context.Context, uuid.UUID, bool) (internalModels.User, error)
+	deactivateUserFn      func(context.Context, uuid.UUID, string, string, string, string) (internalModels.User, error)
 	getProfileFn          func(context.Context, uuid.UUID) (internalModels.User, *internalModels.Client, error)
 	updateProfileFn       func(context.Context, internalModels.UpdateProfileParams) (internalModels.User, *internalModels.Client, error)
 	listUserClientsFn     func(context.Context, uuid.UUID) ([]internalModels.Client, error)
@@ -59,6 +60,12 @@ func (f *fakeStorage) SoftDeleteUser(ctx context.Context, userID uuid.UUID) erro
 }
 func (f *fakeStorage) SetUserActive(ctx context.Context, userID uuid.UUID, active bool) (internalModels.User, error) {
 	return f.setUserActiveFn(ctx, userID, active)
+}
+func (f *fakeStorage) DeactivateUser(ctx context.Context, userID uuid.UUID, reason, contactName, contactPhone, contactEmail string) (internalModels.User, error) {
+	if f.deactivateUserFn == nil {
+		return internalModels.User{}, nil
+	}
+	return f.deactivateUserFn(ctx, userID, reason, contactName, contactPhone, contactEmail)
 }
 func (f *fakeStorage) GetProfile(ctx context.Context, userID uuid.UUID) (internalModels.User, *internalModels.Client, error) {
 	return f.getProfileFn(ctx, userID)
@@ -132,7 +139,7 @@ func (f *fakeAccessClient) UpdateRole(ctx context.Context, adminUserID uuid.UUID
 }
 
 func testService(storage Storage) *Service {
-	return New(zerolog.Nop(), storage, &fakeAccessClient{})
+	return New(zerolog.Nop(), storage, &fakeAccessClient{}, nil)
 }
 
 func TestCheckBuyerAccess(t *testing.T) {
@@ -147,7 +154,7 @@ func TestCheckBuyerAccess(t *testing.T) {
 		return true, nil
 	}}
 
-	if err := New(zerolog.Nop(), &fakeStorage{}, access).checkBuyerAccess(context.Background(), userID); err != nil {
+	if err := New(zerolog.Nop(), &fakeStorage{}, access, nil).checkBuyerAccess(context.Background(), userID); err != nil {
 		t.Fatalf("checkBuyerAccess() error = %v", err)
 	}
 }
@@ -162,7 +169,7 @@ func TestGetProfileRejectsNonBuyerBeforeStorage(t *testing.T) {
 		return false, nil
 	}}
 
-	_, err := New(zerolog.Nop(), storage, access).GetProfile(context.Background(), uuid.New())
+	_, err := New(zerolog.Nop(), storage, access, nil).GetProfile(context.Background(), uuid.New())
 	if err == nil || !errors.Is(err, customErrors.ErrForbidden) {
 		t.Fatalf("expected forbidden, got %v", err)
 	}
@@ -551,23 +558,27 @@ func TestListUsersFiltersAndPagination(t *testing.T) {
 
 func TestActivateAndDeactivateUser(t *testing.T) {
 	userID := uuid.New()
-	repo := &fakeStorage{setUserActiveFn: func(_ context.Context, gotUserID uuid.UUID, active bool) (internalModels.User, error) {
-		user := testUser(gotUserID, uuid.Nil)
-		user.IsActive = active
-		if active {
+	repo := &fakeStorage{
+		setUserActiveFn: func(_ context.Context, gotUserID uuid.UUID, active bool) (internalModels.User, error) {
+			user := testUser(gotUserID, uuid.Nil)
+			user.IsActive = active
 			user.Status = "active"
-		} else {
+			return user, nil
+		},
+		deactivateUserFn: func(_ context.Context, gotUserID uuid.UUID, _, _, _, _ string) (internalModels.User, error) {
+			user := testUser(gotUserID, uuid.Nil)
+			user.IsActive = false
 			user.Status = "inactive"
-		}
-		return user, nil
-	}}
+			return user, nil
+		},
+	}
 	svc := testService(repo)
 
 	activated, err := svc.ActivateUser(context.Background(), userID)
 	if err != nil || !activated.User.IsActive || activated.User.Status != "active" {
 		t.Fatalf("ActivateUser() response=%+v error=%v", activated, err)
 	}
-	deactivated, err := svc.DeactivateUser(context.Background(), userID)
+	deactivated, err := svc.DeactivateUser(context.Background(), userID, "", "", "", "")
 	if err != nil || deactivated.User.IsActive || deactivated.User.Status != "inactive" {
 		t.Fatalf("DeactivateUser() response=%+v error=%v", deactivated, err)
 	}
