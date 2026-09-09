@@ -48,13 +48,14 @@ func main() {
 	svc := productsService.New(log.Logger, postgresStorage, accessClient, productsService.WithObjectStorage(s3Client, cfg.S3MaxFileSize))
 
 	imageRoutes := customHandlers.NewProductImageRoutes(log.Logger, svc, cfg.S3MaxFileSize)
+	maxBodySize := int(cfg.S3MaxFileSize * customHandlers.MaxBatchImageFiles)
 	app := externalapi.New(
 		log.Logger,
-		externalapi.MaxBodySize(int(cfg.S3MaxFileSize*customHandlers.MaxBatchImageFiles)),
+		externalapi.MaxBodySize(maxBodySize),
 		externalapi.ProductsAPI(externalapi.NewProductsAPI(svc)),
 		externalapi.Service(imageRoutes),
 	).WithLog().WithMetrics()
-	server := &fasthttp.Server{Handler: app.Fiber().Handler()}
+	server := &fasthttp.Server{Handler: app.Fiber().Handler(), MaxRequestBodySize: maxBodySize}
 	healthServer := transportHTTP.NewHealthServer()
 
 	shutdown := make(chan os.Signal, 1)
