@@ -82,11 +82,13 @@
 
   /* Auth */
   --auth-bg: #f4f6f9;
+  --auth-bg-accent: rgb(206 33 33 / 7%);
+  --auth-bg-depth: rgb(18 26 51 / 4%);
   --auth-card-radius: 16px;
   --auth-card-shadow: 0 8px 32px rgb(18 26 51 / 8%);
   --auth-icon-bg: #fde8e8;
   --auth-max-width: 440px;
-  --auth-max-width-wide: 720px;
+  --auth-max-width-wide: 560px;
 
   /* Z-index */
   --z-index-popup: 12;

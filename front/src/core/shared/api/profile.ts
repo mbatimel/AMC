@@ -28,6 +28,10 @@ export type Profile = {
   last_name: string;
   middle_name: string;
   phone: string;
+  /** Оригинальное имя файла с реквизитами (для download). */
+  requisites_file_name: string;
+  /** URL для скачивания файла с реквизитами; пусто, если файла нет. */
+  requisites_file_url: string;
   status: string;
   user_id: string;
 };
@@ -138,6 +142,8 @@ const parseProfile = (data: unknown): Profile => {
     last_name: asString(profile.last_name),
     middle_name: asString(profile.middle_name),
     phone: asString(profile.phone),
+    requisites_file_name: asString(profile.requisites_file_name),
+    requisites_file_url: asString(profile.requisites_file_url),
     status: asString(profile.status),
     user_id: asString(profile.user_id),
   };

@@ -1,3 +1,5 @@
+import type { UserBlockPayload } from './userBlock';
+
 import {
   assertApiSuccess,
   fetchWithNetworkFallback,
@@ -30,9 +32,19 @@ export type RealUser = {
   last_name: string;
   middle_name: string;
   phone: string;
+  /** Оригинальное имя файла с реквизитами (для download). */
+  requisites_file_name: string;
+  /** URL для скачивания файла с реквизитами; пусто, если файла нет. */
+  requisites_file_url: string;
   role: string;
   status: string;
   updated_at: string;
+};
+
+export type SetUserActiveParams = {
+  deactivate?: UserBlockPayload;
+  isActive: boolean;
+  userId: string;
 };
 
 export class UsersApiError extends Error {
@@ -76,6 +88,8 @@ const parseUser = (value: unknown): null | RealUser => {
     last_name: asString(record.last_name),
     middle_name: asString(record.middle_name),
     phone: asString(record.phone),
+    requisites_file_name: asString(record.requisites_file_name),
+    requisites_file_url: asString(record.requisites_file_url),
     role: asString(record.role, 'client'),
     status: asString(record.status),
     updated_at: asString(record.updated_at),
@@ -174,13 +188,42 @@ export const getUserRequest = async (userId: string): Promise<RealUser> => {
   return user;
 };
 
-export const setUserActiveRequest = async (
-  userId: string,
-  isActive: boolean,
-): Promise<RealUser> => {
-  const data = await request(`/api/v1/users/${userId}/${isActive ? 'activate' : 'deactivate'}`, {
+export const setUserActiveRequest = async ({
+  deactivate,
+  isActive,
+  userId,
+}: SetUserActiveParams): Promise<RealUser> => {
+  const init: RequestInit = {
     method: 'POST',
-  });
+  };
+
+  if (!isActive && deactivate) {
+    const payload: Record<string, string> = {};
+
+    if (deactivate.reason?.trim()) {
+      payload.reason = deactivate.reason.trim();
+    }
+
+    if (deactivate.contactName?.trim()) {
+      payload.contactName = deactivate.contactName.trim();
+    }
+
+    if (deactivate.contactPhone?.trim()) {
+      payload.contactPhone = deactivate.contactPhone.trim();
+    }
+
+    if (deactivate.contactEmail?.trim()) {
+      payload.contactEmail = deactivate.contactEmail.trim();
+    }
+
+    init.body = JSON.stringify(payload);
+    init.headers = { 'Content-Type': 'application/json' };
+  }
+
+  const data = await request(
+    `/api/v1/users/${userId}/${isActive ? 'activate' : 'deactivate'}`,
+    init,
+  );
   const user = parseUserPayload(data);
 
   if (!user) {

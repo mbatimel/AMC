@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { AuthApiError, requestPasswordResetRequest } from '@/core/shared/api/auth';
 import { IconKey } from '@/core/shared/icons/IconKey';
 import { IconMail } from '@/core/shared/icons/IconMail';
 import { readFormString } from '@/core/shared/lib/readFormString';
@@ -16,7 +17,10 @@ import formStyles from '@/core/shared/ui/AuthShell/AuthForm.module.css';
 
 export const ForgotPassword = (): JSX.Element => {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [emailSent, setEmailSent] = useState(true);
   const [emailError, setEmailError] = useState<null | string>(null);
+  const [submitError, setSubmitError] = useState<null | string>(null);
+  const [isPending, setIsPending] = useState(false);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -26,12 +30,30 @@ export const ForgotPassword = (): JSX.Element => {
     const nextEmailError = validateEmail(email);
 
     setEmailError(nextEmailError);
+    setSubmitError(null);
 
     if (nextEmailError) {
       return;
     }
 
-    setIsSubmitted(true);
+    setIsPending(true);
+
+    void requestPasswordResetRequest(email)
+      .then((result) => {
+        setEmailSent(result.emailSent);
+        setIsSubmitted(true);
+      })
+      .catch((error: unknown) => {
+        const message =
+          error instanceof AuthApiError
+            ? error.message
+            : 'Не удалось отправить ссылку. Попробуйте позже.';
+
+        setSubmitError(message);
+      })
+      .finally(() => {
+        setIsPending(false);
+      });
   };
 
   return (
@@ -54,14 +76,22 @@ export const ForgotPassword = (): JSX.Element => {
           {emailError ? <FieldError>{emailError}</FieldError> : <FieldError />}
         </TextField>
         {isSubmitted ? (
-          <p className={clsx(formStyles.success)}>
-            Если аккаунт с таким e-mail существует, ссылка для сброса пароля будет отправлена.
-          </p>
+          emailSent ? (
+            <p className={clsx(formStyles.success)}>
+              Если аккаунт с таким e-mail существует, ссылка для сброса пароля отправлена. Проверьте
+              почту.
+            </p>
+          ) : (
+            <p className={clsx(formStyles.error)}>
+              Не удалось отправить письмо. Попробуйте ещё раз позже или обратитесь в поддержку.
+            </p>
+          )
         ) : null}
+        {submitError ? <p className={clsx(formStyles.error)}>{submitError}</p> : null}
         <div className={clsx(formStyles.actions)}>
-          <Button type="submit" variant="primary">
+          <Button isDisabled={isPending} type="submit" variant="primary">
             <IconMail currentColor="currentColor" height={16} width={16} />
-            Отправить ссылку
+            {isPending ? 'Отправляем…' : 'Отправить ссылку'}
           </Button>
           <Link className={clsx(formStyles.secondaryLink)} href={AppPath.Login}>
             Назад ко входу

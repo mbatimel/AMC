@@ -1,10 +1,12 @@
 import { createEffect, createEvent, createStore, sample } from 'effector';
 
-import type { PortalUser } from '@/core/shared/api/portalUsers';
+import type { InvitePortalAdminResult, PortalUser } from '@/core/shared/api/portalUsers';
+import type { UserBlockPayload } from '@/core/shared/api/userBlock';
 import type { RealUser } from '@/core/shared/api/users';
 
+import { $adminUserId } from '@/core/entities/adminSession';
 import { toDisplayErrorMessage } from '@/core/shared/api/parseApiError';
-import { invitePortalUser, patchPortalUser } from '@/core/shared/api/portalUsers';
+import { invitePortalUser } from '@/core/shared/api/portalUsers';
 import { listAllUsersRequest, setUserActiveRequest } from '@/core/shared/api/users';
 import { toastShown } from '@/core/shared/ui/Toast/model';
 
@@ -21,10 +23,18 @@ export const toPortalUser = (user: RealUser): PortalUser => ({
   role: user.role === 'admin' ? 'admin' : 'client',
 });
 
+const isAdminUserId = (userId: null | string): userId is string => Boolean(userId);
+
+export type ToggleUserPayload = {
+  deactivate?: UserBlockPayload;
+  id: string;
+  isActive: boolean;
+};
+
 export const adminUsersOpened = createEvent();
-export const portalUserInvited = createEvent<{ company: string; email: string }>();
-export const portalUserToggled = createEvent<{ id: string; isActive: boolean }>();
-export const portalUserPasswordReset = createEvent<string>();
+export const portalUserInvited = createEvent<{ email: string; name: string }>();
+export const portalUserToggled = createEvent<ToggleUserPayload>();
+export const inviteResultDismissed = createEvent();
 
 export const fetchPortalUsersFx = createEffect(async () => {
   const items = await listAllUsersRequest();
@@ -33,33 +43,43 @@ export const fetchPortalUsersFx = createEffect(async () => {
 });
 
 export const inviteUserFx = createEffect(
-  async ({ company, email }: { company: string; email: string }) =>
-    invitePortalUser({ company, email, role: 'admin' }),
+  ({
+    email,
+    name,
+    userId,
+  }: {
+    email: string;
+    name: string;
+    userId: string;
+  }): Promise<InvitePortalAdminResult> => invitePortalUser(userId, { email, name }),
 );
 
-export const toggleUserFx = createEffect(
-  async ({ id, isActive }: { id: string; isActive: boolean }) => {
-    const user = await setUserActiveRequest(id, isActive);
+export const toggleUserFx = createEffect<ToggleUserPayload, PortalUser, Error>(async (payload) => {
+  const user = await setUserActiveRequest({
+    deactivate: payload.deactivate,
+    isActive: payload.isActive,
+    userId: payload.id,
+  });
 
-    return toPortalUser(user);
-  },
-);
-
-export const resetUserPasswordFx = createEffect(async (id: string) =>
-  patchPortalUser(id, { passwordReset: true }),
-);
+  return toPortalUser(user);
+});
 
 export const $portalUsers = createStore<PortalUser[]>([])
   .on(fetchPortalUsersFx.doneData, (_, users) => users)
-  .on(inviteUserFx.doneData, (state, user) => [user, ...state])
-  .on([toggleUserFx.doneData, resetUserPasswordFx.doneData], (state, user) =>
+  .on(toggleUserFx.doneData, (state, user) =>
     state.map((item) => (item.id === user.id ? user : item)),
   );
 
+export const $inviteResult = createStore<InvitePortalAdminResult | null>(null)
+  .on(inviteUserFx.doneData, (_, result) => result)
+  .reset([inviteResultDismissed, adminUsersOpened]);
+
 export const $isUsersPending = fetchPortalUsersFx.pending;
+export const $isInvitePending = inviteUserFx.pending;
+export const $isTogglePending = toggleUserFx.pending;
 
 export const $usersError = createStore<null | string>(null)
-  .on(fetchPortalUsersFx, () => null)
+  .on([fetchPortalUsersFx, inviteUserFx, toggleUserFx], () => null)
   .on([fetchPortalUsersFx.failData, inviteUserFx.failData, toggleUserFx.failData], (_, error) =>
     toDisplayErrorMessage(error, 'Не удалось выполнить операцию'),
   );
@@ -69,10 +89,15 @@ sample({
   target: fetchPortalUsersFx,
 });
 
+/* eslint-disable perfectionist/sort-objects -- effector sample option order */
 sample({
   clock: portalUserInvited,
+  source: $adminUserId,
+  filter: isAdminUserId,
+  fn: (userId, payload) => ({ ...payload, userId }),
   target: inviteUserFx,
 });
+/* eslint-enable perfectionist/sort-objects */
 
 sample({
   clock: portalUserToggled,
@@ -80,18 +105,12 @@ sample({
 });
 
 sample({
-  clock: portalUserPasswordReset,
-  target: resetUserPasswordFx,
+  clock: inviteUserFx.done,
+  target: fetchPortalUsersFx,
 });
 
 sample({
-  clock: [inviteUserFx.done, toggleUserFx.done],
+  clock: toggleUserFx.done,
   fn: () => ({ message: 'Готово', tone: 'success' as const }),
-  target: toastShown,
-});
-
-sample({
-  clock: resetUserPasswordFx.done,
-  fn: () => ({ message: 'Ссылка для сброса пароля отправлена', tone: 'success' as const }),
   target: toastShown,
 });

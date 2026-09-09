@@ -19,6 +19,7 @@ export enum AppPath {
   Product = '/product',
   Promo = '/promo',
   Register = '/register',
+  ResetPassword = '/reset-password',
   Support = '/support',
   Terms = '/terms',
 }

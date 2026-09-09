@@ -216,3 +216,27 @@ export const validatePassword = (value: string): null | string => {
 
   return null;
 };
+
+/** Файл с реквизитами: обязательный, до 10 МБ, PDF/DOC/DOCX/JPG/PNG. */
+export const REQUISITES_FILE_ACCEPT = '.pdf,.doc,.docx,.jpg,.jpeg,.png';
+export const REQUISITES_FILE_MAX_BYTES = 10 * 1024 * 1024;
+
+const REQUISITES_FILE_EXTENSIONS = new Set(['doc', 'docx', 'jpeg', 'jpg', 'pdf', 'png']);
+
+export const validateRequisitesFile = (file: File | null | undefined): null | string => {
+  if (!file || file.size === 0) {
+    return 'Прикрепите файл с реквизитами';
+  }
+
+  if (file.size > REQUISITES_FILE_MAX_BYTES) {
+    return 'Файл не должен превышать 10 МБ';
+  }
+
+  const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+
+  if (!REQUISITES_FILE_EXTENSIONS.has(extension)) {
+    return 'Допустимы PDF, DOC, DOCX, JPG или PNG';
+  }
+
+  return null;
+};

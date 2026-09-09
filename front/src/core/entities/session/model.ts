@@ -54,11 +54,11 @@ export const $authError = createStore<null | string>(null)
  */
 export const registerModerationFx = createEffect(async (payload: RegisterIpPayload) => {
   await createSignupRequest({
-    company: payload.shortName ?? payload.fullName ?? '',
-    contact: payload.directorFullName ?? '',
+    company: payload.shortName,
+    contact: payload.directorFullName,
     email: payload.email,
-    inn: payload.inn ?? '',
-    phone: payload.phone ?? '',
+    inn: payload.inn,
+    phone: payload.phone,
     type: 'organization',
   });
 });

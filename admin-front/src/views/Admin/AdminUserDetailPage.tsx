@@ -4,7 +4,9 @@ import { Button } from '@heroui/react';
 import clsx from 'clsx';
 import { useUnit } from 'effector-react';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+import type { UserBlockPayload } from '@/core/shared/api/userBlock';
 
 import { formatPrice } from '@/core/shared/lib/formatPrice';
 import { AppPath } from '@/core/shared/router/paths';
@@ -14,6 +16,7 @@ import { formatAdminDateTime } from './lib/nav';
 import {
   $isUserDetailPending,
   $isUserOrdersPending,
+  $isUserStatusPending,
   $userDetail,
   $userDetailError,
   $userOrders,
@@ -21,6 +24,7 @@ import {
   adminUserDetailStatusToggled,
 } from './model/userDetails';
 import { AdminPageHeader } from './ui/AdminPageHeader';
+import { BlockUserDialog } from './ui/BlockUserDialog';
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   cancelled: 'Отменён',
@@ -52,19 +56,31 @@ type AdminUserDetailPageProps = {
 };
 
 export const AdminUserDetailPage = ({ userId }: AdminUserDetailPageProps): JSX.Element => {
-  const [user, orders, isUserPending, isOrdersPending, error, open, toggleStatus] = useUnit([
-    $userDetail,
-    $userOrders,
-    $isUserDetailPending,
-    $isUserOrdersPending,
-    $userDetailError,
-    adminUserDetailOpened,
-    adminUserDetailStatusToggled,
-  ]);
+  const [user, orders, isUserPending, isOrdersPending, isStatusPending, error, open, toggleStatus] =
+    useUnit([
+      $userDetail,
+      $userOrders,
+      $isUserDetailPending,
+      $isUserOrdersPending,
+      $isUserStatusPending,
+      $userDetailError,
+      adminUserDetailOpened,
+      adminUserDetailStatusToggled,
+    ]);
+  const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false);
 
   useEffect(() => {
     open(userId);
   }, [open, userId]);
+
+  const handleBlockConfirm = (payload: UserBlockPayload): void => {
+    if (!user) {
+      return;
+    }
+
+    toggleStatus({ deactivate: payload, id: user.id, isActive: false });
+    setIsBlockDialogOpen(false);
+  };
 
   return (
     <>
@@ -114,6 +130,26 @@ export const AdminUserDetailPage = ({ userId }: AdminUserDetailPageProps): JSX.E
               <p>{user.inn || '—'}</p>
             </div>
             <div>
+              <p className={clsx(styles.hint)}>Реквизиты</p>
+              {user.requisites_file_url ? (
+                <p>
+                  <a
+                    className={clsx(styles.smallButton, styles.smallButtonPrimary)}
+                    download={user.requisites_file_name || undefined}
+                    href={user.requisites_file_url}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    {user.requisites_file_name
+                      ? `Скачать «${user.requisites_file_name}»`
+                      : 'Скачать файл'}
+                  </a>
+                </p>
+              ) : (
+                <p>—</p>
+              )}
+            </div>
+            <div>
               <p className={clsx(styles.hint)}>Регистрация</p>
               <p>{formatAdminDateTime(user.created_at)}</p>
             </div>
@@ -130,7 +166,16 @@ export const AdminUserDetailPage = ({ userId }: AdminUserDetailPageProps): JSX.E
           </div>
           <div className={clsx(styles.actionsRow)}>
             <Button
-              onPress={() => toggleStatus({ id: user.id, isActive: !user.is_active })}
+              isDisabled={isStatusPending}
+              onPress={() => {
+                if (user.is_active) {
+                  setIsBlockDialogOpen(true);
+
+                  return;
+                }
+
+                toggleStatus({ id: user.id, isActive: true });
+              }}
               variant={user.is_active ? 'danger' : 'primary'}
             >
               {user.is_active ? 'Заблокировать' : 'Разблокировать'}
@@ -177,6 +222,15 @@ export const AdminUserDetailPage = ({ userId }: AdminUserDetailPageProps): JSX.E
           </table>
         </div>
       </section>
+
+      {isBlockDialogOpen && user ? (
+        <BlockUserDialog
+          email={user.email}
+          isPending={isStatusPending}
+          onClose={() => setIsBlockDialogOpen(false)}
+          onConfirm={handleBlockConfirm}
+        />
+      ) : null}
     </>
   );
 };

@@ -347,24 +347,46 @@ export const CabinetProfile = (): JSX.Element => {
             <Typography.Heading className={clsx(styles.sectionTitle)} level={3}>
               Реквизиты
             </Typography.Heading>
-            {client ? (
+            {client || profile.requisites_file_url ? (
               <dl className={clsx(styles.requisites)}>
-                <dt>Название</dt>
-                <dd>{client.company_name || '—'}</dd>
-                <dt>Тип</dt>
-                <dd>{client.company_type || '—'}</dd>
-                <dt>ИНН</dt>
-                <dd>{client.inn || '—'}</dd>
-                <dt>ОГРН</dt>
-                <dd>{client.ogrn || '—'}</dd>
-                <dt>Адрес</dt>
-                <dd>{client.address || '—'}</dd>
-                <dt>Контакт</dt>
-                <dd>{client.contact_name || '—'}</dd>
-                <dt>Телефон</dt>
-                <dd>{client.phone || '—'}</dd>
-                <dt>Email</dt>
-                <dd>{client.email || '—'}</dd>
+                {client ? (
+                  <>
+                    <dt>Название</dt>
+                    <dd>{client.company_name || '—'}</dd>
+                    <dt>Тип</dt>
+                    <dd>{client.company_type || '—'}</dd>
+                    <dt>ИНН</dt>
+                    <dd>{client.inn || '—'}</dd>
+                    <dt>ОГРН</dt>
+                    <dd>{client.ogrn || '—'}</dd>
+                    <dt>Адрес</dt>
+                    <dd>{client.address || '—'}</dd>
+                    <dt>Контакт</dt>
+                    <dd>{client.contact_name || '—'}</dd>
+                    <dt>Телефон</dt>
+                    <dd>{client.phone || '—'}</dd>
+                    <dt>Email</dt>
+                    <dd>{client.email || '—'}</dd>
+                  </>
+                ) : null}
+                <dt>Файл с реквизитами</dt>
+                <dd>
+                  {profile.requisites_file_url ? (
+                    <a
+                      className={clsx(styles.requisitesLink)}
+                      download={profile.requisites_file_name || undefined}
+                      href={profile.requisites_file_url}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      {profile.requisites_file_name
+                        ? `Скачать «${profile.requisites_file_name}»`
+                        : 'Скачать файл'}
+                    </a>
+                  ) : (
+                    '—'
+                  )}
+                </dd>
               </dl>
             ) : (
               <EmptyState>

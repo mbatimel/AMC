@@ -11,34 +11,92 @@ import { getUserDetailPath } from '@/core/shared/router/paths';
 import styles from './Admin.module.css';
 import { formatAdminDateTime } from './lib/nav';
 import {
+  $inviteResult,
+  $isInvitePending,
+  $isTogglePending,
   $portalUsers,
   $usersError,
   adminUsersOpened,
+  inviteResultDismissed,
   portalUserInvited,
-  portalUserPasswordReset,
   portalUserToggled,
 } from './model/users';
 import { AdminPageHeader } from './ui/AdminPageHeader';
+import { BlockUserDialog } from './ui/BlockUserDialog';
 
 export const AdminUsersPage = (): JSX.Element => {
-  const [users, error, open, invite, toggle, resetPassword] = useUnit([
+  const [
+    users,
+    error,
+    inviteResult,
+    isInvitePending,
+    isTogglePending,
+    open,
+    invite,
+    dismissInviteResult,
+    toggle,
+  ] = useUnit([
     $portalUsers,
     $usersError,
+    $inviteResult,
+    $isInvitePending,
+    $isTogglePending,
     adminUsersOpened,
     portalUserInvited,
+    inviteResultDismissed,
     portalUserToggled,
-    portalUserPasswordReset,
   ]);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
+  const [copyState, setCopyState] = useState<'copied' | 'failed' | 'idle'>('idle');
+  const [copiedPassword, setCopiedPassword] = useState<null | string>(null);
+  const [blockTarget, setBlockTarget] = useState<null | { email: string; id: string }>(null);
 
   useEffect(() => {
     open();
   }, [open]);
 
+  const passwordCopyState =
+    inviteResult && copiedPassword === inviteResult.password ? copyState : 'idle';
+
   const admins = users.filter((user) => user.role === 'admin');
   const clients = users.filter((user) => user.role !== 'admin');
+
+  const handleInvite = (): void => {
+    const email = inviteEmail.trim();
+    const name = inviteName.trim();
+
+    if (!email || !name) {
+      return;
+    }
+
+    invite({ email, name });
+    setInviteEmail('');
+    setInviteName('');
+    setIsInviteOpen(false);
+    setCopyState('idle');
+    setCopiedPassword(null);
+  };
+
+  const handleCopyPassword = (): void => {
+    if (!inviteResult?.password) {
+      return;
+    }
+
+    const password = inviteResult.password;
+
+    void navigator.clipboard.writeText(password).then(
+      () => {
+        setCopiedPassword(password);
+        setCopyState('copied');
+      },
+      () => {
+        setCopiedPassword(password);
+        setCopyState('failed');
+      },
+    );
+  };
 
   return (
     <>
@@ -53,6 +111,47 @@ export const AdminUsersPage = (): JSX.Element => {
       />
 
       {error ? <p className={clsx(styles.error)}>{error}</p> : null}
+
+      {inviteResult ? (
+        <section className={clsx(styles.card)}>
+          <h2 className={clsx(styles.cardTitle)}>Администратор создан</h2>
+          <p className={clsx(styles.hint)}>Скопируйте пароль — он больше нигде не отобразится.</p>
+          {!inviteResult.emailSent ? (
+            <p className={clsx(styles.error)}>
+              Письмо с доступом не удалось отправить. Передайте пароль администратору вручную.
+            </p>
+          ) : (
+            <p className={clsx(styles.hint)}>Письмо с доступом отправлено на e-mail.</p>
+          )}
+          <div className={clsx(styles.formGrid)}>
+            <div className={clsx(styles.field)}>
+              <span className={clsx(styles.label)}>E-mail</span>
+              <p>{inviteResult.email}</p>
+            </div>
+            <div className={clsx(styles.field)}>
+              <span className={clsx(styles.label)}>Пароль</span>
+              <code className={clsx(styles.invitePassword)}>{inviteResult.password}</code>
+            </div>
+          </div>
+          <div className={clsx(styles.actionsRow)}>
+            <Button onPress={handleCopyPassword} variant="primary">
+              {passwordCopyState === 'copied' ? 'Скопировано' : 'Скопировать пароль'}
+            </Button>
+            <button
+              className={clsx(styles.smallButton)}
+              onClick={() => dismissInviteResult()}
+              type="button"
+            >
+              Закрыть
+            </button>
+          </div>
+          {passwordCopyState === 'failed' ? (
+            <p className={clsx(styles.error)}>
+              Не удалось скопировать — скопируйте пароль вручную.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       {isInviteOpen ? (
         <section className={clsx(styles.card)}>
@@ -84,16 +183,13 @@ export const AdminUsersPage = (): JSX.Element => {
           </div>
           <div className={clsx(styles.actionsRow)}>
             <Button
-              isDisabled={inviteEmail.trim().length === 0}
-              onPress={() => {
-                invite({ company: inviteName.trim(), email: inviteEmail.trim() });
-                setInviteEmail('');
-                setInviteName('');
-                setIsInviteOpen(false);
-              }}
+              isDisabled={
+                isInvitePending || inviteEmail.trim().length === 0 || inviteName.trim().length === 0
+              }
+              onPress={handleInvite}
               variant="primary"
             >
-              Отправить приглашение
+              {isInvitePending ? 'Отправляем…' : 'Отправить приглашение'}
             </Button>
             <button
               className={clsx(styles.smallButton)}
@@ -104,7 +200,7 @@ export const AdminUsersPage = (): JSX.Element => {
             </button>
           </div>
           <p className={clsx(styles.hint)}>
-            Роль «admin» назначается в access-сервисе. Приглашение фиксируется в журнале действий.
+            Создаётся учётная запись администратора. Пароль покажем один раз после создания.
           </p>
         </section>
       ) : null}
@@ -166,18 +262,19 @@ export const AdminUsersPage = (): JSX.Element => {
                       Профиль
                     </Link>
                     <button
-                      className={clsx(styles.smallButton)}
-                      onClick={() => resetPassword(user.id)}
-                      type="button"
-                    >
-                      Сбросить пароль
-                    </button>
-                    <button
                       className={clsx(
                         styles.smallButton,
                         user.is_active && styles.smallButtonDanger,
                       )}
-                      onClick={() => toggle({ id: user.id, isActive: !user.is_active })}
+                      onClick={() => {
+                        if (user.is_active) {
+                          setBlockTarget({ email: user.email, id: user.id });
+
+                          return;
+                        }
+
+                        toggle({ id: user.id, isActive: true });
+                      }}
                       type="button"
                     >
                       {user.is_active ? 'Заблокировать' : 'Разблокировать'}
@@ -189,6 +286,18 @@ export const AdminUsersPage = (): JSX.Element => {
           </tbody>
         </table>
       </div>
+
+      {blockTarget ? (
+        <BlockUserDialog
+          email={blockTarget.email}
+          isPending={isTogglePending}
+          onClose={() => setBlockTarget(null)}
+          onConfirm={(deactivate) => {
+            toggle({ deactivate, id: blockTarget.id, isActive: false });
+            setBlockTarget(null);
+          }}
+        />
+      ) : null}
     </>
   );
 };

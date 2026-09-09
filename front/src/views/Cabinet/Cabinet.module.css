@@ -657,6 +657,17 @@
   font-weight: 600;
 }
 
+.requisitesLink {
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.requisitesLink:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+}
+
 .conditionsGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
