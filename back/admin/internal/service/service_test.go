@@ -41,6 +41,8 @@ type fakeStorage struct {
 	createCertificateFn func(context.Context, postgres.Certificate) (postgres.Certificate, error)
 	updateCertificateFn func(context.Context, postgres.Certificate, bool) (postgres.Certificate, error)
 	deleteCertificateFn func(context.Context, uuid.UUID) error
+
+	createAdminUserFn func(context.Context, string, string) (uuid.UUID, error)
 }
 
 type auditCall struct {
@@ -190,6 +192,13 @@ func (f *fakeStorage) DeleteCertificate(ctx context.Context, certID uuid.UUID) e
 		return f.deleteCertificateFn(ctx, certID)
 	}
 	return nil
+}
+
+func (f *fakeStorage) CreateAdminUser(ctx context.Context, email, passwordHash string) (uuid.UUID, error) {
+	if f.createAdminUserFn != nil {
+		return f.createAdminUserFn(ctx, email, passwordHash)
+	}
+	return uuid.New(), nil
 }
 
 type fakeAuthClient struct {

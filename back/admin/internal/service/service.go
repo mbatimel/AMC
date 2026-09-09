@@ -49,6 +49,7 @@ type Storage interface {
 	CreateCertificate(ctx context.Context, cert postgres.Certificate) (postgres.Certificate, error)
 	UpdateCertificate(ctx context.Context, cert postgres.Certificate, replaceFile bool) (postgres.Certificate, error)
 	DeleteCertificate(ctx context.Context, certID uuid.UUID) error
+	CreateAdminUser(ctx context.Context, email, passwordHash string) (uuid.UUID, error)
 }
 
 // AuthClient is implemented by auth/pkg/client/transport.ClientAuthAPI.
