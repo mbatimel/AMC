@@ -1,9 +1,12 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
@@ -19,6 +22,7 @@ import (
 type Storage interface {
 	GetUserByEmail(ctx context.Context, email string) (postgres.User, error)
 	GetUserByID(ctx context.Context, userID uuid.UUID) (postgres.User, error)
+	CounterpartyINNExists(ctx context.Context, inn string) (bool, error)
 	CreateIPUser(
 		ctx context.Context,
 		email, passwordHash string,
@@ -26,6 +30,7 @@ type Storage interface {
 		fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
 		directorFullName, directorPosition, phone, additionalPhone, website,
 		bankAccount, bankName, bankBik, correspondentAccount *string,
+		requisitesFileURL, requisitesFileName string,
 		roleCode int,
 	) (uuid.UUID, error)
 	CreateIndividualUser(
@@ -47,21 +52,74 @@ type FnsClient interface {
 	CheckIndividual(ctx context.Context, inn string) (valid bool, err error)
 }
 
-type service struct {
-	logger       zerolog.Logger
-	storage      Storage
-	accessClient AccessClient
-	fnsClient    FnsClient
+// ObjectStorage is implemented by back/objectstorage.Client.
+type ObjectStorage interface {
+	Upload(ctx context.Context, objectKey string, body io.Reader, size int64, contentType string) error
+	Delete(ctx context.Context, objectKey string) error
+	URL(objectKey string) string
 }
 
-func NewAuthApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient, fnsClient FnsClient) externalAPI.AuthAPI {
-	return &service{
+// RequisitesFile is the raw bytes of an uploaded requisites document, extracted
+// from the multipart request by the transport layer.
+type RequisitesFile struct {
+	FileName string
+	Content  []byte
+}
+
+// requisitesFileTypes maps an accepted lowercase file extension to the
+// content-type stored alongside the S3 object.
+var requisitesFileTypes = map[string]string{
+	".pdf":  "application/pdf",
+	".doc":  "application/msword",
+	".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	".jpg":  "image/jpeg",
+	".jpeg": "image/jpeg",
+	".png":  "image/png",
+}
+
+func requisitesFileExtensionAndType(fileName string) (extension, contentType string, err error) {
+	extension = strings.ToLower(filepath.Ext(fileName))
+	contentType, ok := requisitesFileTypes[extension]
+	if !ok {
+		return "", "", customErrors.RequisitesFileInvalidTypeError()
+	}
+	return extension, contentType, nil
+}
+
+type Option func(*service)
+
+// WithObjectStorage wires the S3-compatible client used to store uploaded
+// requisites files, and the max accepted file size in bytes.
+func WithObjectStorage(storage ObjectStorage, maxFileSize int64) Option {
+	return func(s *service) {
+		s.objectStorage = storage
+		s.maxFileSize = maxFileSize
+	}
+}
+
+type service struct {
+	logger        zerolog.Logger
+	storage       Storage
+	accessClient  AccessClient
+	fnsClient     FnsClient
+	objectStorage ObjectStorage
+	maxFileSize   int64
+}
+
+func NewAuthApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient, fnsClient FnsClient, options ...Option) *service {
+	s := &service{
 		logger:       logger,
 		storage:      storage,
 		accessClient: accessClient,
 		fnsClient:    fnsClient,
 	}
+	for _, option := range options {
+		option(s)
+	}
+	return s
 }
+
+var _ externalAPI.AuthAPI = (*service)(nil)
 
 func (s *service) LoginUser(ctx context.Context, email string, password string) (userID uuid.UUID, err error) {
 	user, err := s.storage.GetUserByEmail(ctx, email)
@@ -83,9 +141,11 @@ func (s *service) RegisterIP(
 	ctx context.Context,
 	email string,
 	password string,
-	fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
-	directorFullName, directorPosition, phone, additionalPhone, website,
-	bankAccount, bankName, bankBik, correspondentAccount *string,
+	shortName string,
+	inn string,
+	directorFullName string,
+	phone string,
+	file RequisitesFile,
 ) (userID uuid.UUID, err error) {
 	email = strings.TrimSpace(email)
 	if email == "" {
@@ -94,43 +154,84 @@ func (s *service) RegisterIP(
 	if strings.TrimSpace(password) == "" {
 		return uuid.Nil, customErrors.ValidationError("password")
 	}
-	if inn == nil {
+	if strings.TrimSpace(shortName) == "" {
+		return uuid.Nil, customErrors.ValidationError("shortName")
+	}
+	if strings.TrimSpace(directorFullName) == "" {
+		return uuid.Nil, customErrors.ValidationError("directorFullName")
+	}
+	if strings.TrimSpace(phone) == "" {
+		return uuid.Nil, customErrors.ValidationError("phone")
+	}
+	if strings.TrimSpace(inn) == "" {
 		return uuid.Nil, customErrors.InnEmptyErr("inn")
 	}
-	valid, err := validate(*inn)
+	if len(file.Content) == 0 {
+		return uuid.Nil, customErrors.RequisitesFileRequiredError()
+	}
+	if s.objectStorage == nil {
+		return uuid.Nil, customErrors.InternalServerError().SetOuterError(fmt.Errorf("object storage not configured"))
+	}
+	if s.maxFileSize > 0 && int64(len(file.Content)) > s.maxFileSize {
+		return uuid.Nil, customErrors.RequisitesFileTooLargeError()
+	}
+	extension, contentType, err := requisitesFileExtensionAndType(file.FileName)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	valid, err := validate(inn)
 	if err != nil {
 		return uuid.Nil, err
 	}
 	if !valid {
 		return uuid.Nil, fmt.Errorf("Inn not valid:%w", err)
 	}
-	fnsValid, err := s.fnsClient.CheckIndividual(ctx, *inn)
+	innExists, err := s.storage.CounterpartyINNExists(ctx, inn)
+	if err != nil {
+		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
+	}
+	if innExists {
+		return uuid.Nil, customErrors.InnTakenError(inn)
+	}
+	fnsValid, err := s.fnsClient.CheckIndividual(ctx, inn)
 	if err != nil {
 		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
 	}
 	if !fnsValid {
-		return uuid.Nil, customErrors.InnInvalidError(*inn)
+		return uuid.Nil, customErrors.InnInvalidError(inn)
 	}
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
 	}
-	surename, name, middleName := "", "", ""
-	if directorFullName != nil {
-		surename, name, middleName = splitFio(*directorFullName)
+	surename, name, middleName := splitFio(directorFullName)
+
+	objectKey := fmt.Sprintf("counterparties/requisites/%s%s", uuid.NewString(), extension)
+	if err = s.objectStorage.Upload(ctx, objectKey, bytes.NewReader(file.Content), int64(len(file.Content)), contentType); err != nil {
+		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
 	}
+	fileURL := s.objectStorage.URL(objectKey)
+
 	userID, err = s.storage.CreateIPUser(
 		ctx, email, string(passwordHash),
 		surename, name, middleName,
-		fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
-		directorFullName, directorPosition, phone, additionalPhone, website,
-		bankAccount, bankName, bankBik, correspondentAccount,
+		nil, &shortName, &inn, nil, nil, nil, nil, nil, nil,
+		&directorFullName, nil, &phone, nil, nil,
+		nil, nil, nil, nil,
+		fileURL, file.FileName,
 		defaultSignUpRoleCode,
 	)
-	if errors.Is(err, postgres.ErrEmailTaken) {
-		return uuid.Nil, customErrors.EmailTakenError()
-	}
 	if err != nil {
+		if cleanupErr := s.objectStorage.Delete(ctx, objectKey); cleanupErr != nil {
+			s.logger.Error().Err(cleanupErr).Str("objectKey", objectKey).Msg("failed to compensate requisites file upload")
+		}
+		if errors.Is(err, postgres.ErrEmailTaken) {
+			return uuid.Nil, customErrors.EmailTakenError()
+		}
+		if errors.Is(err, postgres.ErrInnTaken) {
+			return uuid.Nil, customErrors.InnTakenError(inn)
+		}
 		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
 	}
 

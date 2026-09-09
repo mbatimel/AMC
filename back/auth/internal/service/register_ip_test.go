@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/google/uuid"
@@ -17,6 +18,10 @@ type stubStorage struct {
 	name               string
 	middleName         string
 	phone              *string
+	fileURL            string
+	fileName           string
+	innExists          bool
+	innExistsErr       error
 }
 
 func (s *stubStorage) GetUserByEmail(ctx context.Context, email string) (postgres.User, error) {
@@ -27,6 +32,10 @@ func (s *stubStorage) GetUserByID(ctx context.Context, userID uuid.UUID) (postgr
 	return postgres.User{}, postgres.ErrUserNotFound
 }
 
+func (s *stubStorage) CounterpartyINNExists(ctx context.Context, inn string) (bool, error) {
+	return s.innExists, s.innExistsErr
+}
+
 func (s *stubStorage) CreateIPUser(
 	ctx context.Context,
 	email, passwordHash string,
@@ -34,10 +43,12 @@ func (s *stubStorage) CreateIPUser(
 	fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
 	directorFullName, directorPosition, phone, additionalPhone, website,
 	bankAccount, bankName, bankBik, correspondentAccount *string,
+	requisitesFileURL, requisitesFileName string,
 	roleCode int,
 ) (uuid.UUID, error) {
 	s.createIPUserCalled = true
 	s.surename, s.name, s.middleName, s.phone = surename, name, middleName, phone
+	s.fileURL, s.fileName = requisitesFileURL, requisitesFileName
 	return uuid.New(), nil
 }
 
@@ -52,6 +63,26 @@ func (s *stubStorage) CreateIndividualUser(
 
 func (s *stubStorage) UpdateUserPassword(ctx context.Context, userID uuid.UUID, passwordHash string) error {
 	return nil
+}
+
+type stubObjectStorage struct {
+	uploadCalled bool
+	deleteCalled bool
+	uploadErr    error
+}
+
+func (o *stubObjectStorage) Upload(ctx context.Context, objectKey string, body io.Reader, size int64, contentType string) error {
+	o.uploadCalled = true
+	return o.uploadErr
+}
+
+func (o *stubObjectStorage) Delete(ctx context.Context, objectKey string) error {
+	o.deleteCalled = true
+	return nil
+}
+
+func (o *stubObjectStorage) URL(objectKey string) string {
+	return "https://s3.example.com/" + objectKey
 }
 
 type stubFnsClient struct {
@@ -69,30 +100,27 @@ func (f *stubFnsClient) CheckIndividual(ctx context.Context, inn string) (bool, 
 
 const validINN = "773208978609" // passes local checksum (validate12)
 
-func registerIPArgs(inn *string) []*string {
-	// fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
-	// directorFullName, directorPosition, phone, additionalPhone, website,
-	// bankAccount, bankName, bankBik, correspondentAccount
-	empty := ""
-	return []*string{
-		&empty, &empty, inn, &empty, &empty, &empty, &empty, &empty, &empty,
-		&empty, &empty, &empty, &empty, &empty,
-		&empty, &empty, &empty, &empty,
+func validRequisitesFile() RequisitesFile {
+	return RequisitesFile{FileName: "requisites.pdf", Content: []byte("%PDF-1.4 test")}
+}
+
+func newTestService(storage Storage, fnsClient FnsClient) *service {
+	return &service{
+		logger:        zerolog.Nop(),
+		storage:       storage,
+		fnsClient:     fnsClient,
+		objectStorage: &stubObjectStorage{},
+		maxFileSize:   10 << 20,
 	}
 }
 
 func TestRegisterIP_FnsValid_CreatesUser(t *testing.T) {
 	storage := &stubStorage{}
 	fnsClient := &stubFnsClient{valid: true}
-	svc := &service{logger: zerolog.Nop(), storage: storage, fnsClient: fnsClient}
+	svc := newTestService(storage, fnsClient)
 
-	inn := validINN
-	args := registerIPArgs(&inn)
 	_, err := svc.RegisterIP(context.Background(), "user@example.com", "password",
-		args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8],
-		args[9], args[10], args[11], args[12], args[13],
-		args[14], args[15], args[16], args[17],
-	)
+		"ИП Иванов", validINN, "Иванов Иван Иванович", "+79990000000", validRequisitesFile())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -102,23 +130,20 @@ func TestRegisterIP_FnsValid_CreatesUser(t *testing.T) {
 	if fnsClient.calls != 1 || fnsClient.lastINN != validINN {
 		t.Fatalf("expected fns client called once with %q, got calls=%d inn=%q", validINN, fnsClient.calls, fnsClient.lastINN)
 	}
+	if storage.fileURL == "" || storage.fileName != "requisites.pdf" {
+		t.Fatalf("expected requisites file to be persisted, got url=%q name=%q", storage.fileURL, storage.fileName)
+	}
 }
 
 func TestRegisterIP_PersistsDirectorNameAndPhone(t *testing.T) {
 	storage := &stubStorage{}
-	svc := &service{logger: zerolog.Nop(), storage: storage, fnsClient: &stubFnsClient{valid: true}}
+	svc := newTestService(storage, &stubFnsClient{valid: true})
 
-	inn := validINN
-	args := registerIPArgs(&inn)
 	director := "Иванов Иван Иванович"
 	phone := "+7 999 000-00-00"
-	args[9], args[11] = &director, &phone
 
 	_, err := svc.RegisterIP(context.Background(), "user@example.com", "password",
-		args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8],
-		args[9], args[10], args[11], args[12], args[13],
-		args[14], args[15], args[16], args[17],
-	)
+		"ИП Иванов", validINN, director, phone, validRequisitesFile())
 	if err != nil {
 		t.Fatalf("RegisterIP() error = %v", err)
 	}
@@ -133,15 +158,10 @@ func TestRegisterIP_PersistsDirectorNameAndPhone(t *testing.T) {
 func TestRegisterIP_FnsInvalid_RejectsRegistration(t *testing.T) {
 	storage := &stubStorage{}
 	fnsClient := &stubFnsClient{valid: false}
-	svc := &service{logger: zerolog.Nop(), storage: storage, fnsClient: fnsClient}
+	svc := newTestService(storage, fnsClient)
 
-	inn := validINN
-	args := registerIPArgs(&inn)
 	_, err := svc.RegisterIP(context.Background(), "user@example.com", "password",
-		args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8],
-		args[9], args[10], args[11], args[12], args[13],
-		args[14], args[15], args[16], args[17],
-	)
+		"ИП Иванов", validINN, "Иванов Иван Иванович", "+79990000000", validRequisitesFile())
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -153,15 +173,10 @@ func TestRegisterIP_FnsInvalid_RejectsRegistration(t *testing.T) {
 func TestRegisterIP_FnsError_FailsClosed(t *testing.T) {
 	storage := &stubStorage{}
 	fnsClient := &stubFnsClient{err: errors.New("timeout")}
-	svc := &service{logger: zerolog.Nop(), storage: storage, fnsClient: fnsClient}
+	svc := newTestService(storage, fnsClient)
 
-	inn := validINN
-	args := registerIPArgs(&inn)
 	_, err := svc.RegisterIP(context.Background(), "user@example.com", "password",
-		args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8],
-		args[9], args[10], args[11], args[12], args[13],
-		args[14], args[15], args[16], args[17],
-	)
+		"ИП Иванов", validINN, "Иванов Иван Иванович", "+79990000000", validRequisitesFile())
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -170,22 +185,68 @@ func TestRegisterIP_FnsError_FailsClosed(t *testing.T) {
 	}
 }
 
+func TestRegisterIP_InnAlreadyTaken_RejectsRegistration(t *testing.T) {
+	storage := &stubStorage{innExists: true}
+	fnsClient := &stubFnsClient{valid: true}
+	svc := newTestService(storage, fnsClient)
+
+	_, err := svc.RegisterIP(context.Background(), "user@example.com", "password",
+		"ИП Иванов", validINN, "Иванов Иван Иванович", "+79990000000", validRequisitesFile())
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if storage.createIPUserCalled {
+		t.Fatal("CreateIPUser must not be called when inn already exists")
+	}
+	if fnsClient.calls != 0 {
+		t.Fatal("fns client must not be called when inn already exists in storage")
+	}
+}
+
 func TestRegisterIP_LocalChecksumInvalid_NeverCallsFns(t *testing.T) {
 	storage := &stubStorage{}
 	fnsClient := &stubFnsClient{valid: true}
-	svc := &service{logger: zerolog.Nop(), storage: storage, fnsClient: fnsClient}
+	svc := newTestService(storage, fnsClient)
 
 	badINN := "773208978608" // validINN with last digit flipped — fails validate12 checksum
-	args := registerIPArgs(&badINN)
+
 	_, err := svc.RegisterIP(context.Background(), "user@example.com", "password",
-		args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8],
-		args[9], args[10], args[11], args[12], args[13],
-		args[14], args[15], args[16], args[17],
-	)
+		"ИП Иванов", badINN, "Иванов Иван Иванович", "+79990000000", validRequisitesFile())
 	if err == nil {
 		t.Fatal("expected error")
 	}
 	if fnsClient.calls != 0 {
 		t.Fatal("fns client must not be called when local checksum is already invalid")
+	}
+}
+
+func TestRegisterIP_MissingFile_RejectsRegistration(t *testing.T) {
+	storage := &stubStorage{}
+	fnsClient := &stubFnsClient{valid: true}
+	svc := newTestService(storage, fnsClient)
+
+	_, err := svc.RegisterIP(context.Background(), "user@example.com", "password",
+		"ИП Иванов", validINN, "Иванов Иван Иванович", "+79990000000", RequisitesFile{})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if storage.createIPUserCalled {
+		t.Fatal("CreateIPUser must not be called when requisites file is missing")
+	}
+}
+
+func TestRegisterIP_InvalidFileType_RejectsRegistration(t *testing.T) {
+	storage := &stubStorage{}
+	fnsClient := &stubFnsClient{valid: true}
+	svc := newTestService(storage, fnsClient)
+
+	badFile := RequisitesFile{FileName: "requisites.exe", Content: []byte("MZ")}
+	_, err := svc.RegisterIP(context.Background(), "user@example.com", "password",
+		"ИП Иванов", validINN, "Иванов Иван Иванович", "+79990000000", badFile)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if storage.createIPUserCalled {
+		t.Fatal("CreateIPUser must not be called when file type is invalid")
 	}
 }

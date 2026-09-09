@@ -25,6 +25,18 @@ var (
 	InnInvalidError = func(inn string) *Error {
 		return New("inn is invalid", fasthttp.StatusBadRequest, ErrInvalidRequest).AddCause("inn", inn)
 	}
+	InnTakenError = func(inn string) *Error {
+		return New("inn already registered", fasthttp.StatusConflict, ErrInnTaken).AddCause("inn", inn)
+	}
+	RequisitesFileRequiredError = func() *Error {
+		return New("requisitesFile required", fasthttp.StatusBadRequest, ErrInvalidRequest).AddCause("field", "requisitesFile")
+	}
+	RequisitesFileTooLargeError = func() *Error {
+		return New("requisitesFile too large", fasthttp.StatusBadRequest, ErrInvalidRequest).AddCause("field", "requisitesFile")
+	}
+	RequisitesFileInvalidTypeError = func() *Error {
+		return New("requisitesFile invalid type", fasthttp.StatusBadRequest, ErrInvalidRequest).AddCause("field", "requisitesFile")
+	}
 )
 
 const (
@@ -36,5 +48,6 @@ const (
 	ErrAccessDenied       = "auth.errors.accessDenied"       // Отказано в доступе
 	ErrInvalidCredentials = "auth.errors.invalidCredentials" // Неверный email или пароль
 	ErrEmailTaken         = "auth.errors.emailTaken"         // Email уже зарегистрирован
+	ErrInnTaken           = "auth.errors.innTaken"           // ИНН уже зарегистрирован
 	ErrNotFound           = "auth.errors.notFound"           // Не найдено
 )
