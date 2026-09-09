@@ -15,11 +15,15 @@ import (
 var (
 	ErrUserNotFound = errors.New("user not found")
 	ErrEmailTaken   = errors.New("email already taken")
+	ErrInnTaken     = errors.New("inn already taken")
 	ErrRoleNotFound = errors.New("role not found")
 )
 
 //go:embed sql/getUserByEmail.sql
 var sqlGetUserByEmail string
+
+//go:embed sql/getCounterpartyByINN.sql
+var sqlGetCounterpartyByINN string
 
 //go:embed sql/getUserByID.sql
 var sqlGetUserByID string
@@ -99,6 +103,19 @@ func (s *Storage) GetUserByID(ctx context.Context, userID uuid.UUID) (User, erro
 	return user, nil
 }
 
+// CounterpartyINNExists reports whether a counterparty with the given inn already exists.
+func (s *Storage) CounterpartyINNExists(ctx context.Context, inn string) (bool, error) {
+	var id uuid.UUID
+	err := s.pool.QueryRow(ctx, sqlGetCounterpartyByINN, inn).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("get counterparty by inn: %w", err)
+	}
+	return true, nil
+}
+
 // assignRole looks up roleCode and links userID to it inside the given transaction.
 func (s *Storage) assignRole(ctx context.Context, tx transaction, userID uuid.UUID, roleCode int) error {
 	var roleID uuid.UUID
@@ -125,6 +142,7 @@ func (s *Storage) CreateIPUser(
 	fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
 	directorFullName, directorPosition, phone, additionalPhone, website,
 	bankAccount, bankName, bankBik, correspondentAccount *string,
+	requisitesFileURL, requisitesFileName string,
 	roleCode int,
 ) (uuid.UUID, error) {
 	tx, err := s.beginTx(ctx)
@@ -138,8 +156,13 @@ func (s *Storage) CreateIPUser(
 		fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
 		directorFullName, directorPosition, phone, additionalPhone, email, website,
 		bankAccount, bankName, bankBik, correspondentAccount,
+		requisitesFileURL, requisitesFileName,
 	).Scan(&counterpartyID)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode && pgErr.ConstraintName == "uq_counterparties_inn" {
+			return uuid.UUID{}, ErrInnTaken
+		}
 		return uuid.UUID{}, fmt.Errorf("insert counterparty: %w", err)
 	}
 
