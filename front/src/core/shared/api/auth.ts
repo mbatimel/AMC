@@ -122,6 +122,7 @@ const isBlockedAccountError = (message: string): boolean => {
   const normalized = message.trim().toLowerCase();
 
   return (
+    normalized === 'auth.errors.userblocked' ||
     normalized === 'user is blocked' ||
     normalized === 'user blocked' ||
     normalized.includes('account is blocked') ||
@@ -226,13 +227,20 @@ const parseErrorMessage = async (response: Response): Promise<string> => {
       const cause = record.Cause ?? record.cause;
       let field: string | undefined;
 
-      if (typeof cause === 'object' && cause !== null) {
-        const causeRecord = cause as Record<string, unknown>;
-
-        if (typeof causeRecord.field === 'string' && causeRecord.field.length > 0) {
-          field = causeRecord.field;
+      const readField = (value: unknown): void => {
+        if (typeof value !== 'object' || value === null || field) {
+          return;
         }
-      }
+
+        const source = value as Record<string, unknown>;
+
+        if (typeof source.field === 'string' && source.field.length > 0) {
+          field = source.field;
+        }
+      };
+
+      readField(cause);
+      readField(additionalErrors);
 
       if (typeof errorText === 'string' && errorText.length > 0) {
         return localizeAuthError(errorText, field, blockedDetails);
