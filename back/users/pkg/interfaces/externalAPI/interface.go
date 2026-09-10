@@ -36,70 +36,15 @@ type UsersAPI interface {
 	// @tg adminUserID.format=uuid
 	CreateUser(ctx context.Context, adminUserID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive bool) (response models.CreateUserResponse, err error)
 
-	// GetUser returns a user by ID.
-	// @tg http-method=GET
-	// @tg http-path=/v1/users/:userID
-	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:GetUser
-	// @tg summary=`Получение пользователя`
-	// @tg desc=`Возвращает пользователя по идентификатору`
-	// @tg uuidPackage=github.com/google/uuid
-	GetUser(ctx context.Context, userID uuid.UUID) (response models.GetUserResponse, err error)
-
-	// ListUsers returns filtered users.
-	// @tg http-method=GET
-	// @tg http-path=/v1/users
-	// @tg http-args=q|q
-	// @tg http-args=role|role
-	// @tg http-args=status|status
-	// @tg http-args=clientID|clientID
-	// @tg http-args=isActive|isActive
-	// @tg http-args=limit|limit
-	// @tg http-args=offset|offset
-	// @tg http-args=sort|sort
-	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:ListUsers
-	// @tg summary=`Список пользователей`
-	// @tg desc=`Возвращает пользователей с фильтрами, безопасной сортировкой и пагинацией`
-	ListUsers(ctx context.Context, q string, role string, status string, clientID string, isActive *bool, limit int, offset int, sort string) (response models.ListUsersResponse, err error)
-
-	// UpdateUser updates allowed administrative user fields.
-	// @tg http-method=PATCH
-	// @tg http-path=/v1/users/:userID
-	// @tg http-headers=adminUserID|X-Admin-User-Id
-	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:UpdateUser
-	// @tg summary=`Обновление пользователя`
-	// @tg desc=`Обновляет разрешённые поля пользователя и роль через access-сервис`
-	// @tg uuidPackage=github.com/google/uuid
-	// @tg adminUserID.format=uuid
-	UpdateUser(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive *bool) (response models.UpdateUserResponse, err error)
-
-	// DeleteUser soft-deletes a user.
-	// @tg http-method=DELETE
-	// @tg http-path=/v1/users/:userID
-	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:DeleteUser
-	// @tg summary=`Удаление пользователя`
-	// @tg desc=`Помечает пользователя удалённым и запрещает дальнейшее использование users API`
-	// @tg uuidPackage=github.com/google/uuid
-	DeleteUser(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error)
-
-	// ActivateUser activates a user.
-	// @tg http-method=POST
-	// @tg http-path=/v1/users/:userID/activate
-	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:ActivateUser
-	// @tg summary=`Активация пользователя`
-	// @tg desc=`Устанавливает активный статус пользователя`
-	// @tg uuidPackage=github.com/google/uuid
-	ActivateUser(ctx context.Context, userID uuid.UUID) (response models.ActivateUserResponse, err error)
-
-	// DeactivateUser deactivates a user.
-	// @tg http-method=POST
-	// @tg http-path=/v1/users/:userID/deactivate
-	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:DeactivateUser
-	// @tg summary=`Деактивация пользователя`
-	// @tg desc=`Устанавливает неактивный статус пользователя, сохраняет причину блокировки и контакты (все поля тела запроса необязательные), отправляет пользователю email`
-	// @tg uuidPackage=github.com/google/uuid
-	DeactivateUser(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error)
-
 	// GetProfile returns the current user's profile.
+	//
+	// Registered before GetUser/UpdateUser/DeleteUser/... on purpose: `tg`
+	// emits routes in this declaration order, and Fiber matches
+	// /api/v1/users/:userID greedily — if that route were registered first,
+	// a request for /api/v1/users/profile would match :userID="profile"
+	// and never reach this handler. Keep every /v1/users/profile* and
+	// /v1/users/favorites* method above GetUser/UpdateUser/DeleteUser/
+	// ActivateUser/DeactivateUser.
 	// @tg http-method=GET
 	// @tg http-path=/v1/users/profile
 	// @tg http-headers=userID|X-User-Id
@@ -191,4 +136,67 @@ type UsersAPI interface {
 	// @tg desc=`Удаляет массив идентификаторов товаров одним параметризованным SQL-запросом`
 	// @tg uuidPackage=github.com/google/uuid
 	DeleteFavorites(ctx context.Context, userID uuid.UUID, productIDs []string) (response models.DeleteFavoritesResponse, err error)
+
+	// GetUser returns a user by ID.
+	// @tg http-method=GET
+	// @tg http-path=/v1/users/:userID
+	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:GetUser
+	// @tg summary=`Получение пользователя`
+	// @tg desc=`Возвращает пользователя по идентификатору`
+	// @tg uuidPackage=github.com/google/uuid
+	GetUser(ctx context.Context, userID uuid.UUID) (response models.GetUserResponse, err error)
+
+	// ListUsers returns filtered users.
+	// @tg http-method=GET
+	// @tg http-path=/v1/users
+	// @tg http-args=q|q
+	// @tg http-args=role|role
+	// @tg http-args=status|status
+	// @tg http-args=clientID|clientID
+	// @tg http-args=isActive|isActive
+	// @tg http-args=limit|limit
+	// @tg http-args=offset|offset
+	// @tg http-args=sort|sort
+	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:ListUsers
+	// @tg summary=`Список пользователей`
+	// @tg desc=`Возвращает пользователей с фильтрами, безопасной сортировкой и пагинацией`
+	ListUsers(ctx context.Context, q string, role string, status string, clientID string, isActive *bool, limit int, offset int, sort string) (response models.ListUsersResponse, err error)
+
+	// UpdateUser updates allowed administrative user fields.
+	// @tg http-method=PATCH
+	// @tg http-path=/v1/users/:userID
+	// @tg http-headers=adminUserID|X-Admin-User-Id
+	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:UpdateUser
+	// @tg summary=`Обновление пользователя`
+	// @tg desc=`Обновляет разрешённые поля пользователя и роль через access-сервис`
+	// @tg uuidPackage=github.com/google/uuid
+	// @tg adminUserID.format=uuid
+	UpdateUser(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive *bool) (response models.UpdateUserResponse, err error)
+
+	// DeleteUser soft-deletes a user.
+	// @tg http-method=DELETE
+	// @tg http-path=/v1/users/:userID
+	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:DeleteUser
+	// @tg summary=`Удаление пользователя`
+	// @tg desc=`Помечает пользователя удалённым и запрещает дальнейшее использование users API`
+	// @tg uuidPackage=github.com/google/uuid
+	DeleteUser(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error)
+
+	// ActivateUser activates a user.
+	// @tg http-method=POST
+	// @tg http-path=/v1/users/:userID/activate
+	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:ActivateUser
+	// @tg summary=`Активация пользователя`
+	// @tg desc=`Устанавливает активный статус пользователя`
+	// @tg uuidPackage=github.com/google/uuid
+	ActivateUser(ctx context.Context, userID uuid.UUID) (response models.ActivateUserResponse, err error)
+
+	// DeactivateUser deactivates a user.
+	// @tg http-method=POST
+	// @tg http-path=/v1/users/:userID/deactivate
+	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:DeactivateUser
+	// @tg summary=`Деактивация пользователя`
+	// @tg desc=`Устанавливает неактивный статус пользователя, сохраняет причину блокировки и контакты (все поля тела запроса необязательные), отправляет пользователю email`
+	// @tg uuidPackage=github.com/google/uuid
+	DeactivateUser(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error)
 }
