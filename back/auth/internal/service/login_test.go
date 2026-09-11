@@ -90,6 +90,24 @@ func TestLoginUser_ActiveUser_CorrectPassword_Succeeds(t *testing.T) {
 	}
 }
 
+func TestLoginUser_NormalizesEmailLikeRegistration(t *testing.T) {
+	userID := uuid.New()
+	var receivedEmail string
+	storage := &stubStorage{getUserByEmailFn: func(_ context.Context, email string) (postgres.User, error) {
+		receivedEmail = email
+		return postgres.User{ID: userID, Email: email, Password: hashPassword(t, "correct-password"), IsActive: true}, nil
+	}}
+	svc := &service{logger: zerolog.Nop(), storage: storage}
+
+	gotID, err := svc.LoginUser(context.Background(), " User@Example.COM ", "correct-password")
+	if err != nil || gotID != userID {
+		t.Fatalf("LoginUser() id=%v error=%v", gotID, err)
+	}
+	if receivedEmail != "user@example.com" {
+		t.Fatalf("storage email = %q, want canonical email", receivedEmail)
+	}
+}
+
 func TestLoginUser_ActiveUser_WrongPassword_InvalidCredentials(t *testing.T) {
 	storage := &stubStorage{getUserByEmailFn: func(context.Context, string) (postgres.User, error) {
 		return postgres.User{ID: uuid.New(), Email: "user@example.com", Password: hashPassword(t, "correct-password"), IsActive: true}, nil

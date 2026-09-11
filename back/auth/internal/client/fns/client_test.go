@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -101,5 +102,20 @@ func TestCheckIndividual_MalformedJSON_FailClosed(t *testing.T) {
 	_, err := c.CheckIndividual(context.Background(), "773208978609")
 	if err == nil {
 		t.Fatal("expected error on malformed json")
+	}
+}
+
+func TestCheckIndividual_TimeoutFailClosed(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(100 * time.Millisecond)
+		w.Write([]byte(`{"Корректность":{"КонтрСумма":true,"Недействительный":false}}`))
+	}))
+	defer server.Close()
+
+	c := New(server.URL, "test-key", testLogger())
+	c.timeout = 10 * time.Millisecond
+	_, err := c.CheckIndividual(context.Background(), "773208978609")
+	if err == nil {
+		t.Fatal("expected timeout error")
 	}
 }

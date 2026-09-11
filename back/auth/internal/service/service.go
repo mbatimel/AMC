@@ -23,7 +23,7 @@ import (
 type Storage interface {
 	GetUserByEmail(ctx context.Context, email string) (postgres.User, error)
 	GetUserByID(ctx context.Context, userID uuid.UUID) (postgres.User, error)
-	CounterpartyINNExists(ctx context.Context, inn string) (bool, error)
+	CounterpartyINNInUse(ctx context.Context, inn string) (bool, error)
 	CreateIPUser(
 		ctx context.Context,
 		email, passwordHash string,
@@ -144,6 +144,7 @@ func NewAuthApiService(logger zerolog.Logger, storage Storage, accessClient Acce
 var _ externalAPI.AuthAPI = (*service)(nil)
 
 func (s *service) LoginUser(ctx context.Context, email string, password string) (userID uuid.UUID, err error) {
+	email = canonicalEmail(email)
 	user, err := s.storage.GetUserByEmail(ctx, email)
 	if errors.Is(err, postgres.ErrUserNotFound) {
 		return uuid.Nil, customErrors.InvalidCredentialsError()
@@ -176,9 +177,9 @@ func (s *service) RegisterIP(
 	phone string,
 	file RequisitesFile,
 ) (userID uuid.UUID, err error) {
-	email = strings.TrimSpace(email)
-	if email == "" {
-		return uuid.Nil, customErrors.ValidationError("email")
+	email, err = normalizeRegistrationEmail(email)
+	if err != nil {
+		return uuid.Nil, err
 	}
 	if strings.TrimSpace(password) == "" {
 		return uuid.Nil, customErrors.ValidationError("password")
@@ -189,11 +190,13 @@ func (s *service) RegisterIP(
 	if strings.TrimSpace(directorFullName) == "" {
 		return uuid.Nil, customErrors.ValidationError("directorFullName")
 	}
-	if strings.TrimSpace(phone) == "" {
-		return uuid.Nil, customErrors.ValidationError("phone")
+	phone, err = normalizeRegistrationPhone(phone)
+	if err != nil {
+		return uuid.Nil, err
 	}
-	if strings.TrimSpace(inn) == "" {
-		return uuid.Nil, customErrors.InnEmptyErr("inn")
+	inn, err = normalizeINN(inn)
+	if err != nil {
+		return uuid.Nil, err
 	}
 	if len(file.Content) == 0 {
 		return uuid.Nil, customErrors.RequisitesFileRequiredError()
@@ -209,18 +212,11 @@ func (s *service) RegisterIP(
 		return uuid.Nil, err
 	}
 
-	valid, err := validate(inn)
-	if err != nil {
-		return uuid.Nil, err
-	}
-	if !valid {
-		return uuid.Nil, fmt.Errorf("Inn not valid:%w", err)
-	}
-	innExists, err := s.storage.CounterpartyINNExists(ctx, inn)
+	innInUse, err := s.storage.CounterpartyINNInUse(ctx, inn)
 	if err != nil {
 		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
 	}
-	if innExists {
+	if innInUse {
 		return uuid.Nil, customErrors.InnTakenError(inn)
 	}
 	fnsValid, err := s.fnsClient.CheckIndividual(ctx, inn)
@@ -258,9 +254,13 @@ func (s *service) RegisterIP(
 		if errors.Is(err, postgres.ErrEmailTaken) {
 			return uuid.Nil, customErrors.EmailTakenError()
 		}
+		if errors.Is(err, postgres.ErrPhoneTaken) {
+			return uuid.Nil, customErrors.PhoneTakenError()
+		}
 		if errors.Is(err, postgres.ErrInnTaken) {
 			return uuid.Nil, customErrors.InnTakenError(inn)
 		}
+		s.logger.Error().Err(err).Msg("register IP storage failure")
 		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
 	}
 

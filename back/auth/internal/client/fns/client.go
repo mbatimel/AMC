@@ -2,6 +2,7 @@ package fns
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"time"
@@ -13,25 +14,28 @@ import (
 const requestTimeout = 5 * time.Second
 
 type Client struct {
-	addr   string
-	key    string
-	http   *fasthttp.Client
-	logger zerolog.Logger
+	addr    string
+	key     string
+	http    *fasthttp.Client
+	logger  zerolog.Logger
+	timeout time.Duration
 }
 
 func New(addr, key string, logger zerolog.Logger) *Client {
 	return &Client{
-		addr:   addr,
-		key:    key,
-		http:   &fasthttp.Client{},
-		logger: logger,
+		addr:    addr,
+		key:     key,
+		http:    &fasthttp.Client{},
+		logger:  logger,
+		timeout: requestTimeout,
 	}
 }
 
 type flStatusResponse struct {
 	Korrektnost struct {
-		KontrSumma     *string `json:"Лицензии"`
-	} `json:"Позитив"`
+		KontrSumma     *bool `json:"КонтрСумма"`
+		Nedeystvitelny *bool `json:"Недействительный"`
+	} `json:"Корректность"`
 }
 
 // CheckIndividual queries api-fns.ru fl_status and reports whether inn is
@@ -39,8 +43,7 @@ type flStatusResponse struct {
 // or parsing failure returns valid=false with a non-nil error (fail-closed) —
 // the caller must reject registration rather than assume validity.
 func (c *Client) CheckIndividual(ctx context.Context, inn string) (valid bool, err error) {
-	// если взять подписку или ключ то req заменить на inn
-	reqURL := fmt.Sprintf("%s?req=%s&key=%s", c.addr, url.QueryEscape(inn), url.QueryEscape(c.key))
+	reqURL := fmt.Sprintf("%s?inn=%s&key=%s", c.addr, url.QueryEscape(inn), url.QueryEscape(c.key))
 
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
@@ -50,7 +53,7 @@ func (c *Client) CheckIndividual(ctx context.Context, inn string) (valid bool, e
 	req.SetRequestURI(reqURL)
 	req.Header.SetMethod(fasthttp.MethodGet)
 
-	doErr := c.http.DoTimeout(req, resp, requestTimeout)
+	doErr := c.http.DoTimeout(req, resp, c.timeout)
 
 	statusCode := resp.StatusCode()
 	body := string(resp.Body())
@@ -66,5 +69,12 @@ func (c *Client) CheckIndividual(ctx context.Context, inn string) (valid bool, e
 		return false, fmt.Errorf("fns fl_status: unexpected status %d", statusCode)
 	}
 
-	return true, nil
+	var parsed flStatusResponse
+	if err = json.Unmarshal(resp.Body(), &parsed); err != nil {
+		return false, fmt.Errorf("fns fl_status: parse response: %w", err)
+	}
+	if parsed.Korrektnost.KontrSumma == nil || parsed.Korrektnost.Nedeystvitelny == nil {
+		return false, fmt.Errorf("fns fl_status: correctness fields are null")
+	}
+	return *parsed.Korrektnost.KontrSumma && !*parsed.Korrektnost.Nedeystvitelny, nil
 }

@@ -17,6 +17,7 @@ import (
 var (
 	ErrUserNotFound  = errors.New("user not found")
 	ErrEmailTaken    = errors.New("email already taken")
+	ErrPhoneTaken    = errors.New("phone already taken")
 	ErrInnTaken      = errors.New("inn already taken")
 	ErrRoleNotFound  = errors.New("role not found")
 	ErrTokenNotFound = errors.New("password reset token not found")
@@ -27,6 +28,15 @@ var sqlGetUserByEmail string
 
 //go:embed sql/getCounterpartyByINN.sql
 var sqlGetCounterpartyByINN string
+
+//go:embed sql/getCounterpartyForRegistration.sql
+var sqlGetCounterpartyForRegistration string
+
+//go:embed sql/counterpartyHasActiveUser.sql
+var sqlCounterpartyHasActiveUser string
+
+//go:embed sql/updateCounterpartyForRegistration.sql
+var sqlUpdateCounterpartyForRegistration string
 
 //go:embed sql/getUserByID.sql
 var sqlGetUserByID string
@@ -123,17 +133,30 @@ func (s *Storage) GetUserByID(ctx context.Context, userID uuid.UUID) (User, erro
 	return user, nil
 }
 
-// CounterpartyINNExists reports whether a counterparty with the given inn already exists.
-func (s *Storage) CounterpartyINNExists(ctx context.Context, inn string) (bool, error) {
-	var id uuid.UUID
-	err := s.pool.QueryRow(ctx, sqlGetCounterpartyByINN, inn).Scan(&id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return false, nil
-	}
+// CounterpartyINNInUse reports whether an active, non-deleted user currently
+// owns a counterparty with the given INN. Orphan counterparties are reusable.
+func (s *Storage) CounterpartyINNInUse(ctx context.Context, inn string) (bool, error) {
+	var inUse bool
+	err := s.pool.QueryRow(ctx, sqlGetCounterpartyByINN, inn).Scan(&inUse)
 	if err != nil {
 		return false, fmt.Errorf("get counterparty by inn: %w", err)
 	}
-	return true, nil
+	return inUse, nil
+}
+
+func classifyUserWriteError(err error) error {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != uniqueViolationCode {
+		return err
+	}
+	switch pgErr.ConstraintName {
+	case "idx_users_email_lower_unique", "users_email_key":
+		return ErrEmailTaken
+	case "idx_users_phone_unique":
+		return ErrPhoneTaken
+	default:
+		return fmt.Errorf("unknown users unique constraint %q: %w", pgErr.ConstraintName, err)
+	}
 }
 
 // assignRole looks up roleCode and links userID to it inside the given transaction.
@@ -165,6 +188,9 @@ func (s *Storage) CreateIPUser(
 	requisitesFileURL, requisitesFileName string,
 	roleCode int,
 ) (uuid.UUID, error) {
+	if inn == nil {
+		return uuid.UUID{}, fmt.Errorf("create ip user requires inn")
+	}
 	tx, err := s.beginTx(ctx)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("begin create ip user transaction: %w", err)
@@ -172,18 +198,41 @@ func (s *Storage) CreateIPUser(
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	var counterpartyID uuid.UUID
-	err = tx.QueryRow(ctx, sqlInsertCounterparty,
-		fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
-		directorFullName, directorPosition, phone, additionalPhone, email, website,
-		bankAccount, bankName, bankBik, correspondentAccount,
-		requisitesFileURL, requisitesFileName,
-	).Scan(&counterpartyID)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode && pgErr.ConstraintName == "uq_counterparties_inn" {
+	var matchCount int
+	err = tx.QueryRow(ctx, sqlGetCounterpartyForRegistration, *inn).Scan(&counterpartyID, &matchCount)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		err = tx.QueryRow(ctx, sqlInsertCounterparty,
+			fullName, shortName, inn, kpp, ogrn, okved, taxSystem, legalAddress, actualAddress,
+			directorFullName, directorPosition, phone, additionalPhone, email, website,
+			bankAccount, bankName, bankBik, correspondentAccount,
+			requisitesFileURL, requisitesFileName,
+		).Scan(&counterpartyID)
+		if err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode && pgErr.ConstraintName == "uq_counterparties_inn" {
+				return uuid.UUID{}, ErrInnTaken
+			}
+			return uuid.UUID{}, fmt.Errorf("insert counterparty: %w", err)
+		}
+	case err != nil:
+		return uuid.UUID{}, fmt.Errorf("lock counterparty by inn: %w", err)
+	case matchCount != 1:
+		return uuid.UUID{}, fmt.Errorf("cannot reuse inn with %d counterparties", matchCount)
+	default:
+		var inUse bool
+		if err = tx.QueryRow(ctx, sqlCounterpartyHasActiveUser, counterpartyID).Scan(&inUse); err != nil {
+			return uuid.UUID{}, fmt.Errorf("check locked counterparty ownership: %w", err)
+		}
+		if inUse {
 			return uuid.UUID{}, ErrInnTaken
 		}
-		return uuid.UUID{}, fmt.Errorf("insert counterparty: %w", err)
+		if _, err = tx.Exec(ctx, sqlUpdateCounterpartyForRegistration,
+			counterpartyID, shortName, inn, directorFullName, phone, email,
+			requisitesFileURL, requisitesFileName,
+		); err != nil {
+			return uuid.UUID{}, fmt.Errorf("update reusable counterparty: %w", err)
+		}
 	}
 
 	var userID uuid.UUID
@@ -191,11 +240,7 @@ func (s *Storage) CreateIPUser(
 		email, passwordHash, counterpartyID, surename, name, middleName, phone,
 	).Scan(&userID)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
-			return uuid.UUID{}, ErrEmailTaken
-		}
-		return uuid.UUID{}, fmt.Errorf("insert user: %w", err)
+		return uuid.UUID{}, classifyUserWriteError(fmt.Errorf("insert user: %w", err))
 	}
 
 	if _, err = tx.Exec(ctx, sqlInsertUserClient, userID, counterpartyID); err != nil {
@@ -232,11 +277,7 @@ func (s *Storage) CreateIndividualUser(
 		email, passwordHash, surename, name, middleName, phone, city, deliveryAddress, inn,
 	).Scan(&userID)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
-			return uuid.UUID{}, ErrEmailTaken
-		}
-		return uuid.UUID{}, fmt.Errorf("insert user: %w", err)
+		return uuid.UUID{}, classifyUserWriteError(fmt.Errorf("insert user: %w", err))
 	}
 
 	if err = s.assignRole(ctx, tx, userID, roleCode); err != nil {
