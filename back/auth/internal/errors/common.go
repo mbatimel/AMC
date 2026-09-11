@@ -15,6 +15,7 @@ var (
 		return New("invalid email or password", fasthttp.StatusUnauthorized, ErrInvalidCredentials)
 	}
 	EmailTakenError = func() *Error { return New("email already registered", fasthttp.StatusConflict, ErrEmailTaken) }
+	PhoneTakenError = func() *Error { return New("phone already registered", fasthttp.StatusConflict, ErrPhoneTaken) }
 	NotFoundError   = func() *Error { return New("not found", fasthttp.StatusNotFound, ErrNotFound) }
 	ValidationError = func(field string) *Error {
 		return New("validation failed", fasthttp.StatusBadRequest, ErrInvalidRequest).AddCause("field", field)
@@ -74,6 +75,7 @@ const (
 	ErrAccessDenied       = "auth.errors.accessDenied"       // Отказано в доступе
 	ErrInvalidCredentials = "auth.errors.invalidCredentials" // Неверный email или пароль
 	ErrEmailTaken         = "auth.errors.emailTaken"         // Email уже зарегистрирован
+	ErrPhoneTaken         = "auth.errors.phoneTaken"         // Телефон уже зарегистрирован
 	ErrInnTaken           = "auth.errors.innTaken"           // ИНН уже зарегистрирован
 	ErrNotFound           = "auth.errors.notFound"           // Не найдено
 	ErrUserBlocked        = "auth.errors.userBlocked"        // Пользователь заблокирован
