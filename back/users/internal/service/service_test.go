@@ -18,6 +18,7 @@ import (
 type fakeStorage struct {
 	createUserFn          func(context.Context, internalModels.CreateUserParams) (internalModels.User, error)
 	getUserByIDFn         func(context.Context, uuid.UUID) (internalModels.User, error)
+	getUserByEmailFn      func(context.Context, string) (internalModels.User, error)
 	listUsersFn           func(context.Context, internalModels.ListUsersParams) ([]internalModels.User, error)
 	countUsersFn          func(context.Context, internalModels.ListUsersParams) (int, error)
 	updateUserFn          func(context.Context, internalModels.UpdateUserParams) (internalModels.User, error)
@@ -45,6 +46,12 @@ func (f *fakeStorage) GetUserByID(ctx context.Context, userID uuid.UUID) (intern
 		return internalModels.User{}, nil
 	}
 	return f.getUserByIDFn(ctx, userID)
+}
+func (f *fakeStorage) GetUserByEmail(ctx context.Context, email string) (internalModels.User, error) {
+	if f.getUserByEmailFn == nil {
+		return internalModels.User{}, nil
+	}
+	return f.getUserByEmailFn(ctx, email)
 }
 func (f *fakeStorage) ListUsers(ctx context.Context, params internalModels.ListUsersParams) ([]internalModels.User, error) {
 	return f.listUsersFn(ctx, params)
@@ -581,5 +588,54 @@ func TestActivateAndDeactivateUser(t *testing.T) {
 	deactivated, err := svc.DeactivateUser(context.Background(), userID, "", "", "", "")
 	if err != nil || deactivated.User.IsActive || deactivated.User.Status != "inactive" {
 		t.Fatalf("DeactivateUser() response=%+v error=%v", deactivated, err)
+	}
+}
+
+func TestDeleteUserByEmail(t *testing.T) {
+	userID := uuid.New()
+	var deletedUserID uuid.UUID
+	repo := &fakeStorage{
+		getUserByEmailFn: func(_ context.Context, email string) (internalModels.User, error) {
+			if email != "user@example.com" {
+				t.Fatalf("email = %q, want normalized lowercase", email)
+			}
+			return testUser(userID, uuid.Nil), nil
+		},
+		softDeleteUserFn: func(_ context.Context, gotUserID uuid.UUID) error {
+			deletedUserID = gotUserID
+			return nil
+		},
+	}
+	svc := testService(repo)
+
+	response, err := svc.DeleteUserByEmail(context.Background(), "  USER@Example.com ")
+	if err != nil || !response.Deleted {
+		t.Fatalf("DeleteUserByEmail() response=%+v error=%v", response, err)
+	}
+	if deletedUserID != userID {
+		t.Fatalf("SoftDeleteUser called with %s, want %s", deletedUserID, userID)
+	}
+}
+
+func TestDeleteUserByEmailNotFound(t *testing.T) {
+	repo := &fakeStorage{
+		getUserByEmailFn: func(_ context.Context, _ string) (internalModels.User, error) {
+			return internalModels.User{}, postgres.ErrUserNotFound
+		},
+	}
+	svc := testService(repo)
+
+	_, err := svc.DeleteUserByEmail(context.Background(), "missing@example.com")
+	if !errors.Is(err, customErrors.ErrNotFound) {
+		t.Fatalf("DeleteUserByEmail() error = %v, want ErrNotFound", err)
+	}
+}
+
+func TestDeleteUserByEmailInvalidEmail(t *testing.T) {
+	svc := testService(&fakeStorage{})
+
+	_, err := svc.DeleteUserByEmail(context.Background(), "not-an-email")
+	if !errors.Is(err, customErrors.ErrValidation) {
+		t.Fatalf("DeleteUserByEmail() error = %v, want ErrValidation", err)
 	}
 }

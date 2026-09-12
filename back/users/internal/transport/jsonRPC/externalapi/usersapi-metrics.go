@@ -43,144 +43,6 @@ func (m metricsUsersAPI) CreateUser(ctx context.Context, adminUserID uuid.UUID, 
 	return m.next.CreateUser(ctx, adminUserID, email, phone, firstName, lastName, middleName, role, status, clientID, companyName, inn, isActive)
 }
 
-func (m metricsUsersAPI) GetUser(ctx context.Context, userID uuid.UUID) (response models.GetUserResponse, err error) {
-
-	defer func(_begin time.Time) {
-		var (
-			success = true
-			errCode int
-		)
-		if err != nil {
-			success = false
-			errCode = v2.StatusInternalServerError
-			ec, ok := err.(withErrorCode)
-			if ok {
-				errCode = ec.Code()
-			}
-		}
-		RequestCount.WithLabelValues("usersAPI", "getUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestCountAll.WithLabelValues("usersAPI", "getUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestLatency.WithLabelValues("usersAPI", "getUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
-	}(time.Now())
-
-	return m.next.GetUser(ctx, userID)
-}
-
-func (m metricsUsersAPI) ListUsers(ctx context.Context, q string, role string, status string, clientID string, isActive *bool, limit int, offset int, sort string) (response models.ListUsersResponse, err error) {
-
-	defer func(_begin time.Time) {
-		var (
-			success = true
-			errCode int
-		)
-		if err != nil {
-			success = false
-			errCode = v2.StatusInternalServerError
-			ec, ok := err.(withErrorCode)
-			if ok {
-				errCode = ec.Code()
-			}
-		}
-		RequestCount.WithLabelValues("usersAPI", "listUsers", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestCountAll.WithLabelValues("usersAPI", "listUsers", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestLatency.WithLabelValues("usersAPI", "listUsers", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
-	}(time.Now())
-
-	return m.next.ListUsers(ctx, q, role, status, clientID, isActive, limit, offset, sort)
-}
-
-func (m metricsUsersAPI) UpdateUser(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive *bool) (response models.UpdateUserResponse, err error) {
-
-	defer func(_begin time.Time) {
-		var (
-			success = true
-			errCode int
-		)
-		if err != nil {
-			success = false
-			errCode = v2.StatusInternalServerError
-			ec, ok := err.(withErrorCode)
-			if ok {
-				errCode = ec.Code()
-			}
-		}
-		RequestCount.WithLabelValues("usersAPI", "updateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestCountAll.WithLabelValues("usersAPI", "updateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestLatency.WithLabelValues("usersAPI", "updateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
-	}(time.Now())
-
-	return m.next.UpdateUser(ctx, adminUserID, userID, email, phone, firstName, lastName, middleName, role, status, clientID, companyName, inn, isActive)
-}
-
-func (m metricsUsersAPI) DeleteUser(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error) {
-
-	defer func(_begin time.Time) {
-		var (
-			success = true
-			errCode int
-		)
-		if err != nil {
-			success = false
-			errCode = v2.StatusInternalServerError
-			ec, ok := err.(withErrorCode)
-			if ok {
-				errCode = ec.Code()
-			}
-		}
-		RequestCount.WithLabelValues("usersAPI", "deleteUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestCountAll.WithLabelValues("usersAPI", "deleteUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestLatency.WithLabelValues("usersAPI", "deleteUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
-	}(time.Now())
-
-	return m.next.DeleteUser(ctx, userID)
-}
-
-func (m metricsUsersAPI) ActivateUser(ctx context.Context, userID uuid.UUID) (response models.ActivateUserResponse, err error) {
-
-	defer func(_begin time.Time) {
-		var (
-			success = true
-			errCode int
-		)
-		if err != nil {
-			success = false
-			errCode = v2.StatusInternalServerError
-			ec, ok := err.(withErrorCode)
-			if ok {
-				errCode = ec.Code()
-			}
-		}
-		RequestCount.WithLabelValues("usersAPI", "activateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestCountAll.WithLabelValues("usersAPI", "activateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestLatency.WithLabelValues("usersAPI", "activateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
-	}(time.Now())
-
-	return m.next.ActivateUser(ctx, userID)
-}
-
-func (m metricsUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error) {
-
-	defer func(_begin time.Time) {
-		var (
-			success = true
-			errCode int
-		)
-		if err != nil {
-			success = false
-			errCode = v2.StatusInternalServerError
-			ec, ok := err.(withErrorCode)
-			if ok {
-				errCode = ec.Code()
-			}
-		}
-		RequestCount.WithLabelValues("usersAPI", "deactivateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestCountAll.WithLabelValues("usersAPI", "deactivateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
-		RequestLatency.WithLabelValues("usersAPI", "deactivateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
-	}(time.Now())
-
-	return m.next.DeactivateUser(ctx, userID, reason, contactName, contactPhone, contactEmail)
-}
-
 func (m metricsUsersAPI) GetProfile(ctx context.Context, userID uuid.UUID) (response models.GetProfileResponse, err error) {
 
 	defer func(_begin time.Time) {
@@ -386,4 +248,165 @@ func (m metricsUsersAPI) DeleteFavorites(ctx context.Context, userID uuid.UUID, 
 	}(time.Now())
 
 	return m.next.DeleteFavorites(ctx, userID, productIDs)
+}
+
+func (m metricsUsersAPI) GetUser(ctx context.Context, userID uuid.UUID) (response models.GetUserResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("usersAPI", "getUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("usersAPI", "getUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("usersAPI", "getUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.GetUser(ctx, userID)
+}
+
+func (m metricsUsersAPI) ListUsers(ctx context.Context, q string, role string, status string, clientID string, isActive *bool, limit int, offset int, sort string) (response models.ListUsersResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("usersAPI", "listUsers", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("usersAPI", "listUsers", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("usersAPI", "listUsers", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.ListUsers(ctx, q, role, status, clientID, isActive, limit, offset, sort)
+}
+
+func (m metricsUsersAPI) UpdateUser(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive *bool) (response models.UpdateUserResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("usersAPI", "updateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("usersAPI", "updateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("usersAPI", "updateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.UpdateUser(ctx, adminUserID, userID, email, phone, firstName, lastName, middleName, role, status, clientID, companyName, inn, isActive)
+}
+
+func (m metricsUsersAPI) DeleteUser(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("usersAPI", "deleteUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("usersAPI", "deleteUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("usersAPI", "deleteUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.DeleteUser(ctx, userID)
+}
+
+func (m metricsUsersAPI) DeleteUserByEmail(ctx context.Context, email string) (response models.DeleteUserResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("usersAPI", "deleteUserByEmail", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("usersAPI", "deleteUserByEmail", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("usersAPI", "deleteUserByEmail", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.DeleteUserByEmail(ctx, email)
+}
+
+func (m metricsUsersAPI) ActivateUser(ctx context.Context, userID uuid.UUID) (response models.ActivateUserResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("usersAPI", "activateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("usersAPI", "activateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("usersAPI", "activateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.ActivateUser(ctx, userID)
+}
+
+func (m metricsUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error) {
+
+	defer func(_begin time.Time) {
+		var (
+			success = true
+			errCode int
+		)
+		if err != nil {
+			success = false
+			errCode = v2.StatusInternalServerError
+			ec, ok := err.(withErrorCode)
+			if ok {
+				errCode = ec.Code()
+			}
+		}
+		RequestCount.WithLabelValues("usersAPI", "deactivateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestCountAll.WithLabelValues("usersAPI", "deactivateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Add(1)
+		RequestLatency.WithLabelValues("usersAPI", "deactivateUser", strconv.FormatBool(success), strconv.Itoa(errCode)).Observe(time.Since(_begin).Seconds())
+	}(time.Now())
+
+	return m.next.DeactivateUser(ctx, userID, reason, contactName, contactPhone, contactEmail)
 }

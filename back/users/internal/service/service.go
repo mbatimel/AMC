@@ -28,6 +28,7 @@ const (
 type Storage interface {
 	CreateUser(ctx context.Context, params internalModels.CreateUserParams) (internalModels.User, error)
 	GetUserByID(ctx context.Context, userID uuid.UUID) (internalModels.User, error)
+	GetUserByEmail(ctx context.Context, email string) (internalModels.User, error)
 	ListUsers(ctx context.Context, params internalModels.ListUsersParams) ([]internalModels.User, error)
 	CountUsers(ctx context.Context, params internalModels.ListUsersParams) (int, error)
 	UpdateUser(ctx context.Context, params internalModels.UpdateUserParams) (internalModels.User, error)
@@ -486,6 +487,21 @@ func (s *Service) DeleteUser(ctx context.Context, userID uuid.UUID) (response mo
 		return response, err
 	}
 	if err = s.storage.SoftDeleteUser(ctx, userID); err != nil {
+		return response, mapStorageError(err)
+	}
+	return models.DeleteUserResponse{Deleted: true}, nil
+}
+
+func (s *Service) DeleteUserByEmail(ctx context.Context, email string) (response models.DeleteUserResponse, err error) {
+	email, err = normalizeEmail(email, true)
+	if err != nil {
+		return response, err
+	}
+	user, err := s.storage.GetUserByEmail(ctx, email)
+	if err != nil {
+		return response, mapStorageError(err)
+	}
+	if err = s.storage.SoftDeleteUser(ctx, user.ID); err != nil {
 		return response, mapStorageError(err)
 	}
 	return models.DeleteUserResponse{Deleted: true}, nil

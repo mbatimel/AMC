@@ -10,12 +10,6 @@ import (
 )
 
 type UsersAPICreateUser func(ctx context.Context, adminUserID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive bool) (response models.CreateUserResponse, err error)
-type UsersAPIGetUser func(ctx context.Context, userID uuid.UUID) (response models.GetUserResponse, err error)
-type UsersAPIListUsers func(ctx context.Context, q string, role string, status string, clientID string, isActive *bool, limit int, offset int, sort string) (response models.ListUsersResponse, err error)
-type UsersAPIUpdateUser func(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive *bool) (response models.UpdateUserResponse, err error)
-type UsersAPIDeleteUser func(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error)
-type UsersAPIActivateUser func(ctx context.Context, userID uuid.UUID) (response models.ActivateUserResponse, err error)
-type UsersAPIDeactivateUser func(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error)
 type UsersAPIGetProfile func(ctx context.Context, userID uuid.UUID) (response models.GetProfileResponse, err error)
 type UsersAPIUpdateProfile func(ctx context.Context, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string) (response models.UpdateProfileResponse, err error)
 type UsersAPIListUserClients func(ctx context.Context, userID uuid.UUID) (response models.ListUserClientsResponse, err error)
@@ -25,16 +19,17 @@ type UsersAPISwitchActiveClient func(ctx context.Context, userID uuid.UUID, clie
 type UsersAPIListFavorites func(ctx context.Context, userID uuid.UUID) (response models.ListFavoritesResponse, err error)
 type UsersAPIAddFavorite func(ctx context.Context, userID uuid.UUID, productID string) (response models.AddFavoriteResponse, err error)
 type UsersAPIDeleteFavorites func(ctx context.Context, userID uuid.UUID, productIDs []string) (response models.DeleteFavoritesResponse, err error)
+type UsersAPIGetUser func(ctx context.Context, userID uuid.UUID) (response models.GetUserResponse, err error)
+type UsersAPIListUsers func(ctx context.Context, q string, role string, status string, clientID string, isActive *bool, limit int, offset int, sort string) (response models.ListUsersResponse, err error)
+type UsersAPIUpdateUser func(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive *bool) (response models.UpdateUserResponse, err error)
+type UsersAPIDeleteUser func(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error)
+type UsersAPIDeleteUserByEmail func(ctx context.Context, email string) (response models.DeleteUserResponse, err error)
+type UsersAPIActivateUser func(ctx context.Context, userID uuid.UUID) (response models.ActivateUserResponse, err error)
+type UsersAPIDeactivateUser func(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error)
 
 type MiddlewareUsersAPI func(next externalAPI.UsersAPI) externalAPI.UsersAPI
 
 type MiddlewareUsersAPICreateUser func(next UsersAPICreateUser) UsersAPICreateUser
-type MiddlewareUsersAPIGetUser func(next UsersAPIGetUser) UsersAPIGetUser
-type MiddlewareUsersAPIListUsers func(next UsersAPIListUsers) UsersAPIListUsers
-type MiddlewareUsersAPIUpdateUser func(next UsersAPIUpdateUser) UsersAPIUpdateUser
-type MiddlewareUsersAPIDeleteUser func(next UsersAPIDeleteUser) UsersAPIDeleteUser
-type MiddlewareUsersAPIActivateUser func(next UsersAPIActivateUser) UsersAPIActivateUser
-type MiddlewareUsersAPIDeactivateUser func(next UsersAPIDeactivateUser) UsersAPIDeactivateUser
 type MiddlewareUsersAPIGetProfile func(next UsersAPIGetProfile) UsersAPIGetProfile
 type MiddlewareUsersAPIUpdateProfile func(next UsersAPIUpdateProfile) UsersAPIUpdateProfile
 type MiddlewareUsersAPIListUserClients func(next UsersAPIListUserClients) UsersAPIListUserClients
@@ -44,3 +39,10 @@ type MiddlewareUsersAPISwitchActiveClient func(next UsersAPISwitchActiveClient) 
 type MiddlewareUsersAPIListFavorites func(next UsersAPIListFavorites) UsersAPIListFavorites
 type MiddlewareUsersAPIAddFavorite func(next UsersAPIAddFavorite) UsersAPIAddFavorite
 type MiddlewareUsersAPIDeleteFavorites func(next UsersAPIDeleteFavorites) UsersAPIDeleteFavorites
+type MiddlewareUsersAPIGetUser func(next UsersAPIGetUser) UsersAPIGetUser
+type MiddlewareUsersAPIListUsers func(next UsersAPIListUsers) UsersAPIListUsers
+type MiddlewareUsersAPIUpdateUser func(next UsersAPIUpdateUser) UsersAPIUpdateUser
+type MiddlewareUsersAPIDeleteUser func(next UsersAPIDeleteUser) UsersAPIDeleteUser
+type MiddlewareUsersAPIDeleteUserByEmail func(next UsersAPIDeleteUserByEmail) UsersAPIDeleteUserByEmail
+type MiddlewareUsersAPIActivateUser func(next UsersAPIActivateUser) UsersAPIActivateUser
+type MiddlewareUsersAPIDeactivateUser func(next UsersAPIDeactivateUser) UsersAPIDeactivateUser

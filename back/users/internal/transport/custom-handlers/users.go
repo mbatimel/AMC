@@ -48,6 +48,12 @@ func DeleteUser(ctx *fiber.Ctx, svc externalapi.UsersAPI, userID uuid.UUID) erro
 	})
 }
 
+func DeleteUserByEmail(ctx *fiber.Ctx, svc externalapi.UsersAPI, email string) error {
+	return handle(ctx, "delete", "/v1/users", "DeleteUserByEmail", map[string]interface{}{"email": email}, func() (interface{}, error) {
+		return svc.DeleteUserByEmail(ctx.UserContext(), email)
+	})
+}
+
 func ActivateUser(ctx *fiber.Ctx, svc externalapi.UsersAPI, userID uuid.UUID) error {
 	return handle(ctx, "post", "/v1/users/{userID}/activate", "ActivateUser", map[string]interface{}{"userID": userID}, func() (interface{}, error) {
 		return svc.ActivateUser(ctx.UserContext(), userID)

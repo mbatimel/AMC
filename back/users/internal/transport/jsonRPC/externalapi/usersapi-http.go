@@ -44,9 +44,6 @@ func (http *httpUsersAPI) WithErrorHandler(handler ErrorHandler) *httpUsersAPI {
 
 func (http *httpUsersAPI) SetRoutes(route *fiber.App) {
 	route.Post("/api/v1/users", http.serveCreateUser)
-	// Static/more-specific paths must be registered before /api/v1/users/:userID —
-	// otherwise Fiber matches e.g. "profile" as the :userID param and the
-	// routes below never get a chance to run.
 	route.Get("/api/v1/users/profile", http.serveGetProfile)
 	route.Patch("/api/v1/users/profile", http.serveUpdateProfile)
 	route.Get("/api/v1/users/profile/clients", http.serveListUserClients)
@@ -60,6 +57,7 @@ func (http *httpUsersAPI) SetRoutes(route *fiber.App) {
 	route.Get("/api/v1/users", http.serveListUsers)
 	route.Patch("/api/v1/users/:userID", http.serveUpdateUser)
 	route.Delete("/api/v1/users/:userID", http.serveDeleteUser)
+	route.Delete("/api/v1/users", http.serveDeleteUserByEmail)
 	route.Post("/api/v1/users/:userID/activate", http.serveActivateUser)
 	route.Post("/api/v1/users/:userID/deactivate", http.serveDeactivateUser)
 }
