@@ -105,22 +105,31 @@ func (s *Storage) CreateOrder(
 		return CreatedOrder{}, fmt.Errorf("push order to onec: %w", pushErr)
 	}
 
-	if _, err = tx.Exec(ctx, `
-		UPDATE orders SET status = 'processing', one_c_guid = $1, synced_to_1c_at = now() WHERE id = $2
-	`, onecGUID, order.ID); err != nil {
-		return CreatedOrder{}, fmt.Errorf("mark order synced: %w", err)
-	}
-	if _, err = tx.Exec(ctx, `
-		INSERT INTO order_status_history (order_id, old_status, new_status, payment_status, changed_by, comment)
-		VALUES ($1, 'new', 'processing', 'not_paid', NULL, $2)
-	`, order.ID, "Отправлен в 1С, документ "+onecNumber); err != nil {
-		return CreatedOrder{}, fmt.Errorf("insert processing history: %w", err)
+	// onecGUID is uuid.Nil while the 1С push is disabled (pushToOnec is a
+	// stub returning uuid.Nil, not a real document guid). uuid.Nil is a
+	// concrete value, not SQL NULL, so writing it to the UNIQUE one_c_guid
+	// column would make every order after the first collide on it. Leave
+	// the order in 'new' status with one_c_guid NULL until there's a real
+	// guid to record.
+	order.Status = "new"
+	if onecGUID != uuid.Nil {
+		if _, err = tx.Exec(ctx, `
+			UPDATE orders SET status = 'processing', one_c_guid = $1, synced_to_1c_at = now() WHERE id = $2
+		`, onecGUID, order.ID); err != nil {
+			return CreatedOrder{}, fmt.Errorf("mark order synced: %w", err)
+		}
+		if _, err = tx.Exec(ctx, `
+			INSERT INTO order_status_history (order_id, old_status, new_status, payment_status, changed_by, comment)
+			VALUES ($1, 'new', 'processing', 'not_paid', NULL, $2)
+		`, order.ID, "Отправлен в 1С, документ "+onecNumber); err != nil {
+			return CreatedOrder{}, fmt.Errorf("insert processing history: %w", err)
+		}
+		order.Status = "processing"
 	}
 
 	if err = tx.Commit(ctx); err != nil {
 		return CreatedOrder{}, fmt.Errorf("commit tx: %w", err)
 	}
-	order.Status = "processing"
 	return order, nil
 }
 
