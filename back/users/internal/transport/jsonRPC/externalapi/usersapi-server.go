@@ -12,12 +12,6 @@ import (
 type serverUsersAPI struct {
 	svc                 externalAPI.UsersAPI
 	createUser          UsersAPICreateUser
-	getUser             UsersAPIGetUser
-	listUsers           UsersAPIListUsers
-	updateUser          UsersAPIUpdateUser
-	deleteUser          UsersAPIDeleteUser
-	activateUser        UsersAPIActivateUser
-	deactivateUser      UsersAPIDeactivateUser
 	getProfile          UsersAPIGetProfile
 	updateProfile       UsersAPIUpdateProfile
 	listUserClients     UsersAPIListUserClients
@@ -27,17 +21,18 @@ type serverUsersAPI struct {
 	listFavorites       UsersAPIListFavorites
 	addFavorite         UsersAPIAddFavorite
 	deleteFavorites     UsersAPIDeleteFavorites
+	getUser             UsersAPIGetUser
+	listUsers           UsersAPIListUsers
+	updateUser          UsersAPIUpdateUser
+	deleteUser          UsersAPIDeleteUser
+	deleteUserByEmail   UsersAPIDeleteUserByEmail
+	activateUser        UsersAPIActivateUser
+	deactivateUser      UsersAPIDeactivateUser
 }
 
 type MiddlewareSetUsersAPI interface {
 	Wrap(m MiddlewareUsersAPI)
 	WrapCreateUser(m MiddlewareUsersAPICreateUser)
-	WrapGetUser(m MiddlewareUsersAPIGetUser)
-	WrapListUsers(m MiddlewareUsersAPIListUsers)
-	WrapUpdateUser(m MiddlewareUsersAPIUpdateUser)
-	WrapDeleteUser(m MiddlewareUsersAPIDeleteUser)
-	WrapActivateUser(m MiddlewareUsersAPIActivateUser)
-	WrapDeactivateUser(m MiddlewareUsersAPIDeactivateUser)
 	WrapGetProfile(m MiddlewareUsersAPIGetProfile)
 	WrapUpdateProfile(m MiddlewareUsersAPIUpdateProfile)
 	WrapListUserClients(m MiddlewareUsersAPIListUserClients)
@@ -47,6 +42,13 @@ type MiddlewareSetUsersAPI interface {
 	WrapListFavorites(m MiddlewareUsersAPIListFavorites)
 	WrapAddFavorite(m MiddlewareUsersAPIAddFavorite)
 	WrapDeleteFavorites(m MiddlewareUsersAPIDeleteFavorites)
+	WrapGetUser(m MiddlewareUsersAPIGetUser)
+	WrapListUsers(m MiddlewareUsersAPIListUsers)
+	WrapUpdateUser(m MiddlewareUsersAPIUpdateUser)
+	WrapDeleteUser(m MiddlewareUsersAPIDeleteUser)
+	WrapDeleteUserByEmail(m MiddlewareUsersAPIDeleteUserByEmail)
+	WrapActivateUser(m MiddlewareUsersAPIActivateUser)
+	WrapDeactivateUser(m MiddlewareUsersAPIDeactivateUser)
 
 	WithMetrics()
 	WithLog()
@@ -60,6 +62,7 @@ func newServerUsersAPI(svc externalAPI.UsersAPI) *serverUsersAPI {
 		deactivateUser:      svc.DeactivateUser,
 		deleteFavorites:     svc.DeleteFavorites,
 		deleteUser:          svc.DeleteUser,
+		deleteUserByEmail:   svc.DeleteUserByEmail,
 		getClientConditions: svc.GetClientConditions,
 		getClientDetails:    svc.GetClientDetails,
 		getProfile:          svc.GetProfile,
@@ -77,12 +80,6 @@ func newServerUsersAPI(svc externalAPI.UsersAPI) *serverUsersAPI {
 func (srv *serverUsersAPI) Wrap(m MiddlewareUsersAPI) {
 	srv.svc = m(srv.svc)
 	srv.createUser = srv.svc.CreateUser
-	srv.getUser = srv.svc.GetUser
-	srv.listUsers = srv.svc.ListUsers
-	srv.updateUser = srv.svc.UpdateUser
-	srv.deleteUser = srv.svc.DeleteUser
-	srv.activateUser = srv.svc.ActivateUser
-	srv.deactivateUser = srv.svc.DeactivateUser
 	srv.getProfile = srv.svc.GetProfile
 	srv.updateProfile = srv.svc.UpdateProfile
 	srv.listUserClients = srv.svc.ListUserClients
@@ -92,34 +89,17 @@ func (srv *serverUsersAPI) Wrap(m MiddlewareUsersAPI) {
 	srv.listFavorites = srv.svc.ListFavorites
 	srv.addFavorite = srv.svc.AddFavorite
 	srv.deleteFavorites = srv.svc.DeleteFavorites
+	srv.getUser = srv.svc.GetUser
+	srv.listUsers = srv.svc.ListUsers
+	srv.updateUser = srv.svc.UpdateUser
+	srv.deleteUser = srv.svc.DeleteUser
+	srv.deleteUserByEmail = srv.svc.DeleteUserByEmail
+	srv.activateUser = srv.svc.ActivateUser
+	srv.deactivateUser = srv.svc.DeactivateUser
 }
 
 func (srv *serverUsersAPI) CreateUser(ctx context.Context, adminUserID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive bool) (response models.CreateUserResponse, err error) {
 	return srv.createUser(ctx, adminUserID, email, phone, firstName, lastName, middleName, role, status, clientID, companyName, inn, isActive)
-}
-
-func (srv *serverUsersAPI) GetUser(ctx context.Context, userID uuid.UUID) (response models.GetUserResponse, err error) {
-	return srv.getUser(ctx, userID)
-}
-
-func (srv *serverUsersAPI) ListUsers(ctx context.Context, q string, role string, status string, clientID string, isActive *bool, limit int, offset int, sort string) (response models.ListUsersResponse, err error) {
-	return srv.listUsers(ctx, q, role, status, clientID, isActive, limit, offset, sort)
-}
-
-func (srv *serverUsersAPI) UpdateUser(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive *bool) (response models.UpdateUserResponse, err error) {
-	return srv.updateUser(ctx, adminUserID, userID, email, phone, firstName, lastName, middleName, role, status, clientID, companyName, inn, isActive)
-}
-
-func (srv *serverUsersAPI) DeleteUser(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error) {
-	return srv.deleteUser(ctx, userID)
-}
-
-func (srv *serverUsersAPI) ActivateUser(ctx context.Context, userID uuid.UUID) (response models.ActivateUserResponse, err error) {
-	return srv.activateUser(ctx, userID)
-}
-
-func (srv *serverUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error) {
-	return srv.deactivateUser(ctx, userID, reason, contactName, contactPhone, contactEmail)
 }
 
 func (srv *serverUsersAPI) GetProfile(ctx context.Context, userID uuid.UUID) (response models.GetProfileResponse, err error) {
@@ -158,32 +138,36 @@ func (srv *serverUsersAPI) DeleteFavorites(ctx context.Context, userID uuid.UUID
 	return srv.deleteFavorites(ctx, userID, productIDs)
 }
 
+func (srv *serverUsersAPI) GetUser(ctx context.Context, userID uuid.UUID) (response models.GetUserResponse, err error) {
+	return srv.getUser(ctx, userID)
+}
+
+func (srv *serverUsersAPI) ListUsers(ctx context.Context, q string, role string, status string, clientID string, isActive *bool, limit int, offset int, sort string) (response models.ListUsersResponse, err error) {
+	return srv.listUsers(ctx, q, role, status, clientID, isActive, limit, offset, sort)
+}
+
+func (srv *serverUsersAPI) UpdateUser(ctx context.Context, adminUserID uuid.UUID, userID uuid.UUID, email string, phone string, firstName string, lastName string, middleName string, role string, status string, clientID string, companyName string, inn string, isActive *bool) (response models.UpdateUserResponse, err error) {
+	return srv.updateUser(ctx, adminUserID, userID, email, phone, firstName, lastName, middleName, role, status, clientID, companyName, inn, isActive)
+}
+
+func (srv *serverUsersAPI) DeleteUser(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error) {
+	return srv.deleteUser(ctx, userID)
+}
+
+func (srv *serverUsersAPI) DeleteUserByEmail(ctx context.Context, email string) (response models.DeleteUserResponse, err error) {
+	return srv.deleteUserByEmail(ctx, email)
+}
+
+func (srv *serverUsersAPI) ActivateUser(ctx context.Context, userID uuid.UUID) (response models.ActivateUserResponse, err error) {
+	return srv.activateUser(ctx, userID)
+}
+
+func (srv *serverUsersAPI) DeactivateUser(ctx context.Context, userID uuid.UUID, reason string, contactName string, contactPhone string, contactEmail string) (response models.DeactivateUserResponse, err error) {
+	return srv.deactivateUser(ctx, userID, reason, contactName, contactPhone, contactEmail)
+}
+
 func (srv *serverUsersAPI) WrapCreateUser(m MiddlewareUsersAPICreateUser) {
 	srv.createUser = m(srv.createUser)
-}
-
-func (srv *serverUsersAPI) WrapGetUser(m MiddlewareUsersAPIGetUser) {
-	srv.getUser = m(srv.getUser)
-}
-
-func (srv *serverUsersAPI) WrapListUsers(m MiddlewareUsersAPIListUsers) {
-	srv.listUsers = m(srv.listUsers)
-}
-
-func (srv *serverUsersAPI) WrapUpdateUser(m MiddlewareUsersAPIUpdateUser) {
-	srv.updateUser = m(srv.updateUser)
-}
-
-func (srv *serverUsersAPI) WrapDeleteUser(m MiddlewareUsersAPIDeleteUser) {
-	srv.deleteUser = m(srv.deleteUser)
-}
-
-func (srv *serverUsersAPI) WrapActivateUser(m MiddlewareUsersAPIActivateUser) {
-	srv.activateUser = m(srv.activateUser)
-}
-
-func (srv *serverUsersAPI) WrapDeactivateUser(m MiddlewareUsersAPIDeactivateUser) {
-	srv.deactivateUser = m(srv.deactivateUser)
 }
 
 func (srv *serverUsersAPI) WrapGetProfile(m MiddlewareUsersAPIGetProfile) {
@@ -220,6 +204,34 @@ func (srv *serverUsersAPI) WrapAddFavorite(m MiddlewareUsersAPIAddFavorite) {
 
 func (srv *serverUsersAPI) WrapDeleteFavorites(m MiddlewareUsersAPIDeleteFavorites) {
 	srv.deleteFavorites = m(srv.deleteFavorites)
+}
+
+func (srv *serverUsersAPI) WrapGetUser(m MiddlewareUsersAPIGetUser) {
+	srv.getUser = m(srv.getUser)
+}
+
+func (srv *serverUsersAPI) WrapListUsers(m MiddlewareUsersAPIListUsers) {
+	srv.listUsers = m(srv.listUsers)
+}
+
+func (srv *serverUsersAPI) WrapUpdateUser(m MiddlewareUsersAPIUpdateUser) {
+	srv.updateUser = m(srv.updateUser)
+}
+
+func (srv *serverUsersAPI) WrapDeleteUser(m MiddlewareUsersAPIDeleteUser) {
+	srv.deleteUser = m(srv.deleteUser)
+}
+
+func (srv *serverUsersAPI) WrapDeleteUserByEmail(m MiddlewareUsersAPIDeleteUserByEmail) {
+	srv.deleteUserByEmail = m(srv.deleteUserByEmail)
+}
+
+func (srv *serverUsersAPI) WrapActivateUser(m MiddlewareUsersAPIActivateUser) {
+	srv.activateUser = m(srv.activateUser)
+}
+
+func (srv *serverUsersAPI) WrapDeactivateUser(m MiddlewareUsersAPIDeactivateUser) {
+	srv.deactivateUser = m(srv.deactivateUser)
 }
 
 func (srv *serverUsersAPI) WithMetrics() {

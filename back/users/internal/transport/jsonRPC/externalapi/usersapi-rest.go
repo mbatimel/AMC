@@ -37,201 +37,6 @@ func (http *httpUsersAPI) serveCreateUser(ctx *fiber.Ctx) (err error) {
 
 	return customhandlers.CreateUser(ctx, http.svc, request.AdminUserID, request.Email, request.Phone, request.FirstName, request.LastName, request.MiddleName, request.Role, request.Status, request.ClientID, request.CompanyName, request.Inn, request.IsActive)
 }
-func (http *httpUsersAPI) getUser(ctx context.Context, request requestUsersAPIGetUser) (response responseUsersAPIGetUser, err error) {
-
-	response.Response, err = http.svc.GetUser(ctx, request.UserID)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpUsersAPI) serveGetUser(ctx *fiber.Ctx) (err error) {
-
-	var request requestUsersAPIGetUser
-
-	if _userID := ctx.Params("userID"); _userID != "" {
-		var userID uuid.UUID
-		userID, _ = uuid.Parse(_userID)
-		request.UserID = userID
-	}
-
-	return customhandlers.GetUser(ctx, http.svc, request.UserID)
-}
-func (http *httpUsersAPI) listUsers(ctx context.Context, request requestUsersAPIListUsers) (response responseUsersAPIListUsers, err error) {
-
-	response.Response, err = http.svc.ListUsers(ctx, request.Q, request.Role, request.Status, request.ClientID, request.IsActive, request.Limit, request.Offset, request.Sort)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpUsersAPI) serveListUsers(ctx *fiber.Ctx) (err error) {
-
-	var request requestUsersAPIListUsers
-
-	if _sort := ctx.Query("sort"); _sort != "" {
-		var sort string
-		sort = _sort
-		request.Sort = sort
-	}
-	if _q := ctx.Query("q"); _q != "" {
-		var q string
-		q = _q
-		request.Q = q
-	}
-	if _role := ctx.Query("role"); _role != "" {
-		var role string
-		role = _role
-		request.Role = role
-	}
-	if _status := ctx.Query("status"); _status != "" {
-		var status string
-		status = _status
-		request.Status = status
-	}
-	if _clientID := ctx.Query("clientID"); _clientID != "" {
-		var clientID string
-		clientID = _clientID
-		request.ClientID = clientID
-	}
-	if _isActive := ctx.Query("isActive"); _isActive != "" {
-		var isActive bool
-		isActive, err = strconv.ParseBool(_isActive)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.IsActive = &isActive
-	}
-	if _limit := ctx.Query("limit"); _limit != "" {
-		var limit int
-		limit, err = strconv.Atoi(_limit)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Limit = limit
-	}
-	if _offset := ctx.Query("offset"); _offset != "" {
-		var offset int
-		offset, err = strconv.Atoi(_offset)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.Offset = offset
-	}
-
-	return customhandlers.ListUsers(ctx, http.svc, request.Q, request.Role, request.Status, request.ClientID, request.IsActive, request.Limit, request.Offset, request.Sort)
-}
-func (http *httpUsersAPI) updateUser(ctx context.Context, request requestUsersAPIUpdateUser) (response responseUsersAPIUpdateUser, err error) {
-
-	response.Response, err = http.svc.UpdateUser(ctx, request.AdminUserID, request.UserID, request.Email, request.Phone, request.FirstName, request.LastName, request.MiddleName, request.Role, request.Status, request.ClientID, request.CompanyName, request.Inn, request.IsActive)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpUsersAPI) serveUpdateUser(ctx *fiber.Ctx) (err error) {
-
-	var request requestUsersAPIUpdateUser
-	if err = ctx.BodyParser(&request); err != nil {
-		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
-		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
-		return
-	}
-
-	if _userID := ctx.Params("userID"); _userID != "" {
-		var userID uuid.UUID
-		userID, _ = uuid.Parse(_userID)
-		request.UserID = userID
-	}
-
-	if _adminUserID := string(ctx.Request().Header.Peek("X-Admin-User-Id")); _adminUserID != "" {
-		var adminUserID uuid.UUID
-		adminUserID, _ = uuid.Parse(_adminUserID)
-		request.AdminUserID = adminUserID
-	}
-
-	return customhandlers.UpdateUser(ctx, http.svc, request.AdminUserID, request.UserID, request.Email, request.Phone, request.FirstName, request.LastName, request.MiddleName, request.Role, request.Status, request.ClientID, request.CompanyName, request.Inn, request.IsActive)
-}
-func (http *httpUsersAPI) deleteUser(ctx context.Context, request requestUsersAPIDeleteUser) (response responseUsersAPIDeleteUser, err error) {
-
-	response.Response, err = http.svc.DeleteUser(ctx, request.UserID)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpUsersAPI) serveDeleteUser(ctx *fiber.Ctx) (err error) {
-
-	var request requestUsersAPIDeleteUser
-
-	if _userID := ctx.Params("userID"); _userID != "" {
-		var userID uuid.UUID
-		userID, _ = uuid.Parse(_userID)
-		request.UserID = userID
-	}
-
-	return customhandlers.DeleteUser(ctx, http.svc, request.UserID)
-}
-func (http *httpUsersAPI) activateUser(ctx context.Context, request requestUsersAPIActivateUser) (response responseUsersAPIActivateUser, err error) {
-
-	response.Response, err = http.svc.ActivateUser(ctx, request.UserID)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpUsersAPI) serveActivateUser(ctx *fiber.Ctx) (err error) {
-
-	var request requestUsersAPIActivateUser
-
-	if _userID := ctx.Params("userID"); _userID != "" {
-		var userID uuid.UUID
-		userID, _ = uuid.Parse(_userID)
-		request.UserID = userID
-	}
-
-	return customhandlers.ActivateUser(ctx, http.svc, request.UserID)
-}
-func (http *httpUsersAPI) deactivateUser(ctx context.Context, request requestUsersAPIDeactivateUser) (response responseUsersAPIDeactivateUser, err error) {
-
-	response.Response, err = http.svc.DeactivateUser(ctx, request.UserID, request.Reason, request.ContactName, request.ContactPhone, request.ContactEmail)
-	if err != nil {
-		if http.errorHandler != nil {
-			err = http.errorHandler(err)
-		}
-	}
-	return
-}
-func (http *httpUsersAPI) serveDeactivateUser(ctx *fiber.Ctx) (err error) {
-
-	var request requestUsersAPIDeactivateUser
-	if err = ctx.BodyParser(&request); err != nil {
-		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
-		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
-		return
-	}
-
-	if _userID := ctx.Params("userID"); _userID != "" {
-		var userID uuid.UUID
-		userID, _ = uuid.Parse(_userID)
-		request.UserID = userID
-	}
-
-	return customhandlers.DeactivateUser(ctx, http.svc, request.UserID, request.Reason, request.ContactName, request.ContactPhone, request.ContactEmail)
-}
 func (http *httpUsersAPI) getProfile(ctx context.Context, request requestUsersAPIGetProfile) (response responseUsersAPIGetProfile, err error) {
 
 	response.Response, err = http.svc.GetProfile(ctx, request.UserID)
@@ -462,4 +267,221 @@ func (http *httpUsersAPI) serveDeleteFavorites(ctx *fiber.Ctx) (err error) {
 	}
 
 	return customhandlers.DeleteFavorites(ctx, http.svc, request.UserID, request.ProductIDs)
+}
+func (http *httpUsersAPI) getUser(ctx context.Context, request requestUsersAPIGetUser) (response responseUsersAPIGetUser, err error) {
+
+	response.Response, err = http.svc.GetUser(ctx, request.UserID)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpUsersAPI) serveGetUser(ctx *fiber.Ctx) (err error) {
+
+	var request requestUsersAPIGetUser
+
+	if _userID := ctx.Params("userID"); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.GetUser(ctx, http.svc, request.UserID)
+}
+func (http *httpUsersAPI) listUsers(ctx context.Context, request requestUsersAPIListUsers) (response responseUsersAPIListUsers, err error) {
+
+	response.Response, err = http.svc.ListUsers(ctx, request.Q, request.Role, request.Status, request.ClientID, request.IsActive, request.Limit, request.Offset, request.Sort)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpUsersAPI) serveListUsers(ctx *fiber.Ctx) (err error) {
+
+	var request requestUsersAPIListUsers
+
+	if _limit := ctx.Query("limit"); _limit != "" {
+		var limit int
+		limit, err = strconv.Atoi(_limit)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Limit = limit
+	}
+	if _offset := ctx.Query("offset"); _offset != "" {
+		var offset int
+		offset, err = strconv.Atoi(_offset)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.Offset = offset
+	}
+	if _sort := ctx.Query("sort"); _sort != "" {
+		var sort string
+		sort = _sort
+		request.Sort = sort
+	}
+	if _q := ctx.Query("q"); _q != "" {
+		var q string
+		q = _q
+		request.Q = q
+	}
+	if _role := ctx.Query("role"); _role != "" {
+		var role string
+		role = _role
+		request.Role = role
+	}
+	if _status := ctx.Query("status"); _status != "" {
+		var status string
+		status = _status
+		request.Status = status
+	}
+	if _clientID := ctx.Query("clientID"); _clientID != "" {
+		var clientID string
+		clientID = _clientID
+		request.ClientID = clientID
+	}
+	if _isActive := ctx.Query("isActive"); _isActive != "" {
+		var isActive bool
+		isActive, err = strconv.ParseBool(_isActive)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.IsActive = &isActive
+	}
+
+	return customhandlers.ListUsers(ctx, http.svc, request.Q, request.Role, request.Status, request.ClientID, request.IsActive, request.Limit, request.Offset, request.Sort)
+}
+func (http *httpUsersAPI) updateUser(ctx context.Context, request requestUsersAPIUpdateUser) (response responseUsersAPIUpdateUser, err error) {
+
+	response.Response, err = http.svc.UpdateUser(ctx, request.AdminUserID, request.UserID, request.Email, request.Phone, request.FirstName, request.LastName, request.MiddleName, request.Role, request.Status, request.ClientID, request.CompanyName, request.Inn, request.IsActive)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpUsersAPI) serveUpdateUser(ctx *fiber.Ctx) (err error) {
+
+	var request requestUsersAPIUpdateUser
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
+
+	if _userID := ctx.Params("userID"); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	if _adminUserID := string(ctx.Request().Header.Peek("X-Admin-User-Id")); _adminUserID != "" {
+		var adminUserID uuid.UUID
+		adminUserID, _ = uuid.Parse(_adminUserID)
+		request.AdminUserID = adminUserID
+	}
+
+	return customhandlers.UpdateUser(ctx, http.svc, request.AdminUserID, request.UserID, request.Email, request.Phone, request.FirstName, request.LastName, request.MiddleName, request.Role, request.Status, request.ClientID, request.CompanyName, request.Inn, request.IsActive)
+}
+func (http *httpUsersAPI) deleteUser(ctx context.Context, request requestUsersAPIDeleteUser) (response responseUsersAPIDeleteUser, err error) {
+
+	response.Response, err = http.svc.DeleteUser(ctx, request.UserID)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpUsersAPI) serveDeleteUser(ctx *fiber.Ctx) (err error) {
+
+	var request requestUsersAPIDeleteUser
+
+	if _userID := ctx.Params("userID"); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.DeleteUser(ctx, http.svc, request.UserID)
+}
+func (http *httpUsersAPI) deleteUserByEmail(ctx context.Context, request requestUsersAPIDeleteUserByEmail) (response responseUsersAPIDeleteUserByEmail, err error) {
+
+	response.Response, err = http.svc.DeleteUserByEmail(ctx, request.Email)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpUsersAPI) serveDeleteUserByEmail(ctx *fiber.Ctx) (err error) {
+
+	var request requestUsersAPIDeleteUserByEmail
+
+	if _email := ctx.Query("email"); _email != "" {
+		var email string
+		email = _email
+		request.Email = email
+	}
+
+	return customhandlers.DeleteUserByEmail(ctx, http.svc, request.Email)
+}
+func (http *httpUsersAPI) activateUser(ctx context.Context, request requestUsersAPIActivateUser) (response responseUsersAPIActivateUser, err error) {
+
+	response.Response, err = http.svc.ActivateUser(ctx, request.UserID)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpUsersAPI) serveActivateUser(ctx *fiber.Ctx) (err error) {
+
+	var request requestUsersAPIActivateUser
+
+	if _userID := ctx.Params("userID"); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.ActivateUser(ctx, http.svc, request.UserID)
+}
+func (http *httpUsersAPI) deactivateUser(ctx context.Context, request requestUsersAPIDeactivateUser) (response responseUsersAPIDeactivateUser, err error) {
+
+	response.Response, err = http.svc.DeactivateUser(ctx, request.UserID, request.Reason, request.ContactName, request.ContactPhone, request.ContactEmail)
+	if err != nil {
+		if http.errorHandler != nil {
+			err = http.errorHandler(err)
+		}
+	}
+	return
+}
+func (http *httpUsersAPI) serveDeactivateUser(ctx *fiber.Ctx) (err error) {
+
+	var request requestUsersAPIDeactivateUser
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
+	}
+
+	if _userID := ctx.Params("userID"); _userID != "" {
+		var userID uuid.UUID
+		userID, _ = uuid.Parse(_userID)
+		request.UserID = userID
+	}
+
+	return customhandlers.DeactivateUser(ctx, http.svc, request.UserID, request.Reason, request.ContactName, request.ContactPhone, request.ContactEmail)
 }

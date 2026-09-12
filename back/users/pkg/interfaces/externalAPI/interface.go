@@ -182,6 +182,15 @@ type UsersAPI interface {
 	// @tg uuidPackage=github.com/google/uuid
 	DeleteUser(ctx context.Context, userID uuid.UUID) (response models.DeleteUserResponse, err error)
 
+	// DeleteUserByEmail soft-deletes a user found by email.
+	// @tg http-method=DELETE
+	// @tg http-path=/v1/users
+	// @tg http-args=email|email
+	// @tg http-response=github.com/mbatimel/AMC/users/internal/transport/custom-handlers:DeleteUserByEmail
+	// @tg summary=`Удаление пользователя по email`
+	// @tg desc=`Находит пользователя по email и помечает его удалённым; запрещает дальнейшее использование users API`
+	DeleteUserByEmail(ctx context.Context, email string) (response models.DeleteUserResponse, err error)
+
 	// ActivateUser activates a user.
 	// @tg http-method=POST
 	// @tg http-path=/v1/users/:userID/activate

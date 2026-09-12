@@ -64,6 +64,9 @@ func (f *routingFake) UpdateUser(context.Context, uuid.UUID, uuid.UUID, string, 
 func (f *routingFake) DeleteUser(context.Context, uuid.UUID) (models.DeleteUserResponse, error) {
 	return models.DeleteUserResponse{}, nil
 }
+func (f *routingFake) DeleteUserByEmail(context.Context, string) (models.DeleteUserResponse, error) {
+	return models.DeleteUserResponse{}, nil
+}
 func (f *routingFake) ActivateUser(context.Context, uuid.UUID) (models.ActivateUserResponse, error) {
 	return models.ActivateUserResponse{}, nil
 }
