@@ -23,6 +23,9 @@ type Product struct {
 	IsPublished     bool           `json:"is_published"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
+	WBStatus        string         `json:"wb_status,omitempty"`
+	OzonStatus      string         `json:"ozon_status,omitempty"`
+	YMStatus        string         `json:"ym_status,omitempty"`
 }
 
 type ProductListItem struct {
@@ -45,6 +48,9 @@ type ProductListItem struct {
 	IsPublished     bool           `json:"is_published"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
+	WBStatus        string         `json:"wb_status,omitempty"`
+	OzonStatus      string         `json:"ozon_status,omitempty"`
+	YMStatus        string         `json:"ym_status,omitempty"`
 }
 
 type Category struct {

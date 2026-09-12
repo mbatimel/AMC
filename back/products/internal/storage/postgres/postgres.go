@@ -23,6 +23,7 @@ var (
 	ErrSKUTaken             = errors.New("sku already taken")
 	ErrInvalidSort          = errors.New("invalid sort")
 	ErrProductImageNotFound = errors.New("product image not found")
+	ErrUnknownMarketplace   = errors.New("unknown marketplace")
 )
 
 const (
@@ -65,6 +66,15 @@ var (
 	sqlGetBrandByID            = query("getBrandByID.sql")
 	sqlListBrands              = query("listBrands.sql")
 	sqlCountBrands             = query("countBrands.sql")
+	sqlSetProductWBStatus      = query("setProductWBStatus.sql")
+	sqlSetProductOzonStatus    = query("setProductOzonStatus.sql")
+	sqlSetProductYMStatus      = query("setProductYMStatus.sql")
+)
+
+const (
+	MarketplaceWildberries = "wildberries"
+	MarketplaceOzon        = "ozon"
+	MarketplaceYandex      = "yandex_market"
 )
 
 type Storage struct {
@@ -107,6 +117,9 @@ func scanProduct(row rowScanner) (internalModels.Product, error) {
 		&product.IsPublished,
 		&product.CreatedAt,
 		&product.UpdatedAt,
+		&product.WBStatus,
+		&product.OzonStatus,
+		&product.YMStatus,
 	)
 	if categoryID.Valid {
 		product.CategoryID = categoryID.UUID
@@ -391,6 +404,9 @@ func scanProductWithMainImage(row rowScanner) (internalModels.Product, error) {
 		&product.IsPublished,
 		&product.CreatedAt,
 		&product.UpdatedAt,
+		&product.WBStatus,
+		&product.OzonStatus,
+		&product.YMStatus,
 		&image.ID,
 		&image.URL,
 		&image.Alt,
@@ -883,4 +899,29 @@ func (s *Storage) CountBrands(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("count brands: %w", err)
 	}
 	return total, nil
+}
+
+// SetMarketplaceStatus отмечает товар статусом карточки на указанном
+// маркетплейсе (wildberries/ozon/yandex_market).
+func (s *Storage) SetMarketplaceStatus(ctx context.Context, productID uuid.UUID, marketplace string, status string) error {
+	var statement string
+	switch marketplace {
+	case MarketplaceWildberries:
+		statement = sqlSetProductWBStatus
+	case MarketplaceOzon:
+		statement = sqlSetProductOzonStatus
+	case MarketplaceYandex:
+		statement = sqlSetProductYMStatus
+	default:
+		return ErrUnknownMarketplace
+	}
+	var updatedID uuid.UUID
+	err := s.pool.QueryRow(ctx, statement, productID, status).Scan(&updatedID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrProductNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("set marketplace status: %w", err)
+	}
+	return nil
 }

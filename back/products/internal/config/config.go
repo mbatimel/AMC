@@ -16,6 +16,7 @@ type Config struct {
 	PGUser           string
 	PGPassword       string
 	BindAddr         string
+	InternalBindAddr string
 	HealthAddr       string
 	AccessURL        string
 	S3Endpoint       string
@@ -36,6 +37,7 @@ func LoadConfig() Config {
 		PGUser:           os.Getenv("PG_USER"),
 		PGPassword:       os.Getenv("PG_PASSWORD"),
 		BindAddr:         GetEnv("BIND_ADDR", ":8081"),
+		InternalBindAddr: GetEnv("INTERNAL_BIND_ADDR", ":8091"),
 		HealthAddr:       GetEnv("HEALTH_ADDR", ":9091"),
 		AccessURL:        GetEnv("ACCESS_URL", "http://localhost:8080"),
 		S3Endpoint:       os.Getenv("S3_ENDPOINT"),

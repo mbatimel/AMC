@@ -1,0 +1,109 @@
+openapi: 3.0.0
+info:
+    title: products-internal
+    version: 0.0.1
+servers:
+    - {}
+paths:
+    /api/v1/products/marketplace-status:
+        post:
+            tags:
+                - ProductsInternalAPI
+            summary: Установка статуса карточки товара на маркетплейсе
+            description: 'Отмечает товар как добавленный (или с иным статусом) на указанном маркетплейсе: wildberries, ozon или yandex_market'
+            parameters:
+                - in: query
+                  name: productID
+                  schema:
+                    type: string
+                    format: uuid
+                - in: query
+                  name: marketplace
+                  schema:
+                    type: string
+                - in: query
+                  name: status
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.products.internalError
+                                        description: Заголовок ошибки
+components:
+    schemas:
+        requestProductsInternalAPISetMarketplaceStatus:
+            type: object
+        responseProductsInternalAPISetMarketplaceStatus:
+            type: object
+            required:
+                - ok
+            properties:
+                ok:
+                    type: boolean
+            description: 'Отмечает товар как добавленный (или с иным статусом) на указанном маркетплейсе: wildberries, ozon или yandex_market'

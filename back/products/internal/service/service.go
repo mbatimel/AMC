@@ -61,6 +61,7 @@ type Storage interface {
 	CountPromotions(ctx context.Context) (int, error)
 	UpdatePromotion(ctx context.Context, params internalModels.UpdatePromotionParams) (internalModels.Promotion, error)
 	DeletePromotion(ctx context.Context, promotionID uuid.UUID) error
+	SetMarketplaceStatus(ctx context.Context, productID uuid.UUID, marketplace string, status string) error
 }
 
 type AccessClient interface {
@@ -469,6 +470,9 @@ func modelProduct(product internalModels.Product) models.Product {
 		IsPublished:     product.IsPublished,
 		CreatedAt:       product.CreatedAt,
 		UpdatedAt:       product.UpdatedAt,
+		WBStatus:        product.WBStatus,
+		OzonStatus:      product.OzonStatus,
+		YMStatus:        product.YMStatus,
 	}
 }
 
@@ -493,6 +497,9 @@ func modelProductListItem(product internalModels.Product) models.ProductListItem
 		IsPublished:     product.IsPublished,
 		CreatedAt:       product.CreatedAt,
 		UpdatedAt:       product.UpdatedAt,
+		WBStatus:        product.WBStatus,
+		OzonStatus:      product.OzonStatus,
+		YMStatus:        product.YMStatus,
 	}
 }
 
@@ -1191,4 +1198,31 @@ func (s *Service) ListBrands(
 		Limit: resultLimit, Offset: resultOffset, Total: total,
 	}
 	return response, nil
+}
+
+var validMarketplaces = map[string]struct{}{
+	postgres.MarketplaceWildberries: {},
+	postgres.MarketplaceOzon:        {},
+	postgres.MarketplaceYandex:      {},
+}
+
+// SetMarketplaceStatus вызывается сервисом platforms по внутреннему API:
+// отмечает товар статусом карточки на маркетплейсе. Проверку прав пользователя
+// выполняет вызывающая сторона (platforms) при создании карточки.
+func (s *Service) SetMarketplaceStatus(
+	ctx context.Context,
+	productID uuid.UUID,
+	marketplace string,
+	status string,
+) (ok bool, err error) {
+	if productID == uuid.Nil {
+		return false, validation("productID")
+	}
+	if _, known := validMarketplaces[marketplace]; !known {
+		return false, validation("marketplace")
+	}
+	if err = s.storage.SetMarketplaceStatus(ctx, productID, marketplace, strings.TrimSpace(status)); err != nil {
+		return false, mapStorageError(err)
+	}
+	return true, nil
 }
