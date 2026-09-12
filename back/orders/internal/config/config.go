@@ -29,6 +29,13 @@ type Config struct {
 	VATRate             float64
 	IntegrationsURL     string
 	IntegrationsTimeout time.Duration
+	SMTPHost            string
+	SMTPPort            string
+	SMTPUsername        string
+	SMTPPassword        string
+	SMTPFrom            string
+	SMTPTLS             bool
+	SMTPTimeout         time.Duration
 }
 
 func LoadConfig() Config {
@@ -42,6 +49,13 @@ func LoadConfig() Config {
 		AccessURL:           os.Getenv("ACCESS_URL"),
 		IntegrationsURL:     os.Getenv("INTEGRATIONS_URL"),
 		IntegrationsTimeout: getEnvDuration("INTEGRATIONS_TIMEOUT", defaultIntegrationsTimeout),
+		SMTPHost:            os.Getenv("SMTP_HOST"),
+		SMTPPort:            GetEnv("SMTP_PORT", "587"),
+		SMTPUsername:        os.Getenv("SMTP_USERNAME"),
+		SMTPPassword:        os.Getenv("SMTP_PASSWORD"),
+		SMTPFrom:            os.Getenv("SMTP_FROM"),
+		SMTPTLS:             true,
+		SMTPTimeout:         10 * time.Second,
 	}
 
 	if cfg.PGDB == "" || cfg.PGUser == "" || cfg.PGPassword == "" {

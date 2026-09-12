@@ -39,6 +39,7 @@ type Storage interface {
 
 	GetProductOnecRefs(ctx context.Context, productIDs []uuid.UUID) (map[uuid.UUID]postgres.ProductOnecRef, error)
 	GetCounterpartyOnecRef(ctx context.Context, counterpartyID uuid.UUID) (postgres.CounterpartyOnecRef, error)
+	GetProductImages(ctx context.Context, productIDs []uuid.UUID) (map[uuid.UUID]string, error)
 
 	CreateOrder(
 		ctx context.Context,
@@ -64,11 +65,21 @@ const (
 	// rows left behind by a failed order creation. Short on purpose: the client is
 	// already waiting on an error response.
 	orphanCleanupTimeout = 5 * time.Second
+
+	// confirmationEmailTimeout bounds the best-effort order confirmation email
+	// sent synchronously during CreateOrder. A slow/unreachable SMTP server must
+	// not stall the order response; a failure here is logged, never returned.
+	confirmationEmailTimeout = 5 * time.Second
 )
 
 // AccessClient is implemented by internal/access.Client.
 type AccessClient interface {
 	CheckAccess(ctx context.Context, userID uuid.UUID, role int) (allowed bool, err error)
+}
+
+// Mailer is implemented by internal/mailer.SMTPMailer.
+type Mailer interface {
+	SendHTML(ctx context.Context, to string, subject string, html string) error
 }
 
 type service struct {
@@ -77,15 +88,17 @@ type service struct {
 	accessClient AccessClient
 	vatRate      float64
 	onecPusher   OnecPusher
+	mailer       Mailer
 }
 
-func NewOrdersApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient, vatRate float64, onecPusher OnecPusher) externalapi.OrdersAPI {
+func NewOrdersApiService(logger zerolog.Logger, storage Storage, accessClient AccessClient, vatRate float64, onecPusher OnecPusher, mailer Mailer) externalapi.OrdersAPI {
 	return &service{
 		logger:       logger,
 		storage:      storage,
 		accessClient: accessClient,
 		vatRate:      vatRate,
 		onecPusher:   onecPusher,
+		mailer:       mailer,
 	}
 }
 
@@ -636,6 +649,19 @@ func (s *service) CreateOrder(ctx context.Context, userID uuid.UUID, clientID st
 		Status:          created.Status,
 		PaymentStatus:   "not_paid",
 		CreatedAt:       created.CreatedAt,
+	}
+
+	if email != "" {
+		images, imgErr := s.storage.GetProductImages(ctx, productIDs)
+		if imgErr != nil {
+			s.logger.Error().Err(imgErr).Str("orderID", created.ID.String()).Msg("failed to load product images for order confirmation email")
+			images = map[uuid.UUID]string{}
+		}
+		emailCtx, cancelEmail := context.WithTimeout(context.WithoutCancel(ctx), confirmationEmailTimeout)
+		defer cancelEmail()
+		if sendErr := s.sendOrderConfirmationEmail(emailCtx, email, order, images); sendErr != nil {
+			s.logger.Error().Err(sendErr).Str("orderID", created.ID.String()).Str("email", email).Msg("failed to send order confirmation email")
+		}
 	}
 
 	return models.CreateOrderResponse{Order: order}, nil

@@ -57,6 +57,10 @@ func (s *clientResolutionStorage) GetProductOnecRefs(context.Context, []uuid.UUI
 	return s.productOnecRefs, nil
 }
 
+func (s *clientResolutionStorage) GetProductImages(context.Context, []uuid.UUID) (map[uuid.UUID]string, error) {
+	return nil, nil
+}
+
 func (s *clientResolutionStorage) GetCounterpartyOnecRef(context.Context, uuid.UUID) (postgres.CounterpartyOnecRef, error) {
 	return s.counterpartyOnecRef, nil
 }
@@ -169,7 +173,7 @@ func (allowBuyerAccess) CheckAccess(context.Context, uuid.UUID, int) (bool, erro
 }
 
 func newClientResolutionService(storage Storage) *service {
-	return NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 0.2, nil).(*service)
+	return NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 0.2, nil, nil).(*service)
 }
 
 func requireOrdersError(t *testing.T, err error, status int, trKey string, causeKey, causeValue string) *customErrors.Error {

@@ -37,7 +37,7 @@ func TestCreateOrder_CallsOnecPusherWithItemsAndReturnsProcessingStatus(t *testi
 		},
 	}
 	pusher := &fakeOnecPusher{guid: uuid.New(), number: "УТ-00099"}
-	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, pusher)
+	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, pusher, nil)
 
 	resp, err := svc.CreateOrder(context.Background(), uuid.New(), "", "delivery", "Адрес", "Иван", "+7900", "a@b.c", "коммент")
 	if err != nil {
@@ -61,7 +61,7 @@ func TestCreateOrder_OnecPushFails_ReturnsError(t *testing.T) {
 		},
 	}
 	pusher := &fakeOnecPusher{err: errors.New("onec down")}
-	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, pusher)
+	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, pusher, nil)
 
 	_, err := svc.CreateOrder(context.Background(), uuid.New(), "", "delivery", "Адрес", "Иван", "+7900", "a@b.c", "")
 	if err == nil {
@@ -76,7 +76,7 @@ func TestCreateOrder_PushFails_CleansUpOrphanAddressAndContact(t *testing.T) {
 		},
 	}
 	pusher := &fakeOnecPusher{err: errors.New("onec down")}
-	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, pusher)
+	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, pusher, nil)
 
 	if _, err := svc.CreateOrder(context.Background(), uuid.New(), "", "delivery", "Адрес", "Иван", "+7900", "a@b.c", ""); err == nil {
 		t.Fatal("expected error when onec push fails")
@@ -101,7 +101,7 @@ func TestCreateOrder_CleanupFailure_DoesNotMaskPushError(t *testing.T) {
 		deleteAddressAndContactErr: errors.New("cleanup failed too"),
 	}
 	pushErr := errors.New("onec down")
-	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, &fakeOnecPusher{err: pushErr})
+	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, &fakeOnecPusher{err: pushErr}, nil)
 
 	_, err := svc.CreateOrder(context.Background(), uuid.New(), "", "delivery", "Адрес", "Иван", "+7900", "a@b.c", "")
 	if err == nil {
@@ -124,7 +124,7 @@ func TestCreateOrder_PushFailsWithCancelledContext_CleanupStillRuns(t *testing.T
 		},
 	}
 	pusher := &fakeOnecPusher{err: context.DeadlineExceeded}
-	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, pusher)
+	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, pusher, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	storage.onCreateOrder = cancel // cancel the request ctx before the push fails
@@ -150,7 +150,7 @@ func TestCreateOrder_PushSucceeds_DoesNotDeleteAddressOrContact(t *testing.T) {
 			{ProductID: uuid.New(), SKU: "SKU-5", ProductName: "Товар 5", Qty: 1, Price: 50},
 		},
 	}
-	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, &fakeOnecPusher{guid: uuid.New(), number: "УТ-1"})
+	svc := NewOrdersApiService(zerolog.Nop(), storage, allowBuyerAccess{}, 20, &fakeOnecPusher{guid: uuid.New(), number: "УТ-1"}, nil)
 
 	if _, err := svc.CreateOrder(context.Background(), uuid.New(), "", "delivery", "Адрес", "Иван", "+7900", "a@b.c", ""); err != nil {
 		t.Fatalf("unexpected error: %v", err)
