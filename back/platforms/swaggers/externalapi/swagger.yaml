@@ -1,0 +1,946 @@
+openapi: 3.0.0
+info:
+    title: platforms
+    version: 0.0.1
+servers:
+    - {}
+paths:
+    /api/v1/ozon/cards:
+        post:
+            tags:
+                - PlatformsAPI
+            summary: Создание/обновление карточки товара на Ozon
+            description: Создание или обновление товара в личном кабинете продавца Ozon (POST /v3/product/import). Обрабатывается асинхронно — ответ содержит номер задания (task_id).
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestPlatformsAPICreateOzonCard'
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.internalError
+                                        description: Заголовок ошибки
+    /api/v1/wildberries/cards:
+        post:
+            tags:
+                - PlatformsAPI
+            summary: Создание карточки товара на Wildberries
+            description: Создание карточки товара в личном кабинете продавца Wildberries (POST /content/v2/cards/upload). Поддерживается создание отдельной (не объединённой) карточки — один вариант на запрос.
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestPlatformsAPICreateWildberriesCard'
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.internalError
+                                        description: Заголовок ошибки
+    /api/v1/yandex-market/cards:
+        post:
+            tags:
+                - PlatformsAPI
+            summary: Создание/обновление карточки товара на Яндекс Маркете
+            description: Создание или обновление товара в кабинете продавца Яндекс Маркета (POST /v2/businesses/{businessId}/offer-mappings/update). Обрабатывается синхронно — статус и предупреждения приходят сразу в ответе.
+            parameters:
+                - in: header
+                  name: X-User-Id
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestPlatformsAPICreateYandexMarketCard'
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors: {}
+                                    data:
+                                        example: true
+                                    error:
+                                        type: boolean
+                                        example: false
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.badRequest
+                                        description: Заголовок ошибки
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 401, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.unauthorized
+                                        description: Заголовок ошибки
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 403, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.accessDenied
+                                        description: Заголовок ошибки
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.badRequest
+                                        description: Заголовок ошибки
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        type: object
+                                        properties:
+                                            errors:
+                                                type: array
+                                                items:
+                                                    type: object
+                                                    properties:
+                                                        params:
+                                                            type: object
+                                                            example:
+                                                                "1": value one
+                                                                "2": value two
+                                                            additionalProperties:
+                                                                type: string
+                                                        trKey:
+                                                            type: string
+                                                nullable: true
+                                        description: Текст ошибки, при ответе
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.badRequest
+                                        description: Заголовок ошибки
+                "500":
+                    description: Internal Server Error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    additionalErrors:
+                                        description: Текст ошибки, при ответе, со статус кодом 500, не указывается
+                                    data: {}
+                                    error:
+                                        type: boolean
+                                        example: true
+                                        description: Флаг показывающий, что ответ пришел с ошибкой
+                                    errorText:
+                                        type: string
+                                        example: content.api.errors.platforms.internalError
+                                        description: Заголовок ошибки
+components:
+    schemas:
+        models.CreateOzonCardResponse:
+            type: object
+            properties:
+                accepted:
+                    type: boolean
+                offer_id:
+                    type: string
+                task_id:
+                    type: number
+                    format: int64
+        models.CreateWildberriesCardResponse:
+            type: object
+            properties:
+                accepted:
+                    type: boolean
+                subject_id:
+                    type: number
+                    format: int
+                vendor_code:
+                    type: string
+        models.CreateYandexMarketCardResponse:
+            type: object
+            properties:
+                accepted:
+                    type: boolean
+                offer_id:
+                    type: string
+                warnings:
+                    type: array
+                    items:
+                        type: string
+                    nullable: true
+        models.OzonAttribute:
+            type: object
+            properties:
+                complex_id:
+                    type: number
+                    format: int
+                id:
+                    type: number
+                    format: int
+                values:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/models.OzonAttributeValue'
+                    nullable: true
+        models.OzonAttributeValue:
+            type: object
+            properties:
+                dictionary_value_id:
+                    type: number
+                    format: int64
+                value:
+                    type: string
+        models.OzonDimensions:
+            type: object
+            properties:
+                depth_mm:
+                    type: number
+                    format: int
+                dimension_unit:
+                    type: string
+                height_mm:
+                    type: number
+                    format: int
+                weight:
+                    type: number
+                    format: int
+                weight_unit:
+                    type: string
+                width_mm:
+                    type: number
+                    format: int
+        models.WildberriesCharacteristic:
+            type: object
+            properties:
+                id:
+                    type: number
+                    format: int
+                value_json:
+                    type: string
+        models.WildberriesDimensions:
+            type: object
+            properties:
+                height_cm:
+                    type: number
+                    format: int
+                length_cm:
+                    type: number
+                    format: int
+                weight_brutto_kg:
+                    type: number
+                    format: float
+                width_cm:
+                    type: number
+                    format: int
+        models.WildberriesDocumentItem:
+            type: object
+            properties:
+                applicant:
+                    type: string
+                end_date:
+                    type: string
+                is_endless:
+                    type: boolean
+                number:
+                    type: string
+                product_number:
+                    type: string
+                start_date:
+                    type: string
+                trade_name:
+                    type: string
+                type:
+                    type: number
+                    format: int
+        models.WildberriesDocuments:
+            type: object
+            properties:
+                exclude_documents:
+                    type: boolean
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/models.WildberriesDocumentItem'
+                    nullable: true
+        models.WildberriesSize:
+            type: object
+            properties:
+                price:
+                    type: number
+                    format: float
+                skus:
+                    type: array
+                    items:
+                        type: string
+                    nullable: true
+                tech_size:
+                    type: string
+                wb_size:
+                    type: string
+        models.YandexMarketDimensions:
+            type: object
+            properties:
+                height_cm:
+                    type: number
+                    format: float
+                length_cm:
+                    type: number
+                    format: float
+                weight_kg:
+                    type: number
+                    format: float
+                width_cm:
+                    type: number
+                    format: float
+        models.YandexMarketParameterValue:
+            type: object
+            properties:
+                parameter_id:
+                    type: number
+                    format: int64
+                unit_id:
+                    type: number
+                    format: int64
+                value:
+                    type: string
+                value_id:
+                    type: number
+                    format: int64
+        requestPlatformsAPICreateOzonCard:
+            type: object
+            required:
+                - productID
+                - offerID
+                - name
+                - descriptionCategoryID
+                - typeID
+                - currencyCode
+                - price
+                - oldPrice
+                - vat
+                - barcode
+                - dimensions
+                - images
+                - primaryImage
+                - colorImage
+                - attributes
+            properties:
+                attributes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/models.OzonAttribute'
+                    nullable: true
+                barcode:
+                    type: string
+                colorImage:
+                    type: string
+                currencyCode:
+                    type: string
+                descriptionCategoryID:
+                    type: number
+                    format: int64
+                dimensions:
+                    $ref: '#/components/schemas/models.OzonDimensions'
+                images:
+                    type: array
+                    items:
+                        type: string
+                    nullable: true
+                name:
+                    type: string
+                offerID:
+                    type: string
+                oldPrice:
+                    type: string
+                price:
+                    type: string
+                primaryImage:
+                    type: string
+                productID:
+                    type: string
+                    format: uuid
+                typeID:
+                    type: number
+                    format: int64
+                vat:
+                    type: string
+            description: Создание или обновление товара в личном кабинете продавца Ozon (POST /v3/product/import). Обрабатывается асинхронно — ответ содержит номер задания (task_id).
+        requestPlatformsAPICreateWildberriesCard:
+            type: object
+            required:
+                - productID
+                - subjectID
+                - vendorCode
+                - title
+                - description
+                - brand
+                - kizMarked
+                - wholesaleEnabled
+                - wholesaleQuantum
+                - dimensions
+                - sizes
+                - characteristics
+                - documents
+            properties:
+                brand:
+                    type: string
+                characteristics:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/models.WildberriesCharacteristic'
+                    nullable: true
+                description:
+                    type: string
+                dimensions:
+                    $ref: '#/components/schemas/models.WildberriesDimensions'
+                documents:
+                    $ref: '#/components/schemas/models.WildberriesDocuments'
+                kizMarked:
+                    type: boolean
+                productID:
+                    type: string
+                    format: uuid
+                sizes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/models.WildberriesSize'
+                    nullable: true
+                subjectID:
+                    type: number
+                    format: int
+                title:
+                    type: string
+                vendorCode:
+                    type: string
+                wholesaleEnabled:
+                    type: boolean
+                wholesaleQuantum:
+                    type: number
+                    format: int
+            description: Создание карточки товара в личном кабинете продавца Wildberries (POST /content/v2/cards/upload). Поддерживается создание отдельной (не объединённой) карточки — один вариант на запрос.
+        requestPlatformsAPICreateYandexMarketCard:
+            type: object
+            required:
+                - productID
+                - offerID
+                - name
+                - marketCategoryID
+                - description
+                - vendor
+                - vendorCode
+                - pictures
+                - barcodes
+                - dimensions
+                - parameterValues
+            properties:
+                barcodes:
+                    type: array
+                    items:
+                        type: string
+                    nullable: true
+                description:
+                    type: string
+                dimensions:
+                    $ref: '#/components/schemas/models.YandexMarketDimensions'
+                marketCategoryID:
+                    type: number
+                    format: int64
+                name:
+                    type: string
+                offerID:
+                    type: string
+                parameterValues:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/models.YandexMarketParameterValue'
+                    nullable: true
+                pictures:
+                    type: array
+                    items:
+                        type: string
+                    nullable: true
+                productID:
+                    type: string
+                    format: uuid
+                vendor:
+                    type: string
+                vendorCode:
+                    type: string
+            description: Создание или обновление товара в кабинете продавца Яндекс Маркета (POST /v2/businesses/{businessId}/offer-mappings/update). Обрабатывается синхронно — статус и предупреждения приходят сразу в ответе.
+        responsePlatformsAPICreateOzonCard:
+            type: object
+            required:
+                - response
+            properties:
+                response:
+                    $ref: '#/components/schemas/models.CreateOzonCardResponse'
+            description: Создание или обновление товара в личном кабинете продавца Ozon (POST /v3/product/import). Обрабатывается асинхронно — ответ содержит номер задания (task_id).
+        responsePlatformsAPICreateWildberriesCard:
+            type: object
+            required:
+                - response
+            properties:
+                response:
+                    $ref: '#/components/schemas/models.CreateWildberriesCardResponse'
+            description: Создание карточки товара в личном кабинете продавца Wildberries (POST /content/v2/cards/upload). Поддерживается создание отдельной (не объединённой) карточки — один вариант на запрос.
+        responsePlatformsAPICreateYandexMarketCard:
+            type: object
+            required:
+                - response
+            properties:
+                response:
+                    $ref: '#/components/schemas/models.CreateYandexMarketCardResponse'
+            description: Создание или обновление товара в кабинете продавца Яндекс Маркета (POST /v2/businesses/{businessId}/offer-mappings/update). Обрабатывается синхронно — статус и предупреждения приходят сразу в ответе.

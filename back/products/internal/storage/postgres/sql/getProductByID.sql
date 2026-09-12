@@ -53,7 +53,10 @@ SELECT
     ), 0)::DOUBLE PRECISION,
     p.is_active,
     p.created_at,
-    p.updated_at
+    p.updated_at,
+    COALESCE(p.wb_status, ''),
+    COALESCE(p.ozon_status, ''),
+    COALESCE(p.ym_status, '')
 FROM products p
 LEFT JOIN categories c ON c.id = p.category_id
 LEFT JOIN brands b ON b.id = p.brand_id

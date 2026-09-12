@@ -39,6 +39,7 @@ type fakeStorage struct {
 	countPromotionsFn         func(context.Context) (int, error)
 	updatePromotionFn         func(context.Context, internalModels.UpdatePromotionParams) (internalModels.Promotion, error)
 	deletePromotionFn         func(context.Context, uuid.UUID) error
+	setMarketplaceStatusFn    func(context.Context, uuid.UUID, string, string) error
 	lastCreateParams          internalModels.CreateProductParams
 	lastListParams            internalModels.ListProductsParams
 	lastUpdateParams          internalModels.UpdateProductParams
@@ -247,6 +248,13 @@ func (f *fakeStorage) UpdatePromotion(ctx context.Context, params internalModels
 func (f *fakeStorage) DeletePromotion(ctx context.Context, id uuid.UUID) error {
 	if f.deletePromotionFn != nil {
 		return f.deletePromotionFn(ctx, id)
+	}
+	return nil
+}
+
+func (f *fakeStorage) SetMarketplaceStatus(ctx context.Context, productID uuid.UUID, marketplace string, status string) error {
+	if f.setMarketplaceStatusFn != nil {
+		return f.setMarketplaceStatusFn(ctx, productID, marketplace, status)
 	}
 	return nil
 }

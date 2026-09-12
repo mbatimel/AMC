@@ -28,6 +28,9 @@ type Product struct {
 	IsPublished     bool
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	WBStatus        string
+	OzonStatus      string
+	YMStatus        string
 }
 
 type ProductImage struct {
