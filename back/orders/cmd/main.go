@@ -11,6 +11,7 @@ import (
 
 	accessTransport "github.com/mbatimel/AMC/access/pkg/client/transport"
 	"github.com/mbatimel/AMC/orders/internal/config"
+	"github.com/mbatimel/AMC/orders/internal/mailer"
 	"github.com/mbatimel/AMC/orders/internal/onecclient"
 	ordersService "github.com/mbatimel/AMC/orders/internal/service"
 	postgres "github.com/mbatimel/AMC/orders/internal/storage/postgres"
@@ -40,7 +41,11 @@ func main() {
 	// Must exceed the integrations service's own outbound timeout to 1С
 	// (ONEC_ORDERS_REQUEST_TIMEOUT, default 15s) — this call wraps it.
 	onecPusher := onecclient.New(cfg.IntegrationsURL, cfg.IntegrationsTimeout)
-	svc := ordersService.NewOrdersApiService(log.Logger, postgresStorage, access, cfg.VATRate, onecPusher)
+	mail := mailer.NewSMTPMailer(
+		log.Logger, cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword,
+		cfg.SMTPFrom, cfg.SMTPTLS, cfg.SMTPTimeout,
+	)
+	svc := ordersService.NewOrdersApiService(log.Logger, postgresStorage, access, cfg.VATRate, onecPusher, mail)
 
 	app := externalapi.New(log.Logger, externalapi.OrdersAPI(externalapi.NewOrdersAPI(svc))).WithLog().WithMetrics()
 	server := &fasthttp.Server{

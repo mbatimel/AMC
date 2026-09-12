@@ -597,6 +597,38 @@ func (s *Storage) GetProductOnecRefs(ctx context.Context, productIDs []uuid.UUID
 	return result, nil
 }
 
+// GetProductImages returns each product's primary image URL (falling back to
+// the lowest sort_order image when no image is marked main). Products with no
+// image are simply absent from the result map.
+func (s *Storage) GetProductImages(ctx context.Context, productIDs []uuid.UUID) (map[uuid.UUID]string, error) {
+	result := make(map[uuid.UUID]string, len(productIDs))
+	if len(productIDs) == 0 {
+		return result, nil
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT DISTINCT ON (product_id) product_id, COALESCE(url, '')
+		FROM product_images
+		WHERE product_id = ANY($1) AND COALESCE(url, '') != ''
+		ORDER BY product_id, is_main DESC, sort_order, id
+	`, productIDs)
+	if err != nil {
+		return nil, fmt.Errorf("get product images: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id uuid.UUID
+		var url string
+		if err = rows.Scan(&id, &url); err != nil {
+			return nil, fmt.Errorf("get product images: scan: %w", err)
+		}
+		result[id] = url
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("get product images: %w", err)
+	}
+	return result, nil
+}
+
 type CounterpartyOnecRef struct {
 	OneCGUID uuid.NullUUID
 	INN      string

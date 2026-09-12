@@ -130,6 +130,13 @@ services:
       # call wraps that one, and expiring first would roll the order back while
       # 1С may already have created the document.
       INTEGRATIONS_TIMEOUT: "20s"
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_TLS: ${SMTP_TLS:-true}
+      SMTP_TIMEOUT: ${SMTP_TIMEOUT:-10s}
     depends_on:
       migrations:
         condition: service_completed_successfully
