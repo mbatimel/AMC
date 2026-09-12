@@ -219,10 +219,16 @@ func (s *service) RegisterIP(
 	if innInUse {
 		return uuid.Nil, customErrors.InnTakenError(inn)
 	}
-	fnsValid, err := s.fnsClient.CheckIndividual(ctx, inn)
-	if err != nil {
-		return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
-	}
+	// TEMPORARY: ФНС-проверка ИНН отключена по той же причине, что и 1С-пуш
+	// в заказах (см. back/orders/internal/service/service.go) — внешний
+	// сервис недоступен и валил регистрацию целиком. Считаем ИНН валидным
+	// без реального похода в ФНС. Вернуть вызов s.fnsClient.CheckIndividual,
+	// как только сервис ФНС снова будет доступен.
+	fnsValid := true
+	// fnsValid, err := s.fnsClient.CheckIndividual(ctx, inn)
+	// if err != nil {
+	// 	return uuid.Nil, customErrors.InternalServerError().SetOuterError(err)
+	// }
 	if !fnsValid {
 		return uuid.Nil, customErrors.InnInvalidError(inn)
 	}
